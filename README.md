@@ -14,8 +14,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
 ![Electron](https://img.shields.io/badge/Electron-37-47848F.svg)
 
-<!-- GitHub 发布占位（08-25 release-prep-naming）：仓库未建，下载链接回填后恢复跳转。 -->
-**⬇ 下载安装**（即将上线） · [📖 文档](docs/) · [🕒 时间线指南](docs/guides/时间线指南.md) · [📋 更新日志](CHANGELOG.md)
+**⬇ [下载安装](../../releases/latest)** · [📖 文档](docs/) · [🕒 时间线指南](docs/guides/时间线指南.md) · [📋 更新日志](CHANGELOG.md)
 
 </div>
 
@@ -168,13 +167,13 @@ docs/               — 架构与设计文档
 
 > ⚠️ 项目仍处于**早期开发阶段**，可能遇到各种奇怪的 BUG——遇到了请[提 Issue](../../issues)，见[项目状态](#项目状态)。
 
-发布仓库即将上线（GitHub 发布准备中），repo 公开后可在 GitHub Releases 下载安装包：
+在 [GitHub Releases](../../releases) 下载安装包：
 
 | 平台 | 格式 |
 |------|------|
 | Windows | `.exe` 安装包 / 免安装 `.zip` |
-| macOS | `.dmg` 磁盘映像 |
-| Linux | `.AppImage` 免安装可执行 |
+| macOS | `.dmg` 磁盘映像（实验性，将陆续补传） |
+| Linux | `.AppImage` 免安装可执行（实验性，将陆续补传） |
 
 ## 使用指南
 

@@ -65,9 +65,9 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Closure
 
-# 禁用 blockmap（增量更新），减少 Release 页附件数量。
+# 禁用 blockmap（增量更新）的多发产物，减少 Release 页附件数量。
+# （electron-builder 26 已移除 electronDifferentialDownload 根级开关。）
 generateUpdatesFilesForAllChannels: false
-electronDifferentialDownload: false
 
 # macOS 同时出 arm64(Apple Silicon) 与 x64(Intel) 两份 dmg。
 mac:

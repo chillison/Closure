@@ -29,16 +29,10 @@ module.exports = {
       from: { path: 'apps/desktop/client/ui/src' },
       to: { path: 'apps/desktop/local-bff' },
     },
-    {
-      name: 'agent-no-legacy-engine-nodes',
-      comment: 'agent 历史死代码 engine/nodes 已弃用，禁止从其余代码重新接线。',
-      severity: 'error',
-      from: {
-        path: 'apps/desktop/agent/src',
-        pathNot: 'apps/desktop/agent/src/(engine|nodes)',
-      },
-      to: { path: 'apps/desktop/agent/src/(engine|nodes)' },
-    },
+    // agent-no-legacy-engine-nodes 已删（08-28 release prep）：OrisonSpace 时代的规则，
+    // 前提是「engine/nodes 为弃用死代码」。Closure 的写章链节点（nodes/chapter-chain、
+    // world-state-query 等）与 craft 消费者（engine/craftGuide）都活在这些目录里被
+    // tool/runtime 正常 import——首推公仓 CI 全平台红即其伪前提暴露（13 条假违规边）。
     {
       name: 'no-circular',
       comment: '禁止模块循环依赖（type-only imports 不计入）。',
