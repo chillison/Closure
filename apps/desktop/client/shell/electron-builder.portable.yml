@@ -1,0 +1,55 @@
+# 同主 yml 发布身份（08-28 快速发布回填）。
+appId: com.aoharucat.closure
+productName: Closure
+copyright: Copyright © 2026 AoharuCat
+
+directories:
+  output: ../../../../release/portable
+  buildResources: resources
+
+files:
+  - dist/**
+  - resources/**
+  # craft KB 种子走下方 extraResources（asar 外），同主 yml。
+  - "!resources/craft-kb/**"
+  - package.json
+  - node_modules/**
+  # Trim packaging bloat. These are either non-runtime build artifacts or
+  # renderer-only libs that Vite already bundles into dist/renderer.
+  - "!node_modules/better-sqlite3/deps/**"
+  - "!node_modules/better-sqlite3/src/**"
+  - "!node_modules/better-sqlite3/build/Release/obj/**"
+  - "!node_modules/material-symbols/**"
+  - "!node_modules/react/**"
+  - "!node_modules/react-dom/**"
+
+# asar 外运行时静态资源，同主 yml（craft-kb 种子 + agent 契约 prompts）。
+extraResources:
+  - from: resources/craft-kb
+    to: craft-kb
+  - from: ../../agent/prompts
+    to: prompts
+
+asar: true
+asarUnpack:
+  - "**/*.node"
+  - "node_modules/better-sqlite3/**"
+  # sqlite-vec loadable extension binaries (.dll/.dylib/.so). SQLite cannot read
+  # inside an asar, so they must be unpacked; the @photostructure/sqlite-vec
+  # fork's getLoadablePath() rewrites app.asar -> app.asar.unpacked to find them.
+  - "**/@photostructure/sqlite-vec/**/*.{so,dylib,dll}"
+
+npmRebuild: true
+buildDependenciesFromSource: false
+
+win:
+  icon: resources/icon.ico
+  target:
+    - target: dir
+      arch:
+        - x64
+
+publish:
+  provider: github
+  owner: chillison
+  repo: Closure

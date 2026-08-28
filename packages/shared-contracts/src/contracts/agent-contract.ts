@@ -1,0 +1,145 @@
+import { z } from 'zod';
+import { creativeFieldKeySchema } from './creative-fields';
+
+// ── Creative Constraints ──
+
+export const creativeConstraintsSchema = z.object({
+  language: z.enum(['zh-CN', 'en-US']).default('zh-CN'),
+  contentRating: z.string().optional(),
+  episodeCount: z.number().int().positive().optional(),
+  chapterCount: z.number().int().positive().optional(),
+  targetLength: z.string().optional()
+});
+
+export type CreativeConstraints = z.infer<typeof creativeConstraintsSchema>;
+
+// ── Agent Policy ──
+
+export const agentPolicySchema = z.object({
+  outputJsonOnly: z.boolean().default(true),
+  noOverwriteOtherFields: z.boolean().default(true),
+  noDiscardUpstreamFacts: z.boolean().default(true),
+  explicitDegradeOnMissing: z.boolean().default(true),
+  traceableSourceRefs: z.boolean().default(true),
+  defaultLanguage: z.enum(['zh-CN', 'en-US']).default('zh-CN'),
+  fieldNameCase: z.literal('snake_case').default('snake_case')
+});
+
+export type AgentPolicy = z.infer<typeof agentPolicySchema>;
+
+// ── Agent Contract ──
+
+export const agentContractSchema = z.object({
+  id: z.string().min(1),
+  role: z.string().min(1),
+  goal: z.string().min(1),
+  owns: z.array(creativeFieldKeySchema),
+  reads: z.array(creativeFieldKeySchema),
+  must: z.array(z.string()),
+  mustNot: z.array(z.string()),
+  outputSchemaName: z.string().min(1),
+  qualityGates: z.array(z.string())
+});
+
+export type AgentContract = z.infer<typeof agentContractSchema>;
+
+export const reusableAgentNodeContractSchema = z.object({
+  nodeId: z.string().min(1),
+  displayName: z.string().min(1),
+  inputSchemaName: z.string().min(1),
+  outputSchemaName: z.string().min(1),
+  requiredArtifactKeys: z.array(z.string().min(1)).default([]),
+  producedArtifactKeys: z.array(z.string().min(1)).default([]),
+  sideEffects: z.array(z.enum(['persist_artifact', 'apply_patch', 'call_model', 'write_project'])).default([]),
+});
+
+export type ReusableAgentNodeContract = z.infer<typeof reusableAgentNodeContractSchema>;
+
+// ── Field Dependency Graph ──
+
+export const fieldDependencyEdgeSchema = z.object({
+  upstream: creativeFieldKeySchema,
+  downstream: creativeFieldKeySchema
+});
+
+export const fieldDependencyGraphSchema = z.object({
+  edges: z.array(fieldDependencyEdgeSchema)
+});
+
+export type FieldDependencyGraph = z.infer<typeof fieldDependencyGraphSchema>;
+
+// ── Workflow Sync Event ──
+
+export const workflowSyncEventSchema = z.object({
+  id: z.string().min(1),
+  createdAt: z.string().datetime(),
+  source: z.enum(['user', 'agent', 'sync']),
+  field: creativeFieldKeySchema,
+  entityId: z.string().optional(),
+  fromVersion: z.number().int().nonnegative(),
+  toVersion: z.number().int().nonnegative(),
+  reason: z.string(),
+  affectedFields: z.array(creativeFieldKeySchema)
+});
+
+export type WorkflowSyncEvent = z.infer<typeof workflowSyncEventSchema>;
+
+// ── Asset Patch Candidate ──
+
+export const assetPatchCandidateSchema = z.object({
+  id: z.string().min(1),
+  action: z.enum(['add', 'update', 'deprecate']),
+  targetType: z.enum(['asset_card', 'relationship_edge']),
+  targetId: z.string().min(1),
+  payload: z.record(z.string(), z.unknown()),
+  sourceRefs: z.array(z.string()).default([]),
+  autoApply: z.boolean().default(false),
+  reason: z.string().optional()
+});
+
+export type AssetPatchCandidate = z.infer<typeof assetPatchCandidateSchema>;
+
+// ── Creative Run Request ──
+
+export const creativeRunRequestSchema = z.object({
+  projectPath: z.string().min(1),
+  requirement: z.string().min(1),
+  projectDocument: z.record(z.string(), z.unknown()).optional(),
+  runIntent: z.enum(['create', 'expand', 'revise', 'review']).default('create'),
+  targetFields: z.array(creativeFieldKeySchema).optional(),
+  configRoot: z.string().optional(),
+  constraints: creativeConstraintsSchema.optional()
+});
+
+export type CreativeRunRequest = z.infer<typeof creativeRunRequestSchema>;
+
+// ── Creative Run Context ──
+
+export const creativeRunContextSchema = z.object({
+  runId: z.string().min(1),
+  projectPath: z.string().min(1),
+  requirement: z.string().min(1),
+  runIntent: z.enum(['create', 'expand', 'revise', 'review']),
+  targetFields: z.array(creativeFieldKeySchema),
+  projectDocument: z.record(z.string(), z.unknown()).nullable(),
+  projectDocumentStatus: z.enum(['loaded', 'missing', 'partial']).default('missing'),
+  fieldVersions: z.record(creativeFieldKeySchema, z.number().int().nonnegative()),
+  dependencyGraph: fieldDependencyGraphSchema,
+  staleFields: z.array(creativeFieldKeySchema),
+  syncEvents: z.array(workflowSyncEventSchema),
+  constraints: creativeConstraintsSchema,
+  agentPolicy: agentPolicySchema,
+  // Story 1.4：story-planner pattern 指引文本（由 contextBuilder 从
+  // creative_brief.structure_pattern 经 formatPatternGuide 派生）。非 blank 时含
+  // PATTERN_SEEDS[id] 的 name/description/growthRule/skeleton 摘要；blank/缺省为 undefined。
+  // mustache `{{patternGuide}}` 注入 story-planner user prompt（design §4 fallback：
+  // 模板不支持嵌套字段 -> contextBuilder 拼 pattern seed 描述进 context）。optional 零 migration。
+  patternGuide: z.string().optional(),
+  // Story 1.9：叙事枚举策展词表（outcomeType/pacingRole/mice_type）的 prompt 指引文本。由
+  // contextBuilder 调 formatNarrativeEnumGuide() 静态生成（零 projectDocument 依赖，恒在）。
+  // mustache `{{narrativeEnumGuide}}` 注入 story-planner user prompt。词表是先验非门禁
+  // （§3.10）：schema 收任意 string，词表只抬 craft 上限不锁死。optional 零 migration。
+  narrativeEnumGuide: z.string().optional()
+});
+
+export type CreativeRunContext = z.infer<typeof creativeRunContextSchema>;

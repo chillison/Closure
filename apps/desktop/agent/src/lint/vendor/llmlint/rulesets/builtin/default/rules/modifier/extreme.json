@@ -1,0 +1,30 @@
+[
+  {
+    "id": "cn.modifier.extreme.extreme-adverb",
+    "namespace": "modifier.extreme",
+    "title": "极其删除",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "modifier.extreme\t\t极其(?:的|地|得)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "极其(?:的|地|得)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "",
+        "非常",
+        "十分",
+        "特别",
+        "格外",
+        "很"
+      ]
+    }
+  }
+]

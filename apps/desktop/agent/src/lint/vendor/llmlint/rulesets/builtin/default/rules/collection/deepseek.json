@@ -1,0 +1,28 @@
+[
+  {
+    "id": "cn.collection.deepseek.decompose-to-understand",
+    "namespace": "collection.deepseek",
+    "title": "合集 3",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“拆解”是技术说明、分析文和创作讨论里的普通动词，不应作为默认 Agent 强提示。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "collection.deepseek\t\t拆解",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "拆解"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "理解"
+      ]
+    }
+  }
+]

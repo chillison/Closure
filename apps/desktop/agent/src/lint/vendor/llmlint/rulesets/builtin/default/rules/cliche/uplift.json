@@ -1,0 +1,38 @@
+[
+  {
+    "id": "uplift-await",
+    "namespace": "cliche.uplift",
+    "title": "鸡汤式期待收尾",
+    "level": "medium",
+    "note": "「让我们拭目以待 / 未来可期」是空洞的正能量收尾，删掉，不做鸡汤。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "让我们拭目以待|拭目以待|未来可期|未来值得期待"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "uplift-embrace",
+    "namespace": "cliche.uplift",
+    "title": "积极拥抱式收尾",
+    "level": "low",
+    "note": "「与其……不如积极拥抱……」式收尾是 AI 偏爱的鸡汤句式，多数可删掉。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "与其[^，。！？\\n]{0,20}不如(?:积极)?(?:拥抱|迎接|面对)|让我们(?:一起)?(?:拥抱|迎接|携手)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉号召姿态，回到具体判断或事实。"
+    }
+  }
+]

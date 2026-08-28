@@ -1,0 +1,48 @@
+[
+  {
+    "id": "quotable-punchline-candidate",
+    "namespace": "punchline",
+    "title": "金句式收束候选",
+    "level": "low",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：裸 regex 会误报“真正的幕后黑手 / 真正的安胎药”等有信息名词短语；金句感交给 LLM 版 quotable-punchline 读上下文判断。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "真正的[^。！？\\n]{1,24}|这才是[^。！？\\n]{1,24}|从来不是[^。！？\\n]{1,24}而是"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "判断它是否承担具体信息；若只是姿态，改成具体动作、结果或场景。"
+    }
+  },
+  {
+    "id": "quotable-punchline",
+    "namespace": "punchline",
+    "title": "金句感",
+    "level": "low",
+    "note": "句子像社交媒体摘录、标语或段尾 punchline，但没有推动信息。",
+    "detector": {
+      "type": "semantic",
+      "prompt": "判断句子是否为了显得有洞察而写成可摘录的金句，却没有承担事实、动作、情绪推进或论证功能。\n\n判断标准：\n1. 如果句子删掉后信息不变，并且主要靠对仗、反转、抽象名词或漂亮收束制造效果，应标记为需要修复。\n2. 如果它确实压缩了前文的具体洞察，或是角色语言、标题、口号场景，可以保留。\n3. 不要只因为一句话好听就标记；关键看它是否替代了内容。\n\n请说明它承担了什么信息，或为什么只是姿态。"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "用具体动作、事实、结果、情绪推进或论证功能替代姿态式收束。"
+    },
+    "examples": [
+      {
+        "text": "每一次沉默，都会在时间深处开出答案。",
+        "hit": true,
+        "reason": "抽象且像可摘录的标语，没有提供具体情节或判断。"
+      },
+      {
+        "text": "她第二天又来了，这次带着账本。",
+        "hit": false,
+        "reason": "具体动作推进了故事。"
+      }
+    ]
+  }
+]

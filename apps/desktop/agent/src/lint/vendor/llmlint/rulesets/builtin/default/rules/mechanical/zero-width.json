@@ -1,0 +1,21 @@
+[
+  {
+    "id": "mechanical-zero-width",
+    "namespace": "mechanical.zero-width",
+    "title": "零宽字符",
+    "level": "low",
+    "note": "零宽空格 / 零宽连接符 / BOM 等不可见字符，正常中文写作不会出现；humanizer 工具常插入它们绕过检测。直接删除。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[\\u200B\\u200C\\u200D\\u2060\\uFEFF]"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

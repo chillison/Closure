@@ -1,0 +1,348 @@
+[
+  {
+    "id": "cn.regex.advanced.arc-outline",
+    "namespace": "regex.advanced",
+    "title": "顶起的弧度→轮廓",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t([顶撑][起出][^\\n]{1,8}?)(?:的)?弧度",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([顶撑][起出][^\\n]{1,8}?)(?:的)?弧度"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1的轮廓",
+        "$1的形状",
+        "$1的曲线",
+        "$1的隆起",
+        "$1的凸起"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.callus-clause",
+    "namespace": "regex.advanced",
+    "title": "删茧子修饰短语",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t(?:略带|布满|长满|带着?|生着?|满是|覆着|留下)[了的]?(?:微薄|细微|[薄老厚细])?茧(?:子)?[，,的 ]?却?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:略带|布满|长满|带着?|生着?|满是|覆着|留下)[了的]?(?:微薄|细微|[薄老厚细])?茧(?:子)?[，,的 ]?却?"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.empty-quantifier",
+    "namespace": "regex.advanced",
+    "title": "正则-高级替换",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.modifier.measure.specific-measure-word 完全重叠，避免同一量词进入多条默认候选。",
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(一?股子?|[一某][种缕抹点道层声])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(一?股子?|[一某][种缕抹点道层声])"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.few-degree",
+    "namespace": "regex.advanced",
+    "title": "几分→些/些许",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：当前数据集扩充后 reference 命中率高于 AI 文本；同时排除“几分钟/几分之一”这类普通表达，避免半截误报。",
+    "source": {
+      "version": "rule-curation-v8",
+      "canonicalKey": "regex.advanced\tg\t([有了上带添多染])几分",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([有了上带添多染])几分(?![钟之])"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1些",
+        "$1些许"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.generic-arc-shell",
+    "namespace": "regex.advanced",
+    "title": "删“的弧度”壳",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t(依旧)?(?:是|有着)(?:那种|这种|一种)?([^\\n的]{1,4}?)的弧度",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(依旧)?(?:是|有着)(?:那种|这种|一种)?([^\\n的]{1,4}?)的弧度"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1$2"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.lifted-smile-arc",
+    "namespace": "regex.advanced",
+    "title": "勾起弧度→地勾起",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t([弯勾翘扬扯])([起出])(?:一抹|一个|一丝)?([^的\\n]{1,4}?)的弧度",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([弯勾翘扬扯])([起出])(?:一抹|一个|一丝)?([^的\\n]{1,4}?)的弧度"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$3地$1$2"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.momentary-reaction",
+    "namespace": "regex.advanced",
+    "title": "正则-高级替换",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“抖/颤/缩/躲/愣/惊了一下”是普通动作和瞬时反应，当前 dataset 真人侧不低于 AI 侧；保留资产给项目显式开启。",
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t([抖颤缩躲愣惊])了?一下",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v30"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([抖颤缩躲愣惊])了?一下"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1了$1",
+        "微$1",
+        "轻$1"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.oral-inner-wall",
+    "namespace": "regex.advanced",
+    "title": "口腔内壁→嫩肉",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t([^，。、？！\\n他她你我它]{1,10})的口腔(?:内壁|内膜)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([^，。、？！\\n他她你我它]{1,10})的口腔(?:内壁|内膜)"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小嘴内$1的软肉",
+        "小嘴内$1的嫩肉",
+        "小嘴内$1的媚肉",
+        "小嘴里$1的软肉",
+        "小嘴里$1的嫩肉",
+        "小嘴里$1的媚肉",
+        "小嘴中$1的软肉",
+        "小嘴中$1的嫩肉",
+        "小嘴中$1的媚肉",
+        "嘴内$1的软肉",
+        "嘴内$1的嫩肉",
+        "嘴内$1的媚肉",
+        "嘴里$1的软肉",
+        "嘴里$1的嫩肉",
+        "嘴里$1的媚肉",
+        "嘴中$1的软肉",
+        "嘴中$1的嫩肉",
+        "嘴中$1的媚肉",
+        "口内$1的软肉",
+        "口内$1的嫩肉",
+        "口内$1的媚肉",
+        "口中$1的软肉",
+        "口中$1的嫩肉",
+        "口中$1的媚肉",
+        "唇舌间$1的软肉",
+        "唇舌间$1的嫩肉",
+        "唇舌间$1的媚肉",
+        "唇舌中$1的软肉",
+        "唇舌中$1的嫩肉",
+        "唇舌中$1的媚肉",
+        "唇齿间$1的软肉",
+        "唇齿间$1的嫩肉",
+        "唇齿间$1的媚肉",
+        "唇齿中$1的软肉",
+        "唇齿中$1的嫩肉",
+        "唇齿中$1的媚肉"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.parenthetical-example",
+    "namespace": "regex.advanced",
+    "title": "删括号举例",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t[（\\(](如|例如|比如)[^）\\)]+[）\\)]",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[（\\(](如|例如|比如)[^）\\)]+[）\\)]"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.pressured-arc-outline",
+    "namespace": "regex.advanced",
+    "title": "压出弧线→曲线",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t([顶撑压挤勒][起出]|勾勒出)([^\\n]{1,8}?)(?:的)?(?:弧度|弧线)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([顶撑压挤勒][起出]|勾勒出)([^\\n]{1,8}?)(?:的)?(?:弧度|弧线)"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1$2的曲线",
+        "$1$2的轮廓",
+        "$1$2的形状",
+        "$1$2的隆起",
+        "$1$2的凸起"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.simile-like",
+    "namespace": "regex.advanced",
+    "title": "正则-高级替换",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：单个“像/仿佛……一样”不是稳定 AI 味，当前 eval 为 noise；比喻问题改由 metaphor human 桶和 story-deslop.metaphor-density 处理。",
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t(像|如同|仿佛|宛如)([^，。！？\\n]{1,30}?)一样(?=[，。！？、；：”'\"\\n]|$)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(像|如同|仿佛|宛如)([^，。！？\\n]{1,30}?)一样(?=[，。！？、；：”'\"\\n]|$)"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1$2"
+      ]
+    }
+  },
+  {
+    "id": "cn.regex.advanced.simile-like-continuation",
+    "namespace": "regex.advanced",
+    "title": "正则-高级替换",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：旧 simile-like 续接规则与比喻壳/密度规则重叠，且当前 eval 为 noise；保留给项目显式开启。",
+    "source": {
+      "canonicalKey": "regex.advanced\tg\t(像|如同|仿佛|宛如|跟|和)([^，。！？\\n]{1,30}?)一样(?=[^，。！？\\n])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(像|如同|仿佛|宛如|跟|和)([^，。！？\\n]{1,30}?)一样(?=[^，。！？\\n])"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "像$2般",
+        "如同$2般",
+        "宛若$2般",
+        "仿佛$2般"
+      ]
+    }
+  }
+]

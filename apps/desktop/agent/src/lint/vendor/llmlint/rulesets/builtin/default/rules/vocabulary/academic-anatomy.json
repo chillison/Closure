@@ -1,0 +1,143 @@
+[
+  {
+    "id": "cn.vocabulary.academic-anatomy.academic-body-terms",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "删“肌肉/结构/频率”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t的?(?:肌肉|结构|频率)的?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "的?(?:肌肉|结构|频率)的?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.academic-anatomy.bony-feel",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "删“骨感”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t骨感",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "骨感"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.academic-anatomy.physiological-academic-label",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "删“生理性”标签",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：“生理性眼泪/快感”由 cn.modifier.measure.physiological-label 覆盖；这里仅保留分析腔标签。",
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t(?:生理性|生理层面|生理本能)的?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v16"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:生理层面|生理本能)的?|生理性(?![眼泪]|快感)的?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.academic-anatomy.regularity-term",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "学术与解剖词汇",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：单词“规律”过宽，容易误伤普通叙述；更具体的 cn.vocabulary.academic-anatomy.rhythmic-regularity 仍保留。",
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t规律",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "规律"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.academic-anatomy.rhythmic-regularity",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "删“有规律地”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t极?有规律地",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "极?有规律地"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.academic-anatomy.sphincter",
+    "namespace": "vocabulary.academic-anatomy",
+    "title": "删“括约肌”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.academic-anatomy\t\t括约肌",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "括约肌"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

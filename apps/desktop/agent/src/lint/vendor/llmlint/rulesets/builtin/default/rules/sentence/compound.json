@@ -1,0 +1,388 @@
+[
+  {
+    "id": "cn.sentence.compound.contrastive-turn-preface",
+    "namespace": "sentence.compound",
+    "title": "修剪特定转折句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：泛“不是/并非/没有…而是/反而”会命中合法对白、设定解释和事实辨析；默认 Agent 只保留 story-deslop 的高信号否定对比规则。",
+    "source": {
+      "version": "rule-curation-v11",
+      "canonicalKey": "sentence.compound\t\t(?:非但|不[是像再]|并[未非不]|(?:并|不仅)?没有)[\\u4e00-\\u9fff]+[,，](?:是|反[而倒]是?|[而倒只也更又全][是像]是?)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:非但|不[是像再]|并[未非不]|(?:并|不仅)?没有)[\\u4e00-\\u9fff]+[,，](?:是|反[而倒]是?|[而倒只也更又全][是像]是?)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.dialogue-echo-after-quote",
+    "namespace": "sentence.compound",
+    "title": "删对白后的回声壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：对白后的回声句和场域前置句可能服务节奏、停顿或空间调度；只在它成为空转句壳时删。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "sentence.compound\t\t(^|[。！？；\\n])(?:这句话|那句话|这几个字|这番话)(?:一出口|出口|一落下|落下)?[，,]",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(^|[。！？；\\n])(?:这句话|那句话|这几个字|这番话)(?:一出口|出口|一落下|落下)?[，,]"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.generic-comparison-tone",
+    "namespace": "sentence.compound",
+    "title": "删泛化类比口气壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t和(?:谈起|聊起|说起)[\\u4e00-\\u9fff]{1,8}一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "和(?:谈起|聊起|说起)[\\u4e00-\\u9fff]{1,8}一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.immediate-delay-shell",
+    "namespace": "sentence.compound",
+    "title": "弱化固定句壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“并没有立刻”是普通叙述短语，当前 eval support 很低；只在它形成拖沓句壳时修。",
+    "source": {
+      "version": "rule-curation-v2",
+      "canonicalKey": "sentence.compound\t\t并没有立刻",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "并没有立刻"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "没有马上"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.ordinary-days-preface",
+    "namespace": "sentence.compound",
+    "title": "删参照依赖句壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“平日里”是普通时间参照，当前 eval support 低；只在它成为可删除的参照依赖句壳时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "sentence.compound\t\t平日里",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "平日里"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.repeated-not-is",
+    "namespace": "sentence.compound",
+    "title": "修剪连续“不是…不是…”",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：命中全部被 cn.sentence.compound.contrastive-turn-preface 覆盖。",
+    "source": {
+      "canonicalKey": "sentence.compound\t\t(?:(?<=^|[,，。])不是[\\u4e00-\\u9fff]+[,，。])+[而只]?是",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:(?<=^|[,，。])不是[\\u4e00-\\u9fff]+[,，。])+[而只]?是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.setting-space-preface",
+    "namespace": "sentence.compound",
+    "title": "删句首场域空壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：对白后的回声句和场域前置句可能服务节奏、停顿或空间调度；只在它成为空转句壳时删。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "sentence.compound\t\t(^|[。！？；\\n])在这个空间里[，,]",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(^|[。！？；\\n])在这个空间里[，,]"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.single-negative-contrast",
+    "namespace": "sentence.compound",
+    "title": "删单层否定对比前半句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：旧“不是…而是”regex 与 story-deslop handler 职责接近，且删前半句易改语义；排除“并不是…而是”，交给 contrastive-turn-preface。",
+    "source": {
+      "version": "rule-curation-v17",
+      "canonicalKey": "sentence.compound\t\t(?<!不是不)([\\u4e00-\\u9fff]+)不是[\\u4e00-\\u9fff，、“”‘’]{1,20}[，,]而是",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<!不是不)([\\u4e00-\\u9fff]+)(?<!并)不是[\\u4e00-\\u9fff，、“”‘’]{1,20}[，,]而是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1是"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.unrealized-preface",
+    "namespace": "sentence.compound",
+    "title": "删未发生部分前半句",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.sentence.compound.contrastive-turn-preface 同 span 重叠率超过 90%，统一交给 canonical rule 判断。",
+    "source": {
+      "canonicalKey": "sentence.compound\t\t(?:并[未非不]|并?(?:没有|不[再是像])|非但)[\\u4e00-\\u9fff]{1,20}[,，](?:[更又全也倒只而][像是]|反[而倒]是?)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:并[未非不]|并?(?:没有|不[再是像])|非但)[\\u4e00-\\u9fff]{1,20}[,，](?:[更又全也倒只而][像是]|反[而倒]是?)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.unrealized-subject-preface",
+    "namespace": "sentence.compound",
+    "title": "删未发生部分前半句",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：带主语的“并没有…而是”已由 cn.sentence.compound.contrastive-turn-preface 覆盖；旧替换还会删除有信息的真实对比。",
+    "source": {
+      "version": "rule-curation-v31",
+      "canonicalKey": "sentence.compound\t\t([\\u4e00-\\u9fff]+)并(?:没有|未)[\\u4e00-\\u9fff，、“”‘’]{1,20}[，,]而是",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([\\u4e00-\\u9fff]+)并(?:没有|未)[\\u4e00-\\u9fff，、“”‘’]{1,20}[，,]而是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.weather-tone-chat",
+    "namespace": "sentence.compound",
+    "title": "像在聊天气一样→平静地",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t像在聊天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像在聊天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.weather-tone-chat-today",
+    "namespace": "sentence.compound",
+    "title": "像聊今天天气一样→平静地",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t像聊今天天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像聊今天天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.weather-tone-direct-state",
+    "namespace": "sentence.compound",
+    "title": "改成直接说话状态",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t用聊天气的口气",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "用聊天气的口气"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.weather-tone-discuss",
+    "namespace": "sentence.compound",
+    "title": "像在讨论天气一样→平静地",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t像在讨论天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像在讨论天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  },
+  {
+    "id": "cn.sentence.compound.weather-tone-discussion",
+    "namespace": "sentence.compound",
+    "title": "跟讨论天气一样→平静地",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：天气/闲聊类口气比喻可能是人物反差或黑色幽默，替换为“平静地”会抹掉语气；只在固定口气壳重复时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "sentence.compound\t\t跟讨论天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "跟讨论天气一样(?=(?:地)?(?:说|开口|问|回答|讲|提起))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "平静地"
+      ]
+    }
+  }
+]

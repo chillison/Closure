@@ -1,0 +1,188 @@
+/* ── 风格片段对话框（StyleInputDialog，风格卡片 MVP 08-28）──
+   独立类前缀 .style-input-*，不依赖 agent-panel.css 既有类（新组件新块，零共享选择器）。
+   结构 mirror image-edit-overlay / image-edit-dialog（overlay 取消 + dialog stopPropagation）。 */
+.style-input-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-image-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: var(--overlay-heavy);
+}
+
+.style-input-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  width: min(720px, calc(100vw - 2rem));
+  max-height: calc(100vh - 3rem);
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-soft);
+}
+
+.style-input-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+}
+
+.style-input-dialog-header h2 {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.style-input-dialog-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0.3rem;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.style-input-dialog-close:hover {
+  background: var(--hover-overlay);
+  color: var(--on-surface);
+}
+
+.style-input-dialog-close .material-symbols-outlined {
+  font-size: 18px;
+}
+
+.style-input-dialog-prompt {
+  margin: 0;
+  padding: 0.5rem 0.7rem;
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font-size: var(--text-md);
+  line-height: 1.5;
+}
+
+.style-input-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.style-input-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.style-input-dialog-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.style-input-dialog-field textarea {
+  width: 100%;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 0.86rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.style-input-dialog-field textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.style-input-dialog-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  min-height: 1.2em;
+}
+
+.style-input-dialog-count {
+  color: var(--on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.style-input-dialog-warn {
+  color: var(--warning);
+  font-size: 0.75rem;
+}
+
+.style-input-dialog-error {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-low);
+  color: var(--on-surface-variant);
+  font-size: 0.78rem;
+}
+
+.style-input-dialog-footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding-top: var(--space-2xs);
+  border-top: 1px solid var(--outline-variant);
+}
+
+.style-input-dialog-busy {
+  flex: 1;
+  color: var(--on-surface-variant);
+  font-size: 0.75rem;
+}
+
+.style-input-dialog-footer button {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.4rem;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.style-input-dialog-footer button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--hover-overlay);
+}
+
+.style-input-dialog-footer button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.style-input-dialog-footer button.primary {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--surface-container-lowest);
+}
+
+.style-input-dialog-footer button.primary:hover:not(:disabled) {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}

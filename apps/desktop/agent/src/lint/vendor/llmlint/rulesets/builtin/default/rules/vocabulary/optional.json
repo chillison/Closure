@@ -1,0 +1,128 @@
+[
+  {
+    "id": "cn.vocabulary.optional.cicada-wing-thin",
+    "namespace": "vocabulary.optional",
+    "title": "词汇替换[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "vocabulary.optional\t\t薄如蝉翼",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "薄如蝉翼"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "轻若无物",
+        "薄透轻柔"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.optional.dig-scratch",
+    "namespace": "vocabulary.optional",
+    "title": "词汇替换[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "vocabulary.optional\t\t抠挖",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "抠挖"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "拨弄",
+        "挑弄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.optional.large-breast-adjective",
+    "namespace": "vocabulary.optional",
+    "title": "词汇替换[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "vocabulary.optional\t\t巨大(?=的(?:[胸奶]|乳房))",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "巨大(?=的(?:[胸奶]|乳房))"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "浑圆",
+        "丰盈",
+        "丰润",
+        "软弹",
+        "滑嫩"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.optional.large-butt-adjective",
+    "namespace": "vocabulary.optional",
+    "title": "词汇替换[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "vocabulary.optional\t\t[巨宽肥]大(?=的臀)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[巨宽肥]大(?=的臀)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "圆硕",
+        "丰隆",
+        "腴润",
+        "圆嫩",
+        "水嫩"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.optional.layered-stack",
+    "namespace": "vocabulary.optional",
+    "title": "词汇替换[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "vocabulary.optional\t\t层层叠叠",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "层层叠叠"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "交错堆叠",
+        "连绵起伏"
+      ]
+    }
+  }
+]

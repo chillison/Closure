@@ -1,0 +1,35 @@
+[
+  {
+    "id": "story-deslop.explanation-chain",
+    "namespace": "explanation.chain",
+    "title": "解释链密度过高",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 reasoning-chain-tic；叙述层判断链 ≥8 处、核心桶 ≥4、至少 2 桶且 ≥18/千字才提示。",
+    "source": {
+      "canonicalKey": "REASONING_CHAIN_PATTERNS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "(?<![不没未无])(?:他|她|我)?(?:知道|明白|意识到|清楚|判断|确认|分析)", "bucket": "mental", "core": true},
+        {"target": "这意味着|也就是说|换句话说|真正的问题(?:在于)?|问题在于|关键在于|在这种情况下|按照这个逻辑|只有这样|想到这里", "bucket": "connector", "core": true},
+        {"target": "(?:(?<!不)(?:必须|需要|应该|只要|就会|可能|可以|能够|无法)|不能)[^。！？!?\\n]{0,16}(?:判断|确认|承担|维持|稳住|控制|扩大|失控|带来|造成|理解|默认|回家|进门|核对|筛选|减少|建立|风险|结果|秩序|责任)", "bucket": "modal", "core": true},
+        {"target": "(?:任务|条件|风险|来源|逻辑|局面|结果|责任|秩序|规则|信息不足|决策能力)", "bucket": "abstract"}
+      ],
+      "minHits": 8,
+      "perKilo": 18,
+      "coreMinHits": 4,
+      "minBuckets": 2
+    },
+    "action": {
+      "type": "suggest",
+      "message": "把判断落到角色当下可见的动作、物件、对话和现场反馈，不要替读者连续推理。"
+    }
+  }
+]

@@ -1,0 +1,56 @@
+[
+  {
+    "id": "firstly-secondly",
+    "namespace": "transition.mechanical",
+    "title": "机械列举过渡",
+    "level": "high",
+    "note": "这种列举方式过于刻板，缺乏自然的叙述节奏。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "首先.*?其次.*?(?:最后|再次)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "如果不是技术步骤或报告提纲，改成自然并列、因果推进，或直接使用列表。"
+    }
+  },
+  {
+    "id": "on-one-hand",
+    "namespace": "transition.mechanical",
+    "title": "机械对比过渡",
+    "level": "medium",
+    "review": "human",
+    "note": "默认交人工：“一方面/另一方面”在说明文和论证中合法，当前 eval support 很低；只在它替代具体因果推进时修。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "一方面.*?另一方面"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "用简单并列、转折或具体因果替代机械对比。"
+    }
+  },
+  {
+    "id": "comprehensive-listing",
+    "namespace": "transition.mechanical",
+    "title": "全面式并列结构",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“无论/不仅”结构常用于正常概括、对比和战斗能力说明，当前 dataset reference 侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "无论(?:是)?.*?还是.*?都|不仅.*?而且.*?(?:更|还)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "简化为简单并列，或只保留最重要的一点。"
+    }
+  }
+]

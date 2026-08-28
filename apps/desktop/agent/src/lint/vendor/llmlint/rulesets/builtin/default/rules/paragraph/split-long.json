@@ -1,0 +1,49 @@
+[
+  {
+    "id": "cn.paragraph.split-long.split-long-paragraph",
+    "namespace": "paragraph.split-long",
+    "title": "分割较长段落[选开]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "paragraph.split-long\t\t^([,，。.、!！?？~～…—“”\"‘’「」〖〗（）()0-9a-zA-Z\\u4e00-\\u9fff]{150,200}。)([\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "^([,，。.、!！?？~～…—“”\"‘’「」〖〗（）()0-9a-zA-Z\\u4e00-\\u9fff]{150,200}。)([\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1\\n\\n$2"
+      ]
+    }
+  },
+  {
+    "id": "story-deslop.long-paragraph",
+    "namespace": "paragraph.split-long",
+    "title": "单段过长",
+    "level": "low",
+    "review": "human",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 long-paragraph advisory；叙述层单段可见字数超过 200 时提示按镜头断段，实际字数在命中的 detail 里。手机阅读保守阈值，默认人工复核；意识流或刻意长镜头段落可以保留。",
+    "source": {
+      "canonicalKey": "LONG_PARAGRAPH_CHARS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "long-paragraph"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "按镜头、新动作、新线索或视线切换断段，不要一段到底。"
+    }
+  }
+]

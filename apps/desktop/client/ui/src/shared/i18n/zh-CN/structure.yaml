@@ -1,0 +1,228 @@
+structure:
+  emptyTitle: "暂无叙事结构"
+  emptyDesc: "多行时间线由场景图自动派生。打开 Agent 面板聊聊你的故事构思，让 AI 规划出第一版场景图；有了场景之后，就可以直接在时间线上增删场景、编排结构。"
+  emptyCta: "打开 Agent 面板"
+  noLines: "场景图包含场景但未定义叙事线"
+  skeleton:
+    causal: "因果骨架"
+  overlay:
+    title: "时间线叠层"
+    validation: "校验"
+    displacement: "时序位移"
+    visibility: "可见性"
+    # dogfood R2 批次 B（SP-4）：第二组曲线叠层 + 伏笔预留占位（禁用态，随伏笔面板 story 提供）。
+    emotion: "情绪"
+    pacing: "节奏"
+    foreshadow: "伏笔（预留）"
+    foreshadowHint: "伏笔叠层随伏笔面板 story 提供"
+    # 批 8（8.4）：曲线数据缺失时的开关禁用提示（诚实零反馈胜过假开关）。
+    emotionMissing: "当前项目暂无情绪标注数据"
+    pacingMissing: "当前项目暂无节奏标注数据"
+  # dogfood R2 批次 B（SP-5）：卷背景带文案（第二表头行 + 未分卷灰带）。
+  volumeBand:
+    label: "卷"
+    unassigned: "未分卷"
+  # dogfood R2 批次 B（SP-5）：全书迷你地图（causal 侧压缩条）。
+  minimap:
+    label: "全书迷你地图"
+    # 08-26 结构页重构 R4/AC6：可发现性增强——轨道悬停 tooltip 提示「可点选 seek」。
+    seekHint: "点击或拖动定位画面位置"
+    # 发现批9 T20：容器 title——可见 chrome 小卡形态的「这块卡片是什么」即时答案。
+    title: "小地图"
+  # 08-26 结构页重构 批 1（R4）：画布缩放组（−/％/＋/适宽；％钮点击复位 100%）。
+  zoom:
+    group: "画布缩放"
+    in: "放大"
+    out: "缩小"
+    reset: "复位缩放（100%）"
+    fit: "适宽"
+    fitTitle: "缩放到全部列可见"
+  # 08-26 结构页重构 批 2（R2）：结构页图例（完备是验收线——所有视觉记号必须在此）。
+  # 批 5（#43）：默认折叠一行摘要——expand/collapse 为开合钮，summary 为折态速览。
+  legend:
+    label: "结构页图例"
+    expand: "图例"
+    collapse: "收起图例"
+    summary: "线色·角色形状·选中外环·✦AI 新增·校验角标·情绪条·位移虚线·钢蓝倒叙序·可见度·节奏条——展开看全部"
+    lineHue: "色＝故事线"
+    selectedRing: "外环＝选中"
+    aiNew: "✦＝AI 新增（短暂脉冲）"
+    validation: "角标＝校验计数"
+    emotionBar: "底条＝情绪（绿正·琥珀中·红负）"
+    displacement: "虚线边框＝时序位移（线级）"
+    reorderOrdinal: "钢蓝序号＝阅读序跳变（章节工作台）"
+    # 批 B（CR 组 3b，R2 六维矩阵补齐）：可见性与节奏热度两族记号入图例。
+    visibilityDim: "透明度＝隐藏（线可见性开关）"
+    pacingHeat: "格顶细条＝节奏热度（默认关）"
+    spanWideCaption: "宽卡"
+    spanWide: "＝场景写作单位跨章（写作单位＝情节弧非章）。用卡片边缘左右直拖调出，± 钮已退役。"
+    stackOrderCaption: "堆叠"
+    stackOrder: "＝同一章排多个场景片，按阅读序依次排列。"
+    emptySlotCaption: "空章"
+    emptySlot: "＝章已建立但暂未挂场景，悬停格内即可新建。"
+    paletteNote: "线色 12 色循环 · 超 12 线以泳道位次为主"
+    # 批 8（8.5 用户拍板）：「两套线」连线说明段——竖弧（跨视图锚）/ 区内边
+    # （因果·悬念）/ 跨线连接。caption 为前导词，正文跟在后面。
+    # T17（08-27 用户拍板 re-baseline）：竖弧默认零渲染——悬停场景任一端或选中才显示。
+    linkAnchorCaption: "竖弧线"
+    linkAnchor: "＝同一场景的跨视图对照锚（因果卡 ↔ 工作台 chip）。默认不显示；悬停该场景任一侧的卡或选中该场景时才显示（倒叙等错位场景的锚线以钢蓝强调）。任一端是待编排场景即不画（悬停/选中也不例外）。"
+    linkCausalCaption: "区内横线/斜线"
+    linkCausal: "＝场景之间的因果边——实线＝因果 · 虚线＝悬念（SUSPENSE 铺设→回收）。任一端待编排的边不画。"
+    linkCrossLineCaption: "跨故事线的连接"
+    linkCrossLine: "＝跨线引用：一条线的事件影响另一条线的走向。"
+  # 08-26 批 2（implement 2.4）：泳道标签场景数。
+  lane:
+    scenes: "{n} 场景"
+    pendingCount: "待编排 {n} 场景"
+  # 08-26 结构页重构 批 3（prd R1）：章节规划工作台（融合网格——行=线 / 列=章 /
+  # chip=场景片按阅读序；WeavingPanel「章节编织」退役，编辑手势全量迁移）。
+  workbench:
+    title: "章节规划工作台"
+    emptyNote: "本章暂无场景"
+    chapterColumn: "第 {n} 章"
+    pendingColumn: "待编排"
+    pendingHint: "无章节归属的场景——补挂章节（presentationSpans / 所属集 / 呈现顺序章号）后进入章列"
+    # 08-27 发现批5（T10/T11）：「续至第 N 章」徽记随 T10 退役（宽卡形态本身即
+    # 表达，不再文字复述跨度）；把手恒渲染后不可用态的三条说明（title 悬停）。
+    handleRightAtEnd: "右缘已是最后已建章"
+    handleLeftSingle: "单章卡左缘不参与（首章稳定原则）"
+    handleLeftAtFirst: "左缘已是首章"
+  # Phase E3-interact（design §1.1 SceneDetailDrawer）：作者钻取 + 编辑表单。
+  # 仅 section 头 + 动作标签；数据值（role 枚举、storyTime 数字、beat 文本）原样展示。
+  # 08-27 结构页修复第三轮（R12 / #73）：每分区一句话说明前置（*SectionHint）+
+  # 三区徽标新手 tooltip + 边类型中文化映射 + 所属集人读格式；节拍三区术语作者化重写
+  # （键名沿用、值重写——消费方仅 SceneEditPopover 一处）。
+  drawer:
+    title: "场景详情"
+    close: "关闭"
+    # R12 / #73：三区徽标的新手 tooltip（解释两区区别与何时可写）。
+    mechBadgeTip: "机械区＝硬结构坐标（角色／线归属／时间）。改动即时写入，撤销栈可回退。"
+    authorBadgeTip: "作者主权区＝这里的文字就是你定的最终事实；AI 只在你按下按钮时起草。"
+    aiBadgeTip: "按一下才向 agent 发起一次摘要请求（运行中禁用）；AI 不会悄悄改写你的场景数据。"
+    # R12 / #73：分区一句话说明前置。
+    stateSectionHint: "角色与故事时间是场景的硬坐标：改动即时写入并可在撤销栈找回。"
+    linesSectionHint: "本场参与哪些故事线——多线场会同时出现在各线的行里。"
+    enumsSectionHint: "下拉是常用词表先验，选「自定义…」可写任意值。"
+    edgesSectionHint: "入边＝上游原因指向本场；出边＝本场驱动的下游。删除边不断开场景本体。"
+    semanticSectionHint: "摘要是这一场的意思——可直接写，也可交给 AI 起草后自行定稿。"
+    issuesSectionHint: "结构校验的只读提示清单（跟随工具栏「校验」开关）。"
+    actSectionHint: "由所参与的线的幕引用解析而来，供上下文参照。"
+    beatSectionHint: "所在章的情绪曲线与节奏计划（大纲规划写入，此处只读）。"
+    retentionSectionHint: "坐标与外键的如实快照；改章走工作台拖拽或边缘直拖，这里不改数值。"
+    # R12 / #73：边类型显示层中文化（存储原值 CAUSAL/SUSPENSE 不动）。
+    edgeTypeCausal: "因果"
+    edgeTypeSuspense: "悬念"
+    # R12 / #73：「所属集」人读格式（N = index+1 人读章号，工作台列头同口径；
+    # lookup 缺失回退原 id、有章号无标题走无标题键）。
+    episodeValue: "第 {n} 章 · {title}"
+    episodeValueNoTitle: "第 {n} 章（标题未填）"
+    # dogfood R2 批次 A（SP-2 抽屉重做）：两区表单（机械·直写 / 语义·作者主权+AI 建议）。
+    titleField: "场景标题"
+    locate: "定位到时间线格"
+    stateSection: "状态"
+    mechBadge: "机械 · 直写"
+    authorBadge: "作者主权 · 直写"
+    aiBadge: "AI 建议"
+    linesSection: "叙事线"
+    noLines: "无（先在泳道列表新增线）"
+    addLineTag: "＋ 加线"
+    removeLineTag: "移除该线归属"
+    enumsSection: "叙事枚举"
+    outcomeType: "结果类型"
+    pacingRole: "节奏角色"
+    customValue: "自定义…"
+    unset: "（未设置）"
+    vocabPrior: "词表是先验建议，可自定义更精确的值"
+    edgeTo: "连边到"
+    edgeToPlaceholder: "选择场景…"
+    edgeType: "边类型"
+    addEdge: "连边"
+    removeEdge: "删除该边"
+    semanticSection: "语义"
+    summaryPlaceholder: "场景摘要（可直接写，也可让 AI 补全）"
+    summaryField: "场景摘要"
+    aiSummary: "让 AI 补全摘要"
+    aiBusy: "Agent 正在运行，稍后再试"
+    aiSummaryMessage: "请补全场景「{scene}」的摘要，并通过 scene_graph_update 工具落盘。"
+    retentionSection: "坐标与归属"
+    poDragHint: "（章内改位走章节工作台拖拽）"
+    deleteScene: "删除场景"
+    deleteDescEdges: "将断开 {n} 条因果边，且不可经确认撤回（可用字段撤销栈撤回）。确定删除？"
+    deleteDescPlain: "删除后可经字段撤销栈撤回。确定删除该场景？"
+    deleteConfirm: "删除"
+    deleteCancel: "取消"
+    # 08-26 结构页重构 批 4（R3）：浮层化后的追加键（内容区沿 1.5/dogfood R2 键）。
+    dragHint: "按住标题栏拖动（钳位结构页内）"
+    # 1.5 期沿用键。
+    role: "角色"
+    storyTime: "故事时间"
+    storyTimeLabel: "故事时间标签"
+    presentationOrder: "呈现顺序"
+    episode: "所属集"
+    actRef: "幕引用"
+    edgesSection: "因果边"
+    edgeIncoming: "入边"
+    edgeOutgoing: "出边"
+    noEdges: "无"
+    issuesSection: "校验问题"
+    noIssues: "该场景无校验问题"
+    actSection: "幕（阶段）"
+    beatSection: "本章节拍"
+    emotionalBeats: "情绪走向"
+    pacingBeats: "节奏推进"
+    noBeats: "暂无节拍记录"
+  # dogfood R2 批次 A：role 四值（右键菜单与抽屉 select 同源标签）。
+  role:
+    normal: "● 普通"
+    coreAnchor: "★ 核心锚点"
+    secondaryAnchor: "◇ 次级锚点"
+    forkPoint: "◆ 分叉点"
+  # dogfood R2 批次 A（SP-3）：线管理。
+  line:
+    add: "新增线"
+    defaultName: "新线"
+    menuHint: "线右键：改名 / 拓扑角色 / 位移 / 可见度 / 删除线"
+  lineTopology:
+    converging: "收束线"
+    parallel-worldview: "网状线（平行世界观）"
+    offline: "离线"
+    if-branch: "IF 分支"
+    side: "支线/番外"
+  lineDisplacement:
+    none: "无位移"
+    prologue: "序章位移"
+    epilogue: "尾声位移"
+    flashback: "倒叙"
+    distant: "远景"
+  # dogfood R2 批次 A（SP-1/SP-3）：右键菜单 + 删除确认。
+  ctx:
+    addSceneBlocked: "此处暂不能新建场景（该章未建）"
+    menuLabel: "时间线菜单"
+    rename: "改名"
+    setRole: "标为 {role}"
+    copyId: "复制 id"
+    deleteScene: "删除场景"
+    deleteSceneHint: "将断开 {n} 条因果边"
+    addSceneAt: "在此章新建场景（第 {col} 章）"
+    # 08-27 三轮 CR 拍板转化（R11 批3 插入新章入口，两区列头右键）。
+    # insertChapterTitle 为建库时固化的数据值（episode.title），建库即定稿。
+    insertChapterTitle: "新章"
+    insertChapterLeft: "在第 {n} 章左侧插入新章"
+    insertChapterBlocked: "此处暂不能插入新章"
+    renameLine: "改名"
+    setTopology: "拓扑角色：{role}"
+    setDisplacement: "时序位移：{d}"
+    setVisibilityOpen: "可见（开放）"
+    setVisibilityHidden: "隐藏直到…"
+    visibilityTargetLabel: "隐藏直到（目标 id）："
+    visibilityTargetPlaceholder: "场景 id / 事件"
+    deleteLine: "删除线"
+    deleteLineHint: "{m} 场景将移除该线归属（场景保留）"
+    deleteSceneTitle: "删除场景"
+    deleteLineTitle: "删除叙事线"
+    deleteSceneConfirm: "将断开 {n} 条因果边并删除该场景，确定？"
+    deleteSceneConfirmPlain: "确定删除该场景？"
+    deleteLineConfirm: "{m} 场景将从该线移除归属（场景保留），确定删线？"
+    deleteLineConfirmPlain: "确定删除该叙事线？"
+    deleteConfirm: "删除"
+    deleteCancel: "取消"

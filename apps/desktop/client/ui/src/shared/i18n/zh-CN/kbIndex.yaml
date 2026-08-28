@@ -1,0 +1,49 @@
+kbIndex:
+  pageSubtitle: "查看派生检索索引的状态，并手动重建。索引为派生数据，随时可从源文件重建。"
+  loading: "读取索引状态…"
+  # ── Craft (global) section ──
+  craftTitle: "Craft 知识库"
+  craftSubtitle: "全局跨项目共享的写作技法参考库（~/.orison/craft-kb）。"
+  # ── Story (per-project) section ──
+  storyTitle: "当前项目设定索引"
+  storySubtitle: "当前项目的资产（图片等）与设定卡片（角色/地点/…/金手指）派生索引。"
+  noProjectHint: "请先打开一个项目，再查看或重建其设定索引。"
+  # ── Meta cells ──
+  count: "条目数"
+  projectAssets: "资产（图片等）"
+  assetCards: "设定卡片"
+  settingMd: "设定散文（settings/*.md）"
+  # dogfood #42：章源两脸此前在状态里但从未展示。
+  chapterChunks: "章节正文块"
+  chapterSummaries: "章摘要"
+  pending: "待补向量"
+  pendingHint: "待补 {n}"
+  model: "向量模型"
+  modelNone: "未配置"
+  # dogfood #39：model 空且 pending>0 时显示（向量一条没落 ≠ 未配置——dim 降级/重建前
+  # 的中间态，别把配了模型的用户说成没配）。
+  modelPending: "待补向量（{n} 条）"
+  # dogfood #39（T2 C2）：向量降级可见——配置了模型但派生索引降级（待补积压/存量模型
+  # 不符）时的横幅，不再只有 dev 日志知道。degraded 由 shell 判定，此页只渲染。
+  degradedTitle: "向量检索降级中"
+  degradedPending: "有 {n} 条待补向量——这些内容当前只走文本检索。"
+  degradedModel: "存量向量来自「{stored}」，与当前配置的「{configured}」不一致，需重建才能生效。"
+  # CR-T2-006：混合态（存量 DISTINCT 含多个模型）专用行——单模型不符行说不清这种形态。
+  degradedMixed: "存量向量来自 {n} 个不同的模型版本，几何空间混杂——需整体重建才能生效。"
+  degradedAction: "点右上「重建」立即恢复；失败会在下次启动时自动重试。"
+  # ── Rebuild buttons ──
+  rebuildCraft: "重建 Craft KB"
+  rebuildStory: "重建设定索引"
+  rebuilding: "重建中…"
+  # ── Toasts ──
+  rebuildCraftSuccess: "Craft 知识库已重建，共 {n} 条。"
+  rebuildStorySuccess: "设定索引已重建，共 {n} 条。"
+  indexedSuccess: "设定卡片索引就绪，共 {n} 张。"
+  indexedError: "设定卡片索引出错：{reason}"
+  statusLoadFailed: "读取索引状态失败：{reason}"
+  # ── Rebuild error codes (模式 A) ──
+  errorNoEmbeddingModel: "尚未配置向量模型，请先在「模型配置」中添加并启用一个向量模型。"
+  errorNoProjectPath: "找不到当前项目的路径，请重新打开项目后再试。"
+  # CR-T2-005：后台重建扫在途（启动自动对账/换模型迁移）——并发重嵌竞争向量表，拒绝重试。
+  errorSweepInProgress: "后台索引重建正在进行中（启动自动对账），请稍候重试——完成后此页会自动刷新。"
+  errorOperationFailed: "重建过程中发生异常，请查看日志。"

@@ -1,0 +1,525 @@
+/* ── Image Gen Editor ── */
+.image-gen-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 1.25rem;
+  overflow: auto;
+}
+
+.image-gen-input-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.image-gen-prompt-surface {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-xl);
+  background: var(--surface-container-lowest);
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.image-gen-prompt-surface:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.image-gen-prompt {
+  min-height: 6rem;
+  max-height: 14rem;
+  resize: none;
+  padding: 0.85rem 0.95rem 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--on-surface);
+  font: inherit;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  outline: none;
+}
+
+.image-gen-prompt::placeholder {
+  color: var(--outline);
+  font-style: italic;
+}
+
+.image-gen-prompt-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0.45rem 0.55rem 0.55rem;
+  gap: var(--space-md);
+}
+
+/* ── Upload ── */
+.image-gen-upload-input {
+  display: none;
+}
+
+.image-gen-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.4rem;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  margin-right: auto;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.image-gen-upload-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.image-gen-upload-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.image-gen-upload-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.4rem 0.55rem;
+  border-top: 1px solid var(--outline-variant);
+}
+
+.image-gen-upload-thumb {
+  width: 48px;
+  height: 48px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--outline-variant);
+}
+
+.image-gen-upload-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.image-gen-upload-remove:hover {
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+  color: var(--error);
+}
+
+.image-gen-upload-remove .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.image-gen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.55rem 1.1rem;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-strong) 100%);
+  color: var(--surface-container-lowest);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.image-gen-btn:not(:disabled):hover {
+  transform: translateY(-1px);
+}
+
+.image-gen-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.image-gen-btn-icon {
+  font-size: 18px !important;
+}
+
+.image-gen-btn.is-loading .image-gen-btn-icon {
+  animation: image-gen-spin 0.9s linear infinite;
+}
+
+@keyframes image-gen-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.image-gen-error-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--error);
+  border-radius: var(--radius-md);
+  background: var(--error-bg);
+  color: var(--error);
+  font-size: var(--text-base);
+  line-height: 1.4;
+}
+
+.image-gen-error-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--error);
+  cursor: pointer;
+}
+
+.image-gen-error-dismiss:hover {
+  background: color-mix(in srgb, var(--error) 15%, transparent);
+}
+
+.image-gen-error-dismiss .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* ── Gallery ── */
+.image-gen-gallery-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.image-gen-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 0.9rem;
+}
+
+.image-gen-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.55rem;
+  overflow: hidden;
+  background: var(--surface-container-lowest);
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.15s;
+}
+
+.image-gen-card:hover {
+  border-color: var(--accent);
+  box-shadow: var(--shadow-soft);
+}
+
+.image-gen-card-preview {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  aspect-ratio: 1;
+  background:
+    linear-gradient(45deg, var(--surface-container-low) 25%, transparent 25%) 0 0,
+    linear-gradient(-45deg, var(--surface-container-low) 25%, transparent 25%) 0 0,
+    linear-gradient(45deg, transparent 75%, var(--surface-container-low) 75%),
+    linear-gradient(-45deg, transparent 75%, var(--surface-container-low) 75%);
+  background-size: 14px 14px;
+  background-color: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  overflow: hidden;
+}
+
+.image-gen-card-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.image-gen-card-loading {
+  font-size: 36px;
+  opacity: 0.5;
+  animation: image-gen-spin 1.2s linear infinite;
+}
+
+.image-gen-card-badge {
+  position: absolute;
+  top: 0.45rem;
+  left: 0.45rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.image-gen-card-badge.is-new {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.image-gen-card-badge.is-edited {
+  background: var(--notice-bg);
+  color: var(--accent-strong);
+}
+
+.image-gen-card-asset-mark {
+  position: absolute;
+  top: 0.4rem;
+  right: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+  color: var(--surface-container-lowest);
+  pointer-events: none;
+}
+
+.image-gen-card-asset-mark .image-gen-action-svg {
+  width: 14px;
+  height: 14px;
+  stroke-width: 2.4;
+}
+
+.image-gen-card-top-actions {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.3rem;
+  padding: var(--space-sm);
+  background: linear-gradient(to bottom, var(--overlay-on-media-scrim-top), transparent);
+  opacity: 0;
+  transition: opacity 0.14s;
+}
+
+.image-gen-card:hover .image-gen-card-top-actions,
+.image-gen-card:focus-within .image-gen-card-top-actions {
+  opacity: 1;
+}
+
+.image-gen-card-top-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid var(--overlay-on-media-border);
+  border-radius: var(--radius-pill);
+  background: var(--overlay-on-media-glass);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: background 0.12s, transform 0.12s;
+}
+
+.image-gen-card-top-actions button:hover:not(:disabled) {
+  background: var(--overlay-on-media-control-active);
+  transform: scale(1.05);
+}
+
+.image-gen-card-top-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.image-gen-card-top-actions .image-gen-card-danger {
+  margin-left: var(--space-xs);
+}
+
+.image-gen-card-top-actions .image-gen-card-danger:hover:not(:disabled) {
+  background: var(--overlay-on-media-danger);
+  border-color: var(--overlay-on-media-border-strong);
+}
+
+.image-gen-action-svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.image-gen-card-prompt-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.55rem 0.5rem;
+  background: linear-gradient(to top, var(--overlay-on-media-scrim-bottom) 55%, transparent);
+  opacity: 0;
+  transition: opacity 0.14s;
+}
+
+.image-gen-card:hover .image-gen-card-prompt-row,
+.image-gen-card:focus-within .image-gen-card-prompt-row {
+  opacity: 1;
+}
+
+.image-gen-card-prompt {
+  flex: 1;
+  min-width: 0;
+  color: var(--overlay-on-media-text);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.image-gen-card-copy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 0;
+  border-radius: 0.3rem;
+  background: var(--overlay-on-media-control);
+  color: var(--on-accent);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.12s;
+}
+
+.image-gen-card-copy:hover {
+  background: var(--overlay-on-media-control-hover);
+}
+
+.image-gen-card-copy .image-gen-action-svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* ── Pager ── */
+.image-gen-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-md);
+  padding-top: 0.4rem;
+  font-size: 0.8rem;
+}
+
+.image-gen-pager button {
+  padding: 0.3rem 0.85rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--text-sm);
+  transition: background 0.12s, border-color 0.12s;
+}
+
+.image-gen-pager button:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--hover-overlay);
+}
+
+.image-gen-pager button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.image-gen-pager-status {
+  color: var(--on-surface-variant);
+  min-width: 4.5rem;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.image-gen-empty {
+  margin: 0;
+  color: var(--outline);
+  font-size: var(--text-base);
+  line-height: 1.45;
+  font-style: italic;
+}
+
+/* Legacy error text used by sibling editors (e.g. VideoEditor). */
+.image-gen-error {
+  margin: 0;
+  color: var(--error);
+  font-size: var(--text-base);
+  line-height: 1.45;
+}
+
+/* ── Profile chip in the image gen workspace ── */
+.image-gen-profile-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container-low);
+  font-size: 0.76rem;
+  color: var(--on-surface-variant);
+  align-self: flex-start;
+}
+
+.image-gen-profile-dot {
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+}
+
+.image-gen-profile-name {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.image-gen-profile-model {
+  color: var(--on-surface-variant);
+}
+
+.image-gen-profile-empty {
+  font-style: italic;
+  color: var(--outline);
+}
+
+/* ── Inspector image-gen specifics ── */
+.image-gen-inspector-hint {
+  font-weight: 400;
+  color: var(--on-surface-variant);
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.image-gen-inspector-slider {
+  width: 100%;
+  margin-top: 0.4rem;
+  accent-color: var(--accent);
+}

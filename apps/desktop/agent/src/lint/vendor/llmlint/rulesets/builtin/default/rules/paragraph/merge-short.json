@@ -1,0 +1,50 @@
+[
+  {
+    "id": "cn.paragraph.merge-short.merge-short-line-ending",
+    "namespace": "paragraph.merge-short",
+    "title": "顺序① 段尾标点变逗号+跨行合并",
+    "level": "medium",
+    "enabled": false,
+    "note": "顺序① 段尾标点变逗号+跨行合并",
+    "source": {
+      "canonicalKey": "paragraph.merge-short\t\t(?<=^[\\u4e00-\\u9fff，,]{1,20})[。!！…—]+\\n+(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=^[\\u4e00-\\u9fff，,]{1,20})[。!！…—]+\\n+(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "，"
+      ]
+    }
+  },
+  {
+    "id": "cn.paragraph.merge-short.merge-short-paragraph",
+    "namespace": "paragraph.merge-short",
+    "title": "顺序② 30字以内的段落与下段合并",
+    "level": "medium",
+    "enabled": false,
+    "note": "顺序② 30字以内的段落与下段合并",
+    "source": {
+      "canonicalKey": "paragraph.merge-short\t\t(?<=^[\\u4e00-\\u9fff,，。.、!！?？~～…—0-9a-zA-Z]{1,30}$)\\n+(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=^[\\u4e00-\\u9fff,，。.、!！?？~～…—0-9a-zA-Z]{1,30}$)\\n+(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

@@ -1,0 +1,92 @@
+Closure
+Copyright (C) 2026 AoharuCat
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU Affero General Public License as published
+by the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+GNU Affero General Public License for more details.
+
+You should have received a copy of the GNU Affero General Public License
+along with this program. If not, see <https://www.gnu.org/licenses/>.
+
+SPDX-License-Identifier: AGPL-3.0-or-later
+
+================================================================================
+THIRD-PARTY ATTRIBUTION
+================================================================================
+
+This project is a fork of OrisonSpace, originally licensed under the
+Apache License, Version 2.0.
+
+  Upstream repository : https://github.com/LumenStorm/OrisonSpace
+  Upstream branch     : dev
+  Fork point (commit) : f1ce8a51bc258f95f5fac60a6fbf6fa34b84f983
+  Original copyright  : Copyright (c) Saki. (LumenStorm)
+  Original license    : Apache-2.0 (full text in LICENSES/Apache-2.0.txt)
+
+Portions of this codebase derived from OrisonSpace retain their Apache-2.0
+license. Per Apache License §4:
+
+  - §4(a): original copyright, patent, trademark, and attribution notices
+           are retained; a copy of the Apache-2.0 license is preserved in
+           LICENSES/Apache-2.0.txt.
+  - §4(b): files modified by Closure carry prominent notices stating that
+           they were changed, together with the date of change.
+  - §4(c): all attribution notices in the source form of the Work are retained.
+  - §4(d): OrisonSpace does not ship a NOTICE file, so this clause is not
+           triggered; this NOTICE is provided by Closure voluntarily.
+
+Closure-specific code — the structured state machines (CognitionGraph /
+desire vector / world entries / information state machine / narrative
+dependency graph), the pure-code constraint compiler layer, and the
+signature modules listed in _bmad-output/brainstorming/ — is licensed
+under AGPL-3.0-or-later.
+
+--------------------------------------------------------------------------------
+Vendored component: llmlint static lint engine
+--------------------------------------------------------------------------------
+
+  Upstream repository : https://github.com/notnotype/llmlint
+  Vendored from       : skill/ package (subdirectory of the upstream repo)
+  Vendored commit     : 7b0e5a0 (2026-08-15)
+  Original copyright  : Copyright (C) 2026 notnotype
+  Original license    : AGPL-3.0-only (full text in LICENSES/AGPL-3.0.txt)
+
+  Vendored path       : apps/desktop/agent/src/lint/vendor/llmlint/
+                        (engine sources in src/, rule data in rulesets/,
+                         upstream license copy in LICENSE)
+
+  Modifications       : none at initial vendor — engine sources and ruleset
+                        data are byte-identical to upstream commit 7b0e5a0.
+                        Any subsequent modification is recorded in the
+                        vendor directory README.md ("修改清单" section).
+
+  The vendored subset covers the static check/fix path only (rule loading,
+                        regex/density/handler scanning, auto-fix projection).
+                        Upstream CLI shell, config discovery, external neural
+                        detector (detect/), and contribution/outbox channels
+                        are deliberately NOT vendored — Closure never uploads
+                        user text to external services.
+
+  Upstream provenance note: the first four handler algorithms in
+  handler-rules/index.ts (not-is-comparison, period-stutter,
+  overcompressed-prose, low-connective-density) are ported by the upstream
+  author from oh-story-claudecode/skills/story-deslop (MIT — full text at
+  LICENSES/MIT.txt; in-file header attribution preserved verbatim), as
+  declared in that file's header comments.
+
+  License effect: Closure as a whole is AGPL-3.0-or-later; incorporation of
+  this AGPL-3.0-only component narrows the effective license of the combined
+  work to AGPL-3.0-only for distributions containing it.
+
+================================================================================
+THIRD-PARTY DEPENDENCIES
+================================================================================
+
+(To be populated during C0.5 — audit of OrisonSpace package.json deps
+plus Closure-added deps. License conflicts will be recorded here.)

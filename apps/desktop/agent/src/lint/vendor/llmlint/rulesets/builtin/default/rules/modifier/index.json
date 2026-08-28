@@ -1,0 +1,686 @@
+[
+  {
+    "id": "adverb-intensifier",
+    "namespace": "modifier",
+    "title": "过度副词和强化词",
+    "level": "low",
+    "note": "默认收窄：非常/十分/特别在小说中是普通程度副词，当前 dataset 真人侧高频；这里只保留更偏公文和抽象判断的强化词。“极其/本质上”交给更具体的中文规则。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "高度|深刻地|充分地|有效地|显著地|真正地|完全地|根本上"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "如果强化词没有提供具体程度，建议删除或改成事实、数字、动作。"
+    }
+  },
+  {
+    "id": "tier2-official-collocation",
+    "namespace": "modifier",
+    "title": "官腔动副搭配",
+    "level": "low",
+    "note": "「显著提升 / 有效解决 / 全面推进 / 持续优化」式公文腔搭配，单看就偏 AI/官样。改成具体动作与可观察结果；同段聚集时更应处理。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:显著|有效|全面|积极|持续|进一步|充分|切实|大力)(?:地)?(?:提升|改善|增长|解决|推动|促进|覆盖|推进|升级|探索|参与|优化|深化|加强|完善|发挥|利用|体现|保障|落实)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "改成具体动作 + 可观察结果，说清楚谁做了什么、变化是什么。"
+    }
+  },
+  {
+    "id": "tier2-pseudo-praise",
+    "namespace": "modifier",
+    "title": "虚化评价副词",
+    "level": "low",
+    "note": "「可谓 / 堪称 / 追根溯源」是虚化的评价姿态，多数可删或改成直接陈述。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "可谓|堪称|追根溯源|不失为"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉评价姿态，或直接给出事实判断。"
+    }
+  },
+  {
+    "id": "cn.modifier.absolute-claim-modifier",
+    "namespace": "modifier",
+    "title": "删“不容质疑的”",
+    "level": "medium",
+    "enabled": true,
+    "note": "必带“的/地”防误伤",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:不容|不可|无法|难以)(?:质疑|置疑|置喙|拒绝|抗拒|言喻|言明|言说|分说)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:不容|不可|无法|难以)(?:质疑|置疑|置喙|拒绝|抗拒|言喻|言明|言说|分说)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.absolute-judgment-modifier",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.absolute-claim-modifier 覆盖；保留更宽 absolute claim canonical，避免绝对判断修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:不容|不可|无法|难以)(?:质疑|置疑|置喙|拒绝|抗拒)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:不容|不可|无法|难以)(?:质疑|置疑|置喙|拒绝|抗拒)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.bare-degree-adverb",
+    "namespace": "modifier",
+    "title": "兼容不带“的/地”",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.modifier.stacked-degree-adverbs 同 span 重叠率约 99%，保留覆盖更完整的 canonical rule。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:死死|紧紧|深深|浅浅|浓浓|稍稍|完全|彻底|[格分]外|[甚乃]至|[全突忽]然|极[其度致具]|[稍略轻微]微|[猛勐][的地]|[无下]意识|不自觉|习惯性)[的地]?(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:死死|紧紧|深深|浅浅|浓浓|稍稍|完全|彻底|[格分]外|[甚乃]至|[全突忽]然|极[其度致具]|[稍略轻微]微|[猛勐][的地]|[无下]意识|不自觉|习惯性)[的地]?(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.barely-perceptible-modifier",
+    "namespace": "modifier",
+    "title": "删“几不可察的”",
+    "level": "medium",
+    "enabled": true,
+    "note": "必带“的/地”防误伤",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:几不|微不)(?:可查|可察|可闻)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:几不|微不)(?:可查|可察|可闻)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.blurry-degree-description",
+    "namespace": "modifier",
+    "title": "删失焦程度描述",
+    "level": "medium",
+    "enabled": true,
+    "note": "删失焦程度描述",
+    "source": {
+      "canonicalKey": "modifier\t\t不轻不重",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "不轻不重"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.dull-optional",
+    "namespace": "modifier",
+    "title": "形副词[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "modifier\t\t而?沉闷(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "而?沉闷(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.excessive-state-simile",
+    "namespace": "modifier",
+    "title": "删极端状态修饰",
+    "level": "medium",
+    "enabled": true,
+    "note": "必带“的/地”防误伤",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:谄媚|讨好|卑微|顺从|虔诚|狂热|屈辱|崩溃|绝望|病态|空洞|麻木|木讷|笨拙|僵硬|机械|灭顶|细若蚊蝇|细若蚊呐|毫无生气|不似人声|似有似无|若有若无|并不存在|不存在|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:谄媚|讨好|卑微|顺从|虔诚|狂热|屈辱|崩溃|绝望|病态|空洞|麻木|木讷|笨拙|僵硬|机械|灭顶|细若蚊蝇|细若蚊呐|毫无生气|不似人声|似有似无|若有若无|并不存在|不存在|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.extreme-sensory-simile",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.excessive-state-simile 覆盖；保留更宽状态修饰 canonical，避免夸张比附修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:惊人|灭顶|细若蚊蝇|细若蚊呐|不似人声|似有似无|若有若无|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:惊人|灭顶|细若蚊蝇|细若蚊呐|不似人声|似有似无|若有若无|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.grandiose-simile-modifier",
+    "namespace": "modifier",
+    "title": "删夸张比附修饰",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.excessive-state-simile 覆盖；保留更宽状态修饰 canonical，避免夸张比附修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:惊人|灭顶|细若蚊蝇|细若蚊呐|不似人声|似有似无|若有若无|并不存在|不存在|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:惊人|灭顶|细若蚊蝇|细若蚊呐|不似人声|似有似无|若有若无|并不存在|不存在|铺天盖地|毁天灭地|狂风暴雨|暴风骤雨)般?(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.hard-to-notice-modifier",
+    "namespace": "modifier",
+    "title": "删“不可察觉的”",
+    "level": "medium",
+    "enabled": true,
+    "note": "必带“的/地”防误伤",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:不可|不容|不易|无法|难以)(?:察觉|查觉|觉察|觉查|察察|查查)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:不可|不容|不易|无法|难以)(?:察觉|查觉|觉察|觉查|察察|查查)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.heavy-degree-shell",
+    "namespace": "modifier",
+    "title": "删“沉甸甸”",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：带“的/地”的“沉甸甸”已由 cn.modifier.sensory-atmosphere-modifier 覆盖；这里只保留裸“沉甸甸”，避免同 span 重复。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:显得格外)?沉甸甸(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v15"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:显得格外)?沉甸甸(?![的地])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.hollow-state-modifier",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.template-state-modifier 覆盖；保留模板化状态 canonical，避免空洞状态修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:谄媚|讨好|虔诚|狂热|绝望|病态|空洞|麻木|木讷|笨拙|毫无生气)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:谄媚|讨好|虔诚|狂热|绝望|病态|空洞|麻木|木讷|笨拙|毫无生气)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.ineffable-absolute-modifier",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 dataset 中被 cn.modifier.absolute-claim-modifier 完整覆盖；保留更宽 absolute claim canonical，避免“无法言喻的”同 span 重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:不容|无法)(?:言喻|言明|言说|分说)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v28"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:不容|无法)(?:言喻|言明|言说|分说)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.low-information-degree",
+    "namespace": "modifier",
+    "title": "删低信息程度壳",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.modifier.stacked-degree-adverbs 同 span 重叠率接近 100%，不重复进入默认候选。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:一丝丝|极其|极度|极致|死死|紧紧|深深|浅浅|浓浓|稍稍|稍微|略微|轻微|微微|完全|彻底|格外|分外|甚至|乃至|全然|突然|忽然|猛的|猛地|勐的|勐地|近乎于|近乎|无意识|下意识|不自觉|习惯性)(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:一丝丝|极其|极度|极致|死死|紧紧|深深|浅浅|浓浓|稍稍|稍微|略微|轻微|微微|完全|彻底|格外|分外|甚至|乃至|全然|突然|忽然|猛的|猛地|勐的|勐地|近乎于|近乎|无意识|下意识|不自觉|习惯性)(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.near-collapse-modifier",
+    "namespace": "modifier",
+    "title": "删裸“崩溃”",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：带“的/地”的“崩溃”已由 cn.modifier.excessive-state-simile 覆盖；这里只保留裸状态，避免同 span 重复。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:快要)?崩溃(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v28"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:快要)?崩溃(?![的地])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.optional-adjective-bundle",
+    "namespace": "modifier",
+    "title": "删可选氛围修饰",
+    "level": "medium",
+    "enabled": false,
+    "note": "删可选氛围修饰",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:准确|精准|准确无误|精准无误|慵懒|暧昧|禁忌|磁性|低沉|深沉|沉闷|变调|高亢|压迫感|上位者|高大|挺拔|恶劣|恶意|平静|平稳|平淡|平平|冷冷|清冷|冷声|冷淡|逼人)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:准确|精准|准确无误|精准无误|慵懒|暧昧|禁忌|磁性|低沉|深沉|沉闷|变调|高亢|压迫感|上位者|高大|挺拔|恶劣|恶意|平静|平稳|平淡|平平|冷冷|清冷|冷声|冷淡|逼人)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.optional-atmosphere-modifier",
+    "namespace": "modifier",
+    "title": "形副词[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "modifier\t\t(?:准确|精准|准确无误|精准无误|暧昧|禁忌|磁性|低沉|深沉|变调|高亢|压迫感|上位者|高大|挺拔|恶意|平静|平淡|平平|冷冷|清冷|冷声|冷淡|逼人)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:准确|精准|准确无误|精准无误|暧昧|禁忌|磁性|低沉|深沉|变调|高亢|压迫感|上位者|高大|挺拔|恶意|平静|平淡|平平|冷冷|清冷|冷声|冷淡|逼人)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.optional-mood-modifiers",
+    "namespace": "modifier",
+    "title": "删语气氛围修饰",
+    "level": "medium",
+    "enabled": true,
+    "note": "必带“的/地”防误伤[可选]",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:准确|精准|准确无误|精准无误|慵懒|暧昧|禁忌|旖旎|低沉|深沉|沉闷|大咧咧|上位者|居高临下|一瘸一拐)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:准确|精准|准确无误|精准无误|慵懒|暧昧|禁忌|旖旎|低沉|深沉|沉闷|大咧咧|上位者|居高临下|一瘸一拐)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.petty-nasty-optional",
+    "namespace": "modifier",
+    "title": "形副词[可选]",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "modifier\t\t有点小?恶劣(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "有点小?恶劣(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.sensory-atmosphere-core",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.sensory-atmosphere-modifier 覆盖；保留更宽氛围修饰 canonical，避免氛围形副词重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:略显粗糙|粗糙|逼仄|玩味|餍足|旖旎|甜腻|低哑|喑哑|沙哑|嘶哑|微哑|亮晶晶|直勾勾|硬生生)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:略显粗糙|粗糙|逼仄|玩味|餍足|旖旎|甜腻|低哑|喑哑|沙哑|嘶哑|微哑|亮晶晶|直勾勾|硬生生)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.sensory-atmosphere-modifier",
+    "namespace": "modifier",
+    "title": "删感官氛围修饰",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：“戏谑的/地”由 cn.action-expression.teasing-modifier 覆盖；这里保留其它氛围修饰词。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:略显粗糙|粗糙|逼仄|惊人|戏谑|狡黠|玩味|餍足|甜腻|黏腻|磁性|低哑|喑哑|沙哑|嘶哑|微哑|沉甸甸|亮晶晶|直勾勾|硬生生)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v17"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:略显粗糙|粗糙|逼仄|惊人|狡黠|玩味|餍足|甜腻|黏腻|磁性|低哑|喑哑|沙哑|嘶哑|微哑|沉甸甸|亮晶晶|直勾勾|硬生生)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.stacked-degree-adverbs",
+    "namespace": "modifier",
+    "title": "删程度副词",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：移除裸“突然/忽然”、“稍微/略微/稍稍”、“一丝丝”和“近乎/近乎于”等低信号或已有 canonical 接管的分支，并移除会半截命中“凶猛的/迅猛的”的“猛的”。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:一丝丝|极其|极度|极致|死死|紧紧|深深|浅浅|浓浓|稍稍|稍微|略微|极轻微|轻微|微微|完全|彻底|格外|分外|乃至|全然|突然|忽然|猛的|猛地|勐的|勐地|近乎于|近乎|无意识|下意识|不自觉|习惯性)(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v28"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:极其|极度|极致|死死|紧紧|深深|浅浅|浓浓|极轻微|轻微|微微|完全|彻底|格外|分外|乃至|全然|猛地|勐地|无意识地|下意识地|不自觉地|习惯性地)(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.sticky-optional",
+    "namespace": "modifier",
+    "title": "形副词系",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：“黏腻的/地”已由 cn.modifier.sensory-atmosphere-modifier 覆盖；裸“黏腻”在触感描写中语境敏感，不重复进入默认候选。",
+    "source": {
+      "canonicalKey": "modifier\t\t黏腻(?:的|与)?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v28"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "黏腻(?:的|与)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.stiff-remaining",
+    "namespace": "modifier",
+    "title": "删“依然僵硬”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "modifier\t\t依然?僵硬(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "依然?僵硬(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.template-atmosphere-modifier",
+    "namespace": "modifier",
+    "title": "删模板化修饰壳",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.sensory-atmosphere-modifier 覆盖；保留更宽氛围修饰 canonical，避免模板化氛围修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:略显粗糙|粗糙|生理层面|生理本能|生理性|生理|逼仄|戏谑|狡黠|玩味|餍足|旖旎|甜腻|黏腻|低哑|喑哑|沙哑|嘶哑|微哑|沉甸甸|亮晶晶|直勾勾|硬生生)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:略显粗糙|粗糙|生理层面|生理本能|生理性|生理|逼仄|戏谑|狡黠|玩味|餍足|旖旎|甜腻|黏腻|低哑|喑哑|沙哑|嘶哑|微哑|沉甸甸|亮晶晶|直勾勾|硬生生)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.template-state-modifier",
+    "namespace": "modifier",
+    "title": "删模板化状态修饰",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.modifier.excessive-state-simile 覆盖；保留更宽状态修饰 canonical，避免模板化状态修饰重复提示。",
+    "source": {
+      "canonicalKey": "modifier\t\t(?:谄媚|讨好|虔诚|狂热|崩溃|绝望|病态|空洞|麻木|木讷|笨拙|僵硬|机械|毫无生气)(?:的|地)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:谄媚|讨好|虔诚|狂热|崩溃|绝望|病态|空洞|麻木|木讷|笨拙|僵硬|机械|毫无生气)(?:的|地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

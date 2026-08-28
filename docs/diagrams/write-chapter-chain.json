@@ -1,0 +1,310 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "写章链全流程 — 从意图到落章",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "happy-path",
+        "label": "全链正向",
+        "focus": [
+          "leader",
+          "director",
+          "brief",
+          "writer",
+          "checkpoint",
+          "review",
+          "accept",
+          "notify"
+        ],
+        "note": "从作者下意图到落章回注的完整主路径。"
+      },
+      {
+        "id": "injection",
+        "label": "上下文装配",
+        "focus": [
+          "ctx",
+          "brief",
+          "writer"
+        ],
+        "note": "设定编译、世界与认知快照、风格卡如何在装配点汇入。"
+      },
+      {
+        "id": "bounce",
+        "label": "打回与检查点",
+        "focus": [
+          "director",
+          "bounce",
+          "leader",
+          "checkpoint"
+        ],
+        "note": "矛盾打回与阶段暂停：作者始终握有方向盘。"
+      }
+    ],
+    "viewBox": [
+      1057,
+      492
+    ]
+  },
+  "lanes": [
+    {
+      "id": "ui",
+      "label": "作者交互"
+    },
+    {
+      "id": "chain",
+      "label": "写章链"
+    },
+    {
+      "id": "support",
+      "label": "装配 · 关卡 · 打回"
+    }
+  ],
+  "phases": [
+    {
+      "id": "intent",
+      "label": "意图 · 预检",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "assemble",
+      "label": "上下文装配",
+      "fromCol": 2,
+      "toCol": 2,
+      "variant": "emphasis"
+    },
+    {
+      "id": "write",
+      "label": "写作 · 检查点",
+      "fromCol": 3,
+      "toCol": 3
+    },
+    {
+      "id": "finish",
+      "label": "审核 · 落章",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "leader",
+    "director",
+    "brief",
+    "writer",
+    "checkpoint",
+    "review",
+    "accept",
+    "notify"
+  ],
+  "nodes": [
+    {
+      "id": "leader",
+      "lane": "ui",
+      "col": 0,
+      "type": "external",
+      "label": "Leader 对话",
+      "sublabel": "写章意图",
+      "width": 92
+    },
+    {
+      "id": "notify",
+      "lane": "ui",
+      "col": 5,
+      "type": "backend",
+      "label": "Leader 回注",
+      "sublabel": "完成汇报 · 幂等",
+      "width": 108
+    },
+    {
+      "id": "director",
+      "lane": "chain",
+      "col": 0,
+      "type": "backend",
+      "label": "导演预检",
+      "sublabel": "一致性预检",
+      "width": 92
+    },
+    {
+      "id": "brief",
+      "lane": "chain",
+      "col": 2,
+      "type": "backend",
+      "label": "Brief 编译",
+      "width": 110
+    },
+    {
+      "id": "writer",
+      "lane": "chain",
+      "col": 3,
+      "type": "backend",
+      "label": "写手",
+      "sublabel": "正文生成",
+      "width": 60
+    },
+    {
+      "id": "review",
+      "lane": "chain",
+      "col": 4,
+      "type": "backend",
+      "label": "审核",
+      "sublabel": "六组维度",
+      "width": 44
+    },
+    {
+      "id": "accept",
+      "lane": "chain",
+      "col": 5,
+      "type": "database",
+      "label": "落章持久化",
+      "sublabel": "chapters/ · 元数据",
+      "width": 110
+    },
+    {
+      "id": "bounce",
+      "lane": "support",
+      "col": 0,
+      "type": "security",
+      "label": "矛盾打回",
+      "sublabel": "挂起卡 · 待澄清",
+      "width": 96
+    },
+    {
+      "id": "ctx",
+      "lane": "support",
+      "col": 2,
+      "type": "database",
+      "label": "上下文装配源",
+      "sublabel": "风格卡 · 世界快照 · 设定编译",
+      "width": 140
+    },
+    {
+      "id": "checkpoint",
+      "lane": "support",
+      "col": 4,
+      "type": "security",
+      "label": "检查点人审",
+      "sublabel": "草稿落盘",
+      "width": 70
+    }
+  ],
+  "edges": [
+    {
+      "id": "leader-director",
+      "from": "leader",
+      "to": "director",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop"
+    },
+    {
+      "id": "director-brief",
+      "from": "director",
+      "to": "brief",
+      "variant": "default"
+    },
+    {
+      "id": "director-bounce",
+      "from": "director",
+      "to": "bounce",
+      "label": "发现矛盾",
+      "variant": "security",
+      "role": "error",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop",
+      "labelSegment": 1
+    },
+    {
+      "id": "ctx-brief",
+      "from": "ctx",
+      "to": "brief",
+      "label": "style_context 等",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "route": "drop",
+      "labelDx": 56
+    },
+    {
+      "id": "brief-writer",
+      "from": "brief",
+      "to": "writer",
+      "variant": "emphasis"
+    },
+    {
+      "id": "writer-checkpoint",
+      "from": "writer",
+      "to": "checkpoint",
+      "label": "草稿就绪",
+      "variant": "emphasis",
+      "labelDx": -30,
+      "labelDy": -8,
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "checkpoint-review",
+      "from": "checkpoint",
+      "to": "review",
+      "label": "继续",
+      "variant": "emphasis",
+      "labelDx": 36,
+      "fromSide": "top",
+      "toSide": "bottom"
+    },
+    {
+      "id": "checkpoint-redo",
+      "from": "checkpoint",
+      "to": "director",
+      "label": "改稿重跑",
+      "variant": "dashed",
+      "role": "branch",
+      "fromSide": "right",
+      "toSide": "left",
+      "via": [
+        [
+          720,
+          367
+        ],
+        [
+          720,
+          40
+        ],
+        [
+          22,
+          40
+        ],
+        [
+          22,
+          243
+        ]
+      ],
+      "labelSegment": 2,
+      "labelDx": 75,
+      "labelDy": -16
+    },
+    {
+      "id": "review-accept",
+      "from": "review",
+      "to": "accept",
+      "variant": "emphasis"
+    },
+    {
+      "id": "accept-notify",
+      "from": "accept",
+      "to": "notify",
+      "label": "完成",
+      "variant": "emphasis",
+      "role": "return",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 30
+    }
+  ],
+  "cards": []
+}

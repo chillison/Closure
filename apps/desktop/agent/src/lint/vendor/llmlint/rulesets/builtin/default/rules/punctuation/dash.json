@@ -1,0 +1,165 @@
+[
+  {
+    "id": "cn.punctuation.dash.bracket-before-dash",
+    "namespace": "punctuation.dash",
+    "title": "删「后破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t「——",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "「——"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "「"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.cn-quote-before-dash",
+    "namespace": "punctuation.dash",
+    "title": "删中文左引号后破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t“——",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "“——"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.dash-alone-to-comma",
+    "namespace": "punctuation.dash",
+    "title": "破折号",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：裸破折号在中文小说中常用于插入解释、悬念、拖长音和节奏停顿；替换成逗号会改变语气，当前 dataset reference 命中 21 次。",
+    "source": {
+      "version": "rule-curation-v23",
+      "canonicalKey": "punctuation.dash\t\t——",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "——"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "，"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.dash-before-cn-bracket",
+    "namespace": "punctuation.dash",
+    "title": "删」前破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t——」",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "——」"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "」"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.dash-before-cn-quote",
+    "namespace": "punctuation.dash",
+    "title": "删中文右引号前破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t——”",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "——”"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.dash-before-quote",
+    "namespace": "punctuation.dash",
+    "title": "删英文引号前破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t——\"",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "——\""
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash.quote-before-dash",
+    "namespace": "punctuation.dash",
+    "title": "删英文引号后破折号",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "punctuation.dash\t\t\"——",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "\"——"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

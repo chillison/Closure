@@ -1,0 +1,35 @@
+[
+  {
+    "id": "story-deslop.notice-formality",
+    "namespace": "register.notice",
+    "title": "系统公告公文腔",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 system-notice-formality-tic；按 quoted/【】层逐段评估，硬规则词密集时提示，功能性系统面板可保留载体。",
+    "source": {
+      "canonicalKey": "NOTICE_FORMAL_PATTERNS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "quoted"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "不得|必须|不可|禁止|严禁|应当|须|需|务必|被视为|同样计入|计入", "bucket": "core", "core": true},
+        {"target": "当前|本公告|本规则|本系统|提示|任务失败|临时权限|权限|状态|等级", "bucket": "notice"},
+        {"target": "维持|公共区域|秩序|优先|惩罚|处罚|违规|指令|执行", "bucket": "order"},
+        {"target": "承担|责任|单位|撤回|转发|截图", "bucket": "process"}
+      ],
+      "minHits": 6,
+      "perKilo": 60,
+      "coreMinHits": 2,
+      "granularity": "paragraph"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "保留规则载体，但把部分硬词白话化，或补角色当场看懂的具体后果，不改成叙述者解释。"
+    }
+  }
+]

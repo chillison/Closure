@@ -1,0 +1,26 @@
+[
+  {
+    "id": "story-deslop.overcompressed-prose",
+    "namespace": "rhythm.overcompressed",
+    "title": "过度精炼短段",
+    "level": "medium",
+    "review": "human",
+    "fixability": "manual",
+    "note": "handler 移植自 story-deslop：长文本里 15 字以内叙述段过密且自然连接偏少才提示。误杀风险较高，默认交人工判断。",
+    "source": {
+      "canonicalKey": "overcompressed-prose handler",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "overcompressed-prose"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "通读后补断裂处和必要连接；有意短镜头可保留，禁止为过阈值机械注水。"
+    }
+  }
+]

@@ -1,0 +1,1166 @@
+/* ── Outline Editor — Notion-style document flow ──
+ * Single-column structured document. No containers, no card borders.
+ * Content is the interface. Hover reveals interactions. */
+
+/* ── OE-1 (dogfood R2 batch C) field status bar ──
+ * 锁 toggle · v{version} · 上次修改来源 · undo/redo · stale 徽章。
+ * 之前 .outline-field-toolbar / .outline-lock-btn 类名存在但零 CSS（样式债）。 */
+.outline-field-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  margin-bottom: var(--space-xl);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-low);
+}
+
+.outline-lock-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast), border-color var(--duration-fast);
+}
+
+.outline-lock-btn:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-lock-btn.is-locked {
+  border-color: var(--warning);
+  background: var(--warning-bg);
+  color: var(--warning);
+}
+
+.outline-lock-btn .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.outline-status-version {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.outline-status-source {
+  font-size: var(--text-xs);
+  color: var(--outline);
+}
+
+.outline-status-actions {
+  display: inline-flex;
+  gap: var(--space-3xs);
+  margin-left: auto;
+}
+
+.outline-status-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 22px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.outline-status-btn .material-symbols-outlined {
+  font-size: 15px;
+}
+
+.outline-status-btn:not(:disabled):hover {
+  background: var(--hover-overlay);
+  color: var(--on-surface);
+}
+
+.outline-status-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.outline-stale-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-pill);
+  background: var(--warning-bg);
+  color: var(--warning);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+
+.outline-stale-badge .material-symbols-outlined {
+  font-size: 13px;
+}
+
+/* ── OE-2.3 (batch C) 语义字段「让 AI 打磨」小钮（hover 显；机械字段不加） ── */
+.outline-ai-polish {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast), background var(--duration-fast);
+}
+
+.outline-ai-polish .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.outline-core-field:hover .outline-ai-polish,
+.outline-phase-property:hover .outline-ai-polish {
+  opacity: 1;
+}
+
+.outline-ai-polish:not(:disabled):hover {
+  background: var(--accent-soft);
+}
+
+.outline-ai-polish:disabled {
+  opacity: 0;
+  cursor: not-allowed;
+}
+
+/* CR-9（dogfood R2）：锁定态的可发现性——普通禁用（运行中）隐身即可，锁定禁用必须
+ * 可见 + not-allowed + tooltip 锁因，否则用户不知道为何打磨钮点了没反应。 */
+.outline-ai-polish:disabled.is-locked {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.outline-core-label-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.outline-core-label-row .outline-core-label {
+  flex: 1;
+}
+
+/* ── Container ── */
+.outline-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: var(--space-3xl) clamp(1.25rem, 5vw, 3rem);
+  overflow-y: auto;
+}
+
+/* ── Section heading ── */
+.outline-heading {
+  margin: 0 0 var(--space-xl);
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--on-surface);
+}
+
+/* ── Divider ── */
+.outline-divider {
+  width: 100%;
+  height: 1px;
+  margin: var(--space-3xl) 0;
+  background: var(--border-subtle);
+  border: none;
+}
+
+/* ── Transparent input (Notion-style) ── */
+.outline-input,
+.outline-textarea {
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface);
+  font: inherit;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  padding: var(--space-2xs) var(--space-xs);
+  margin: 0 calc(-1 * var(--space-xs));
+  outline: none;
+  resize: none;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.outline-input:hover,
+.outline-textarea:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-input:focus,
+.outline-textarea:focus {
+  background: var(--surface-container-lowest);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.outline-input::placeholder,
+.outline-textarea::placeholder {
+  color: var(--outline);
+}
+
+/* ── Story Core ── */
+.outline-core {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.outline-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-xs);
+}
+
+.outline-tag-label {
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+
+.outline-tag-input {
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  outline: none;
+  min-width: 80px;
+  max-width: 200px;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.outline-tag-input:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-tag-input:focus {
+  background: var(--surface-container-lowest);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+  color: var(--on-surface);
+}
+
+.outline-tag-input::placeholder {
+  color: var(--outline);
+  font-weight: 400;
+}
+
+.outline-core-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-core-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  padding-left: var(--space-xs);
+}
+
+.outline-core-textarea {
+  font-size: var(--text-md);
+  line-height: 1.6;
+}
+
+/* ── Phase list ── */
+.outline-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.outline-phases-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-xl);
+}
+
+.outline-phases-header .outline-heading {
+  margin: 0;
+}
+
+/* ── Phase block (toggle) ── */
+.outline-phase {
+  position: relative;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+
+.outline-phase:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-phase-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-xs);
+  cursor: pointer;
+  user-select: none;
+}
+
+.outline-drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--outline);
+  font-size: 16px;
+  opacity: 0;
+  cursor: grab;
+  flex-shrink: 0;
+  border-radius: var(--radius-2xs);
+  transition: opacity var(--duration-fast), background var(--duration-fast);
+}
+
+.outline-phase:hover .outline-drag-handle {
+  opacity: 1;
+}
+
+.outline-drag-handle:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-phase-chevron {
+  font-size: 18px;
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.outline-phase.is-open .outline-phase-chevron {
+  transform: rotate(90deg);
+}
+
+.outline-phase-index {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-circle);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.outline-phase-title {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--on-surface);
+  padding: 0 var(--space-2xs);
+  outline: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.outline-phase-title:focus {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+  white-space: normal;
+}
+
+.outline-phase-chapters {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.outline-phase-chapters .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Phase body (expanded) ── */
+.outline-phase-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0 var(--space-lg) calc(20px + 18px + 22px + 3 * var(--space-xs));
+  animation: outline-slide-down var(--duration-slow) var(--ease-enter);
+}
+
+@keyframes outline-slide-down {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.outline-phase-property {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-md);
+}
+
+.outline-phase-property-label {
+  flex-shrink: 0;
+  width: 72px;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  text-align: right;
+}
+
+.outline-phase-property-value {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--on-surface);
+  padding: var(--space-3xs) var(--space-xs);
+  outline: none;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.outline-phase-property-value:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-phase-property-value:focus {
+  background: var(--surface-container-lowest);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.outline-phase-property-value::placeholder {
+  color: var(--outline);
+}
+
+.outline-phase-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-xs);
+}
+
+.outline-remove-action {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast), color var(--duration-fast), background var(--duration-fast);
+}
+
+.outline-phase:hover .outline-remove-action {
+  opacity: 1;
+}
+
+.outline-remove-action:hover {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.outline-remove-action .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Add block ── */
+.outline-add-block {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-md);
+  margin-top: var(--space-sm);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast), color var(--duration-fast);
+}
+
+.outline-add-block:hover {
+  background: var(--hover-overlay);
+  border-color: var(--accent);
+  color: var(--accent-strong);
+}
+
+.outline-add-block .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* ── Toggle block (auxiliary sections) ── */
+.outline-toggle {
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+
+.outline-toggle:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-toggle-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-sm) var(--space-xs);
+  cursor: pointer;
+  user-select: none;
+}
+
+.outline-toggle-chevron {
+  font-size: 18px;
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.outline-toggle.is-open .outline-toggle-chevron {
+  transform: rotate(90deg);
+}
+
+.outline-toggle-title {
+  flex: 1;
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.outline-toggle-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast), background var(--duration-fast), color var(--duration-fast);
+}
+
+.outline-toggle:hover .outline-toggle-action {
+  opacity: 1;
+}
+
+.outline-toggle-action:hover {
+  background: var(--hover-overlay);
+  color: var(--accent);
+}
+
+.outline-toggle-action .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.outline-toggle-body {
+  padding: var(--space-xs) 0 var(--space-lg) calc(18px + var(--space-xs) + var(--space-xs));
+  animation: outline-slide-down var(--duration-slow) var(--ease-enter);
+}
+
+/* ── Draggable list items (turning points / constraints) ── */
+.outline-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.outline-list-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-3xs) 0;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+
+.outline-list-item:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-list-item[draggable="true"] {
+  user-select: none;
+}
+
+.outline-list-drag {
+  font-size: 14px;
+  color: var(--outline);
+  opacity: 0;
+  cursor: grab;
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast);
+}
+
+.outline-list-item:hover .outline-list-drag {
+  opacity: 1;
+}
+
+.outline-list-input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--on-surface);
+  padding: var(--space-3xs) var(--space-xs);
+  outline: none;
+  transition: background var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.outline-list-input:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-list-input:focus {
+  background: var(--surface-container-lowest);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.outline-list-input::placeholder {
+  color: var(--outline);
+}
+
+.outline-list-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: none;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity var(--duration-fast), color var(--duration-fast);
+}
+
+.outline-list-item:hover .outline-list-remove {
+  opacity: 1;
+}
+
+.outline-list-remove:hover {
+  color: var(--error);
+}
+
+.outline-list-remove .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── Turning point (typed anchor, Story 1.2) ── */
+/* Functional-first: row wraps on narrow widths; type select fixed-width;
+   description input slightly dimmer to distinguish from label. Aesthetics
+   deferred to Story 1.5 timeline UI. */
+.outline-turning-point {
+  flex-wrap: wrap;
+}
+
+.outline-turning-point-type {
+  flex: 0 0 auto;
+  max-width: 40%;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  padding: 2px var(--space-2xs);
+  font-size: inherit;
+  cursor: pointer;
+}
+
+.outline-turning-point-type:hover {
+  background: var(--hover-overlay);
+}
+
+.outline-turning-point-desc {
+  color: var(--on-surface-variant);
+  font-size: 0.95em;
+}
+
+/* ── CR-26（OE-4）转折点关联状态 ── */
+/* 已挂场景：实 chip（accent-soft 底 + 可点跳时间线定位）。 */
+.outline-tp-anchor-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  flex-shrink: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: none;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.outline-tp-anchor-chip .material-symbols-outlined {
+  font-size: 12px;
+}
+
+.outline-tp-anchor-chip:hover {
+  background: var(--hover-overlay);
+}
+
+/* 未挂：ghost（描边虚样式 + 行内「到时间线挂」动作钮）。 */
+.outline-tp-anchor-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  flex-shrink: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-pill);
+  color: var(--on-surface-variant);
+  font-size: var(--text-2xs);
+}
+
+.outline-tp-anchor-ghost-label {
+  font-weight: 500;
+}
+
+.outline-tp-go-timeline {
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.outline-tp-go-timeline:hover {
+  text-decoration: underline;
+}
+
+/* ── Auxiliary section ── */
+.outline-auxiliary {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* 08-26 草稿位边界 hint（速记 vs 设定卡）：静默次级说明文，mirror 既有 hint 文案形态。 */
+.outline-auxiliary-hint {
+  margin: 0 0 var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+}
+
+/* ── OE-2 (dogfood R2 batch C) 头部「实际 N 场」徽章（大纲↔时间线首个可视桥） ── */
+.outline-phase-scenes {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: 0.1rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.outline-phase-scenes .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── OE-2 (batch C) 卷内集纲折叠子区（只读一行式 + 最小编辑表单 + AI 细化 CTA） ── */
+.outline-ep-sub {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px dashed var(--border-subtle);
+}
+
+.outline-ep-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.outline-ep-count {
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+
+.outline-ep-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-ep-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container-low);
+  font-size: var(--text-xs);
+}
+
+.outline-ep-id {
+  font-weight: 700;
+  color: var(--accent-strong);
+  flex-shrink: 0;
+}
+
+.outline-ep-title {
+  font-weight: 500;
+  color: var(--on-surface);
+  flex-shrink: 0;
+}
+
+.outline-ep-desc {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface-variant);
+}
+
+.outline-ep-edit {
+  margin-left: auto;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  padding: 0 var(--space-2xs);
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--text-2xs);
+  cursor: pointer;
+}
+
+.outline-ep-edit:hover {
+  text-decoration: underline;
+}
+
+/* CR-9：锁定禁用态（tooltip 在组件 title 上给锁因）。 */
+.outline-ep-edit:disabled {
+  color: var(--outline);
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+/* ── CR-27（dogfood R2 批次 C 补完）：集纲手动增/删手势 ── */
+.outline-ep-add {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  margin-left: auto;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  padding: 0 var(--space-2xs);
+  color: var(--accent);
+  font: inherit;
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.outline-ep-add .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.outline-ep-add:not(:disabled):hover {
+  text-decoration: underline;
+}
+
+.outline-ep-add:disabled {
+  color: var(--outline);
+  cursor: not-allowed;
+}
+
+.outline-ep-remove {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+
+.outline-ep-remove .material-symbols-outlined {
+  font-size: 13px;
+}
+
+.outline-ep-remove:not(:disabled):hover {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.outline-ep-remove:disabled {
+  color: var(--outline);
+  cursor: not-allowed;
+}
+
+.outline-ep-empty {
+  font-size: var(--text-xs);
+  color: var(--outline);
+}
+
+.outline-ep-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin-top: var(--space-3xs);
+  padding: var(--space-2xs);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.outline-ep-form-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-ep-form-label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.outline-ep-form-input {
+  width: 100%;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface);
+  font: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  padding: var(--space-3xs) var(--space-2xs);
+  outline: none;
+  resize: none;
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast);
+}
+
+.outline-ep-form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+
+.outline-ep-form-close {
+  align-self: flex-end;
+  border: none;
+  background: transparent;
+  padding: var(--space-3xs) var(--space-2xs);
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-2xs);
+  cursor: pointer;
+}
+
+.outline-ep-form-close:hover {
+  color: var(--on-surface);
+}
+
+.outline-ep-refine {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3xs);
+  width: 100%;
+  padding: var(--space-2xs);
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent-strong);
+  font: inherit;
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.outline-ep-refine:not(:disabled):hover {
+  background: var(--accent-soft);
+}
+
+.outline-ep-refine:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.outline-ep-refine .material-symbols-outlined {
+  font-size: 14px;
+}
+
+/* ── OE-3 (batch C) 卷锚点导航：>3 卷时左侧 sticky 迷你导航 ── */
+.outline-editor.has-nav {
+  max-width: 872px;
+}
+
+.outline-layout {
+  display: grid;
+  grid-template-columns: 132px minmax(0, 1fr);
+  gap: var(--space-xl);
+  align-items: start;
+}
+
+.outline-nav {
+  position: sticky;
+  top: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-nav-title {
+  margin-top: var(--space-sm);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--outline);
+}
+
+.outline-nav-title:first-child {
+  margin-top: 0;
+}
+
+.outline-nav-link {
+  border: none;
+  background: transparent;
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+  padding: var(--space-3xs) var(--space-2xs);
+  border-radius: var(--radius-2xs);
+  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.outline-nav-link:hover {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+/* ── OE-3 (batch C) 导航命中高亮：2s 脉冲 ── */
+.outline-pulse {
+  animation: outline-anchor-pulse 2s var(--ease-standard);
+}
+
+@keyframes outline-anchor-pulse {
+  0%, 100% { box-shadow: none; }
+  20%, 60% { box-shadow: 0 0 0 2px var(--accent); }
+}
+
+/* CR-12（dogfood R2，outline.css 部分）：脉冲动画 reduced-motion 守卫（对照 agent-panel.css
+ * caret / 呼吸点先例——动画转静态；无脉冲时锚点仍可经滚动与选中态定位，信息不丢）。 */
+@media (prefers-reduced-motion: reduce) {
+  .outline-pulse {
+    animation: none;
+  }
+}
+
+/* ── Responsive ── */
+@media (max-width: 640px) {
+  .outline-phase-body {
+    padding-left: var(--space-xl);
+  }
+
+  .outline-phase-property {
+    flex-direction: column;
+    gap: var(--space-3xs);
+  }
+
+  .outline-phase-property-label {
+    width: auto;
+    text-align: left;
+  }
+
+  .outline-tag-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* OE-3：窄屏收起导航列（内容优先，滚动仍可用） */
+  .outline-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .outline-nav {
+    display: none;
+  }
+}

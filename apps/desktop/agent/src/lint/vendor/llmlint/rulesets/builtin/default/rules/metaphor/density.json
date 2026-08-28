@@ -1,0 +1,32 @@
+[
+  {
+    "id": "story-deslop.metaphor-density",
+    "namespace": "metaphor",
+    "title": "比喻密度过高",
+    "level": "medium",
+    "review": "human",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 metaphor-density-tic；单个生活化比喻可保留，只在叙述层比喻标记 ≥7 处且 ≥3/千字时提示。保持 human：当前语料触发富集 2.8x（原始标记 4.2x），真人侧 12% 的文档也会触发，说明门槛之上仍有正常写法。这是分布结论，一条代表全文，禁止当逐处替换指令。它同时是创作类正文里最强的 AI 味信号，所以创作场景必须用 --review all 才看得见。",
+    "source": {
+      "version": "rule-curation-v32",
+      "canonicalKey": "METAPHOR_DENSITY_PATTERNS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "好像|像是|仿佛|宛如|如同|犹如|(?<![不头图画影录摄肖])像(?![头像素])", "bucket": "marker"},
+        {"target": "(?:死|水|冰|火|潮水|石头|木头|机器|纸|铁|鬼|死人|刀|针|网|墙)一样", "bucket": "phrase"}
+      ],
+      "minHits": 7,
+      "perKilo": 3
+    },
+    "action": {
+      "type": "suggest",
+      "message": "保留最有叙事功能的少数比喻，其余回到具体动作、物件、声音或后果。"
+    }
+  }
+]

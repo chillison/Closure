@@ -1,0 +1,120 @@
+[
+  {
+    "id": "cn.numeral.three.few-words-idiom",
+    "namespace": "numeral.three",
+    "title": "几言两语→只言片语",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "numeral.three\t\t几言两语",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "几言两语"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "只言片语",
+        "言简意赅"
+      ]
+    }
+  },
+  {
+    "id": "cn.numeral.three.hat-typo",
+    "namespace": "numeral.three",
+    "title": "几度笠→斗笠",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "numeral.three\t\t几度笠",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "几度笠"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "斗笠"
+      ]
+    }
+  },
+  {
+    "id": "cn.numeral.three.intermittent-typo",
+    "namespace": "numeral.three",
+    "title": "隔几差五→时不时",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "numeral.three\t\t隔几差五",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "隔几差五"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "时不时"
+      ]
+    }
+  },
+  {
+    "id": "cn.numeral.three.numeral-five-typo",
+    "namespace": "numeral.three",
+    "title": "几五→几",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "numeral.three\t\t几五",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "几五"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "几"
+      ]
+    }
+  },
+  {
+    "id": "cn.numeral.three.numeral-three",
+    "namespace": "numeral.three",
+    "title": "三",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：裸“三”会命中所有正常数字表达，如“三个夜班/三室一厅/凌晨三点”；保留资产给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v22",
+      "canonicalKey": "numeral.three\t\t三",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "三"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "几"
+      ]
+    }
+  }
+]

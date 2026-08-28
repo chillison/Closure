@@ -1,0 +1,227 @@
+{
+  "schema_version": 1,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "双层审核漏斗 — 纯代码先滤，LLM 合批精审",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "funnel",
+        "label": "漏斗主路径",
+        "focus": [
+          "draft",
+          "l1",
+          "l2",
+          "findings",
+          "revision",
+          "final"
+        ],
+        "note": "章稿如何经两层过滤抵达落章。"
+      },
+      {
+        "id": "cost",
+        "label": "成本闸门",
+        "focus": [
+          "l1",
+          "pass",
+          "final"
+        ],
+        "note": "零命中稿不进 LLM，直接放行。"
+      },
+      {
+        "id": "human",
+        "label": "人审终点",
+        "focus": [
+          "findings",
+          "revision",
+          "final"
+        ],
+        "note": "分级 findings 与词级 diff 修订走到作者面前。"
+      }
+    ],
+    "viewBox": [
+      1057,
+      486
+    ]
+  },
+  "lanes": [
+    {
+      "id": "l1lane",
+      "label": "L1 纯代码"
+    },
+    {
+      "id": "l2lane",
+      "label": "L2 LLM"
+    },
+    {
+      "id": "gate",
+      "label": "人审与落章"
+    }
+  ],
+  "phases": [
+    {
+      "id": "scan",
+      "label": "静态扫描",
+      "fromCol": 0,
+      "toCol": 1
+    },
+    {
+      "id": "judge",
+      "label": "语义精审",
+      "fromCol": 2,
+      "toCol": 3,
+      "variant": "emphasis"
+    },
+    {
+      "id": "settle",
+      "label": "修订落章",
+      "fromCol": 4,
+      "toCol": 5,
+      "variant": "dashed"
+    }
+  ],
+  "mainPath": [
+    "draft",
+    "l1",
+    "l2",
+    "findings",
+    "revision",
+    "final"
+  ],
+  "nodes": [
+    {
+      "id": "draft",
+      "lane": "l1lane",
+      "col": 0,
+      "type": "external",
+      "label": "章稿",
+      "sublabel": "写手产出",
+      "width": 90
+    },
+    {
+      "id": "l1",
+      "lane": "l1lane",
+      "col": 1,
+      "type": "backend",
+      "label": "L1 规则引擎",
+      "sublabel": "llmlint · 零成本",
+      "width": 110
+    },
+    {
+      "id": "pass",
+      "lane": "l1lane",
+      "col": 4,
+      "type": "messagebus",
+      "label": "零命中放行",
+      "sublabel": "不进 LLM",
+      "width": 90
+    },
+    {
+      "id": "l2",
+      "lane": "l2lane",
+      "col": 2,
+      "type": "backend",
+      "label": "L2 合批审核",
+      "sublabel": "六组语义裁判",
+      "width": 100
+    },
+    {
+      "id": "findings",
+      "lane": "l2lane",
+      "col": 3,
+      "type": "backend",
+      "label": "findings 分级",
+      "sublabel": "阻断 · 建议 · 记录",
+      "width": 102
+    },
+    {
+      "id": "revision",
+      "lane": "gate",
+      "col": 4,
+      "type": "security",
+      "label": "修订人审",
+      "sublabel": "词级 diff 保义",
+      "width": 100
+    },
+    {
+      "id": "final",
+      "lane": "gate",
+      "col": 5,
+      "type": "database",
+      "label": "通过落章",
+      "sublabel": "chapters/ 落盘",
+      "width": 94
+    }
+  ],
+  "edges": [
+    {
+      "id": "draft-l1",
+      "from": "draft",
+      "to": "l1",
+      "variant": "emphasis"
+    },
+    {
+      "id": "l1-l2",
+      "from": "l1",
+      "to": "l2",
+      "label": "命中 / 抽样",
+      "variant": "default",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "route": "drop",
+      "labelDx": 48
+    },
+    {
+      "id": "l1-pass",
+      "from": "l1",
+      "to": "pass",
+      "label": "零命中",
+      "variant": "dashed",
+      "role": "branch",
+      "labelDy": -22
+    },
+    {
+      "id": "pass-final",
+      "from": "pass",
+      "to": "final",
+      "variant": "dashed",
+      "role": "return",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "l2-findings",
+      "from": "l2",
+      "to": "findings",
+      "variant": "default"
+    },
+    {
+      "id": "findings-revision",
+      "from": "findings",
+      "to": "revision",
+      "label": "阻断 / 建议",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDx": 44
+    },
+    {
+      "id": "revision-final",
+      "from": "revision",
+      "to": "final",
+      "label": "接受",
+      "variant": "emphasis"
+    },
+    {
+      "id": "revision-l2",
+      "from": "revision",
+      "to": "l2",
+      "label": "驳回重修",
+      "variant": "dashed",
+      "role": "return",
+      "route": "return-left",
+      "labelSegment": 0
+    }
+  ]
+}

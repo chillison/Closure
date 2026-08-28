@@ -1,0 +1,26 @@
+[
+  {
+    "id": "dated-opening",
+    "namespace": "opening.mouthpiece",
+    "title": "喉舌式时代开头",
+    "level": "medium",
+    "note": "这些是典型的作文式开头，容易用宏大背景替代具体事实。",
+    "scope": {
+      "layer": "narrative",
+      "position": {
+        "kind": "opening",
+        "chars": 600
+      }
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "在当今社会|随着.*?的发展|众所周知|不可否认"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "直接进入具体对象、事件、数据或场景。"
+    }
+  }
+]

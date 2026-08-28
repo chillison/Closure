@@ -1,0 +1,87 @@
+[
+  {
+    "id": "translationese-for-regard",
+    "namespace": "translationese",
+    "title": "对于……而言",
+    "level": "low",
+    "note": "英文 for/regarding 直译来的框架，多数可删掉，让主语直接出场。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "对于[^，。！？\\n]{1,16}(?:而言|来说)|就[^，。！？\\n]{1,12}而言"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "看能否删掉这个框架，让主语直接出场。"
+    }
+  },
+  {
+    "id": "translationese-in-aspect",
+    "namespace": "translationese",
+    "title": "在……方面",
+    "level": "low",
+    "note": "「在……方面 / 在……领域」常是英文 in terms of 的直译填充，多数可删。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "在[^，。！？\\n]{1,12}方面|在[^，。！？\\n]{1,12}领域"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "看能否删掉，或把「方面」换成具体的事。"
+    }
+  },
+  {
+    "id": "translationese-from-angle",
+    "namespace": "translationese",
+    "title": "从……的角度来看",
+    "level": "low",
+    "note": "「从……的角度来看」是 from the perspective of 的直译，多数可简化。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "从[^，。！？\\n]{1,16}的角度(?:来看|来讲|看|出发)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "看能否简化，或直接给出该角度下的判断。"
+    }
+  },
+  {
+    "id": "translationese-through-to",
+    "namespace": "translationese",
+    "title": "通过……来……",
+    "level": "low",
+    "note": "「通过 X 来 Y」是 by ...ing 的直译结构，多数可改成「用 X 做 Y」或直接说 Y。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "通过[^，。！？\\n]{1,20}来[^，。！？\\n]{1,10}"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "看能否简化成「用……做……」或直接陈述目的动作。"
+    }
+  },
+  {
+    "id": "translationese-based-on",
+    "namespace": "translationese",
+    "title": "基于……，",
+    "level": "low",
+    "note": "「基于……，（做某事）」是 based on 的直译开头，多数可改成「根据……」或直接说。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "基于[^，。！？\\n]{1,16}(?:，|的考虑|的原因|这一点)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "看能否改成「根据……」或直接陈述结论。"
+    }
+  }
+]

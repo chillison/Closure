@@ -1,0 +1,287 @@
+[
+  {
+    "id": "cn.action-expression.calm-voice-shell",
+    "namespace": "action-expression",
+    "title": "删“声音平稳”壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“平稳”是普通状态描写，当前 eval support 很低；只在它成为声音状态模板壳时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "action-expression\t\t(?:声音依旧|很)?平稳(?:与|，)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:声音依旧|很)?平稳(?:与|，)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.explicit-teasing-tone",
+    "namespace": "action-expression",
+    "title": "删“明显的戏谑”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“明显的戏谑”仍需判断人物关系、叙述距离和对白口吻；与戏谑修饰词同族，不作为默认 Agent 强提示。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "action-expression\t\t却?带有?明显的?戏谑",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "却?带有?明显的?戏谑"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.flat-tone-shell",
+    "namespace": "action-expression",
+    "title": "删“语气平淡”壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“用平淡的语气/语气平淡地”是常见对白状态提示，删除会改变叙述信息；只在它成为反复口气壳时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "action-expression\t\t(?:用平淡的语气|语气平淡地)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:用平淡的语气|语气平淡地)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.force-white-knuckle",
+    "namespace": "action-expression",
+    "title": "因用力而泛白→用力",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：用力导致泛白可能是有效动作细节，且手部颜色 canonical 已覆盖更典型分句；只在模板化手部特写时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "action-expression\t\t因为用力而泛白",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "因为用力而泛白"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "用力"
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.mouth-corner-arc",
+    "namespace": "action-expression",
+    "title": "嘴角弧度→嘴唇上扬",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：裸“嘴/唇角…弧度”旧报告 support 不足，且尾部分句场景已有 cn.cliche.trailing-mouth-arc-clause 作为 canonical。",
+    "source": {
+      "version": "rule-curation-v12",
+      "canonicalKey": "action-expression\t\t(?:嘴|唇)角(?:弯出|翘起|扯出|勾起)一?个(?:好看的|没有温度的|的)?弧度",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:嘴|唇)角(?:弯出|翘起|扯出|勾起)一?个(?:好看的|没有温度的|的)?弧度"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "嘴唇上扬"
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.mouth-corner-hook",
+    "namespace": "action-expression",
+    "title": "动作与神态",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：裸“嘴角勾”过宽，容易与更长嘴角弧度规则产生半截候选；保留给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v2",
+      "canonicalKey": "action-expression\t\t嘴角勾",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "嘴角勾"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "嘴唇上扬"
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.rough-manner-modifier",
+    "namespace": "action-expression",
+    "title": "删“粗重/粗暴/疯狂”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：旧报告为 strong，但裸“粗重/粗暴/疯狂”会命中呼吸、字体、码字、能量、心跳和真实动作；只在它成为空泛强度修饰时删。",
+    "source": {
+      "version": "rule-curation-v22",
+      "canonicalKey": "action-expression\t\t(?:粗重|粗暴|疯狂)(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:粗重|粗暴|疯狂)(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.scream-to-whimper",
+    "namespace": "action-expression",
+    "title": "尖叫→呜咽",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：裸“尖叫”不是稳定 AI 痕迹，且替换为“呜咽”会改变动作强度；只在上下文确认过度尖叫时改。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "action-expression\t\t尖叫",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "尖叫"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "呜咽"
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.teasing-attitude-shell",
+    "namespace": "action-expression",
+    "title": "删“戏谑的态度”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“戏谑的态度”依赖人物关系和叙述视角；与戏谑修饰词同族，不作为默认 Agent 强提示。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "action-expression\t\t(?:以|用)?戏谑的态度",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:以|用)?戏谑的态度"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.teasing-modifier",
+    "namespace": "action-expression",
+    "title": "删修饰语“戏谑”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“戏谑”可能是人物口吻或真实语气，当前 eval support 低；只在它替代具体动作时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "action-expression\t\t的?戏谑(?:的|地)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "的?戏谑(?:的|地)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.action-expression.tightly-clenched",
+    "namespace": "action-expression",
+    "title": "绞得紧紧的→绞紧",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“绞得紧紧的”可能是手指、衣料或动作状态，替换为“绞紧”容易改语义；只在重复身体模板时修。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "action-expression\t\t绞得紧紧的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "绞得紧紧的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "绞紧"
+      ]
+    }
+  }
+]

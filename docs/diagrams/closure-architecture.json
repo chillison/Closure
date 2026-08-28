@@ -1,0 +1,290 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "Closure 总体架构 — 本地优先的 AI 小说创作 IDE",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "views": [
+      {
+        "id": "creation-path",
+        "label": "创作主路径",
+        "focus": [
+          "author",
+          "renderer",
+          "shell",
+          "runtime"
+        ],
+        "note": "作者操作经渲染层到主进程，再进 Agent 运行时。"
+      },
+      {
+        "id": "persistence",
+        "label": "持久化双层",
+        "focus": [
+          "bff",
+          "projectfiles",
+          "gitrepo",
+          "sqlite"
+        ],
+        "note": "文件层为单一真相源，db 层是机器级注册库与派生索引。"
+      },
+      {
+        "id": "llm-path",
+        "label": "LLM 注入链",
+        "focus": [
+          "runtime",
+          "shell",
+          "cloudllm"
+        ],
+        "note": "LLM 能力经注入 seam 进入运行时，云端只做推理。"
+      }
+    ],
+    "viewBox": [
+      1180,
+      560
+    ]
+  },
+  "components": [
+    {
+      "id": "author",
+      "type": "external",
+      "label": "作者",
+      "sublabel": "人主导创作",
+      "pos": [
+        40,
+        260
+      ],
+      "size": [
+        110,
+        60
+      ]
+    },
+    {
+      "id": "renderer",
+      "type": "frontend",
+      "label": "渲染层 client/ui",
+      "sublabel": "编辑器 · 结构工作台 · Agent 面板",
+      "pos": [
+        220,
+        260
+      ],
+      "size": [
+        180,
+        64
+      ]
+    },
+    {
+      "id": "shell",
+      "type": "backend",
+      "label": "主进程 client/shell",
+      "sublabel": "Electron 37 · IPC handlers · 路径沙箱",
+      "pos": [
+        490,
+        260
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "tag": "IPC 安全边界"
+    },
+    {
+      "id": "runtime",
+      "type": "backend",
+      "label": "Workflow Runtime",
+      "sublabel": "runLoop · 会话 · 契约 · 写章链节点",
+      "pos": [
+        490,
+        430
+      ],
+      "size": [
+        180,
+        64
+      ],
+      "tag": "desktop-agent"
+    },
+    {
+      "id": "bff",
+      "type": "backend",
+      "label": "Local BFF",
+      "sublabel": "project.yaml 读写 · fieldSyncBridge",
+      "pos": [
+        760,
+        260
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "sqlite",
+      "type": "database",
+      "label": "SQLite",
+      "sublabel": "better-sqlite3 · FTS5 · sqlite-vec",
+      "pos": [
+        490,
+        90
+      ],
+      "size": [
+        180,
+        60
+      ],
+      "tag": "projects.db + closure_* 表"
+    },
+    {
+      "id": "projectfiles",
+      "type": "database",
+      "label": "项目文件（单一真相源）",
+      "sublabel": "project.yaml · chapters · .orison/",
+      "pos": [
+        760,
+        430
+      ],
+      "size": [
+        190,
+        64
+      ]
+    },
+    {
+      "id": "gitrepo",
+      "type": "backend",
+      "label": "isomorphic-git",
+      "sublabel": "per-project 版本时间线",
+      "pos": [
+        990,
+        430
+      ],
+      "size": [
+        150,
+        60
+      ]
+    },
+    {
+      "id": "cloudllm",
+      "type": "cloud",
+      "label": "云端 LLM",
+      "sublabel": "任意 OpenAI 兼容端点",
+      "pos": [
+        990,
+        90
+      ],
+      "size": [
+        150,
+        60
+      ],
+      "tag": "仅推理 · 不存作品"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "本机 · 本地优先（作品数据不出机器）",
+      "wraps": [
+        "renderer",
+        "shell",
+        "runtime",
+        "bff",
+        "sqlite",
+        "projectfiles",
+        "gitrepo"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "author-ui",
+      "from": "author",
+      "to": "renderer",
+      "label": "操作 / 审阅",
+      "variant": "emphasis",
+      "labelDy": 54
+    },
+    {
+      "id": "ui-shell-ipc",
+      "from": "renderer",
+      "to": "shell",
+      "label": "preload IPC",
+      "variant": "security"
+    },
+    {
+      "id": "shell-inject",
+      "from": "shell",
+      "to": "runtime",
+      "label": "依赖注入 seam：LLM / 工具 / FS / db",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "labelDy": 24
+    },
+    {
+      "id": "shell-db",
+      "from": "shell",
+      "to": "sqlite",
+      "label": "注册库",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": -48
+    },
+    {
+      "id": "shell-bff",
+      "from": "shell",
+      "to": "bff",
+      "label": "项目数据读写"
+    },
+    {
+      "id": "bff-files",
+      "from": "bff",
+      "to": "projectfiles",
+      "label": "读写",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "git-files",
+      "from": "gitrepo",
+      "to": "projectfiles",
+      "label": "版本快照",
+      "variant": "dashed",
+      "labelDy": 56
+    },
+    {
+      "id": "runtime-llm",
+      "from": "shell",
+      "to": "cloudllm",
+      "label": "model-protocols 流式适配",
+      "variant": "default",
+      "fromSide": "top",
+      "toSide": "left"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "本地优先",
+      "items": [
+        "作品 = 普通文件（project.yaml / chapters/*.md），无需账号",
+        "isomorphic-git 按 project 纯文本版本历史",
+        "SQLite 只做注册库与派生检索索引，可重建"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Agent 纯编排层（ADR-2）",
+      "items": [
+        "LLM / 工具 / 文件 / db 全部经注入 seam，agent 无直接外部访问",
+        "yaml 契约 + Zod 双表示，14 个 agent 各司其职",
+        "写章链 / 审核链 / 拆链派发都是 runtime 节点"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "边界与隐私",
+      "items": [
+        "渲染层只能经 preload IPC 访问主进程，路径沙箱限项目目录",
+        "云端 LLM 仅收推理请求，作品不落第三方存储",
+        "API Key 本地加密保存"
+      ]
+    }
+  ]
+}

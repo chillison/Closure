@@ -1,0 +1,158 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # A warm pnpm store cache can be restored with better-sqlite3 linked but
+      # its native binding unbuilt (--frozen-lockfile skips the install script).
+      # Force the prebuilt binary so electron-builder bundles a working module.
+      - name: Rebuild native modules (better-sqlite3)
+        run: pnpm rebuild -r better-sqlite3
+
+      # Tag is the single source of truth. Strip the leading "v" and write it
+      # into root + shell package.json so app.getVersion(), latest.yml and the
+      # installer filename all match the tag.
+      - name: Inject version from tag
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Releasing version $VERSION"
+          node scripts/set-version.mjs "$VERSION"
+
+      - name: Build renderer + main
+        run: pnpm --filter @orison/desktop-shell build
+
+      # NSIS installer + latest.yml + blockmap, published straight to the
+      # GitHub Release (electron-updater feed). Release must NOT be a draft,
+      # or latest.yml is invisible to the updater.
+      - name: Build & publish NSIS installer
+        working-directory: apps/desktop/client/shell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec electron-builder --config electron-builder.yml --win nsis --x64 --publish always
+
+      # Portable (green) build — secondary artifact, no self-update.
+      - name: Build portable package
+        run: pnpm package:desktop:portable
+
+      - name: Zip portable build
+        shell: pwsh
+        run: |
+          $version = "${{ github.ref_name }}"
+          $src = "release/portable/win-unpacked"
+          if (-not (Test-Path $src)) { throw "Portable output not found at $src" }
+          $zip = "release/Closure-portable-$version-win-x64.zip"
+          Compress-Archive -Path "$src/*" -DestinationPath $zip -Force
+          Write-Host "Created $zip"
+
+      - name: Attach portable zip to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/Closure-portable-*.zip
+          draft: false
+          generate_release_notes: true
+
+  # macOS 在单一 runner 上一次性打包 arm64 + x64 的 dmg + zip。
+  # 两架构同一次构建产出单份 latest-mac.yml，electron-updater 自动选架构。
+  release-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # See windows job: rebuild the native binding so a warm pnpm cache can't
+      # ship a better-sqlite3 without its compiled .node file.
+      - name: Rebuild native modules (better-sqlite3)
+        run: pnpm rebuild -r better-sqlite3
+
+      - name: Inject version from tag
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Releasing version $VERSION"
+          node scripts/set-version.mjs "$VERSION"
+
+      - name: Build renderer + main
+        run: pnpm --filter @orison/desktop-shell build
+
+      # Alpha 无 Apple 证书：CSC_IDENTITY_AUTO_DISCOVERY=false 关闭自动签名，
+      # 配合 electron-builder.yml 中 mac.identity=null，产出未签名 dmg/zip。
+      - name: Build & publish macOS app
+        working-directory: apps/desktop/client/shell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --config electron-builder.yml --mac --publish always
+
+  # Linux 在 x64 runner 上打包 AppImage（跨发行版免安装格式）。
+  release-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # See windows job: rebuild the native binding so a warm pnpm cache can't
+      # ship a better-sqlite3 without its compiled .node file.
+      - name: Rebuild native modules (better-sqlite3)
+        run: pnpm rebuild -r better-sqlite3
+
+      - name: Inject version from tag
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Releasing version $VERSION"
+          node scripts/set-version.mjs "$VERSION"
+
+      - name: Build renderer + main
+        run: pnpm --filter @orison/desktop-shell build
+
+      - name: Build & publish Linux AppImage
+        working-directory: apps/desktop/client/shell
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm exec electron-builder --config electron-builder.yml --linux --publish always

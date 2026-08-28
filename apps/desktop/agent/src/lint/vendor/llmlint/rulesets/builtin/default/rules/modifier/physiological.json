@@ -1,0 +1,25 @@
+[
+  {
+    "id": "cn.modifier.physiological.physiological-modifier",
+    "namespace": "modifier.physiological",
+    "title": "生理删除",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "modifier.physiological\t\t(?:生理|生理性)(?:的|地|得)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:生理|生理性)(?:的|地|得)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

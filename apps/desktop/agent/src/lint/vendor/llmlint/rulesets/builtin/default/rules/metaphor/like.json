@@ -1,0 +1,177 @@
+[
+  {
+    "id": "cn.metaphor.like.bare-like-placeholder",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)像\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)像\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.double-like-is",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t\\*像是\\*，\\*又像是\\*(?:，|。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "\\*像是\\*，\\*又像是\\*(?:，|。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.double-seems-like",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)好像\\*，又好像\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)好像\\*，又好像\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.like-doing",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)\\*像在\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)\\*像在\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.like-is-doing",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)\\*像是在\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)\\*像是在\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.like-is-placeholder",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)\\*像是\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)\\*像是\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.like.unlike-but-like",
+    "namespace": "metaphor.like",
+    "title": "像像像",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的占位文本；保留资产，等待重新建模比喻壳。",
+    "source": {
+      "version": "rule-curation-v7",
+      "canonicalKey": "metaphor.like\t\t(?:，|。)不像\\*，倒像\\*(?:。|，)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)不像\\*，倒像\\*(?:。|，)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  }
+]

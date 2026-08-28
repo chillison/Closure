@@ -1,0 +1,26 @@
+[
+  {
+    "id": "story-deslop.period-stutter",
+    "namespace": "rhythm.period-stutter",
+    "title": "碎句号",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "handler 移植自 story-deslop：连续 6 个可见字数 ≤5 的叙述短句才提示；纯对话、结构行和系统播报重置计数。",
+    "source": {
+      "canonicalKey": "period-stutter handler",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "period-stutter"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "把碎短句按目标句长合并成中长句，补回必要的画面、连接和节奏呼吸。"
+    }
+  }
+]

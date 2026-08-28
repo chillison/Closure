@@ -1,0 +1,115 @@
+[
+  {
+    "id": "sycophantic-praise",
+    "namespace": "sycophantic",
+    "title": "谄媚式夸奖",
+    "level": "medium",
+    "note": "「好问题 / 你说得很对 / 你的观察力太敏锐」是助手对用户的谄媚夸奖，删掉夸奖层，直接回应内容。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "好问题[！!]?|你说得(?:很)?对|这是一个(?:很)?好的(?:观点|问题)|你问到了问题的核心|你的观察力太敏锐|这个思路(?:简直)?绝了|你太(?:清醒|懂了?|对了)了?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "sycophantic-meta",
+    "namespace": "sycophantic",
+    "title": "助手元评论",
+    "level": "medium",
+    "note": "「让我来为你解释 / 希望这对你有帮助 / 如果你有其他问题」是助手框架的元评论，正文不需要。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "让我来为你(?:解释|介绍)|希望这(?:对你)?(?:有|有所)帮助|如果你(?:还)?有(?:其他|任何)?(?:问题|疑问)|很高兴为你"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "assistant-pushy",
+    "namespace": "sycophantic",
+    "title": "助手主动出击腔",
+    "level": "low",
+    "note": "「要不要我 / 只要你回复我 / 我立马开始」是助手推销式话术，等用户提需求即可。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "要不要我(?:来|帮你)?|只要你回复我|你一回复我就|我立马开始|我已确认|如果你愿意(?:的话)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "assistant-comfort-pose",
+    "namespace": "sycophantic",
+    "title": "过度安抚姿态",
+    "level": "low",
+    "review": "human",
+    "note": "默认收窄：只匹配带第二人称或明确陪伴承诺的安抚姿态，放过裸“稳稳接住”和“我就在这里”这类普通动作/对白。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "稳稳(?:地)?(?:接住|托住)(?:你|你们|所有人|这份脆弱)|我(?:就)?在这里陪你|你只是太久没被|不用向我解释"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉安抚姿态，改成具体回应；不要替对方下心理判断。"
+    }
+  },
+  {
+    "id": "sycophantic-solemn-preview",
+    "namespace": "sycophantic",
+    "title": "郑重预告",
+    "level": "low",
+    "note": "「我必须很认真地说一句 / 我要讲一个更深的东西」是先预告「我要说句大的」再开口，删掉直接说。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "我必须(?:很)?认真地?说(?:一句|一下|句话)?|我要讲一个更深(?:一点)?的|我(?:先)?说个(?:更)?大的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "sycophantic-identity-praise",
+    "namespace": "sycophantic",
+    "title": "身份认证式夸奖",
+    "level": "low",
+    "note": "「顶刊作者的素养 / 顶级研究者才具备」是给对方发身份认证的夸奖，删掉夸奖层，改成对内容的具体评价。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "顶刊作者的?素养|顶级研究者才(?:具备|有)|绝对是[^，。！？\\n]{0,8}的素养|[^，。！？\\n]{0,6}才(?:具备|有)的批判性思维"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "story-deslop.cliche-density",
+    "namespace": "cliche",
+    "title": "套词密度过高",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 cliche-density-tic；单个词不是问题，只有叙述层高危套词 ≥8 处且 ≥12/千字时提示。",
+    "source": {
+      "canonicalKey": "CLICHE_PATTERNS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "仿佛|犹如|宛若|如同", "bucket": "simile"},
+        {"target": "一丝|一抹|些许|几分|隐约", "bucket": "small"},
+        {"target": "深吸一口气|缓缓|微微|轻轻|淡淡", "bucket": "softener"},
+        {"target": "眼中闪过|嘴角勾起|眸光微微一闪|指节泛白|目光锐利|眼神锐利", "bucket": "body"},
+        {"target": "心中涌起一股|心头一震|心中一动|心下了然|心中暗道|心中一凛", "bucket": "inner"},
+        {"target": "不容置疑|不容置喙|不易察觉|显而易见|毫无疑问|不可否认", "bucket": "certainty"},
+        {"target": "声音不大[，,]?却带着|语气平静无波|平静无波|声音平直|听不出情绪", "bucket": "voice"},
+        {"target": "不知何时|唾手可得|无声翻涌|沉默(?:在[^。！？!?\\n]{0,16})?蔓延|难以言说", "bucket": "atmosphere"},
+        {"target": "散发着一股|冰冷的光|格外刺眼|深邃而冰冷", "bucket": "visual"}
+      ],
+      "minHits": 8,
+      "perKilo": 12
+    },
+    "action": {
+      "type": "suggest",
+      "message": "不要同义词轮换；删掉总结壳，回到角色当下可见的动作、物件、对话和具体后果。"
+    }
+  }
+]

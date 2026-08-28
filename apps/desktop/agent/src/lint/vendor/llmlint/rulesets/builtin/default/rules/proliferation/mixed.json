@@ -1,0 +1,172 @@
+[
+  {
+    "id": "cn.proliferation.mixed.cn-internal-hyphen",
+    "namespace": "proliferation.mixed",
+    "title": "删中文间的连字符",
+    "level": "medium",
+    "enabled": false,
+    "note": "删中文间的连字符",
+    "source": {
+      "canonicalKey": "proliferation.mixed\t\t(?<=[\\u4e00-\\u9fff])[\\u0020\\-]*-[\\u0020\\-]*(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=[\\u4e00-\\u9fff])[\\u0020\\-]*-[\\u0020\\-]*(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.dangling-cn-hyphen",
+    "namespace": "proliferation.mixed",
+    "title": "删中文连字符",
+    "level": "medium",
+    "enabled": true,
+    "note": "删中文连字符",
+    "source": {
+      "canonicalKey": "proliferation.mixed\t\t(?<!\\s|^)-(?=[\\u4e00-\\u9fff])|(?<=[\\u4e00-\\u9fff])-",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<!\\s|^)-(?=[\\u4e00-\\u9fff])|(?<=[\\u4e00-\\u9fff])-"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.extra-punctuation",
+    "namespace": "proliferation.mixed",
+    "title": "删增殖标点",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材规则会把短前文后的普通逗号、顿号、句号和省略号都当增殖标点，当前 dataset reference 命中 172 次；保留资产给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v23",
+      "canonicalKey": "proliferation.mixed\t\t(?<=(?:^|[、。,，…~～])[\\u4e00-\\u9fff]{1,4})(?:[、，,。~～]|…{1,2}(?!…))(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=(?:^|[、。,，…~～])[\\u4e00-\\u9fff]{1,4})(?:[、，,。~～]|…{1,2}(?!…))(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.merge-short-paragraphs",
+    "namespace": "proliferation.mixed",
+    "title": "短段落并入下一段",
+    "level": "medium",
+    "enabled": true,
+    "note": "短段落并入下一段",
+    "source": {
+      "canonicalKey": "proliferation.mixed\t\t(?<=^[\\u4e00-\\u9fff,，。.、!！?？~～…\\da-zA-Z]{1,30}$)\\n\\n*(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=^[\\u4e00-\\u9fff,，。.、!！?？~～…\\da-zA-Z]{1,30}$)\\n\\n*(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.repeated-de-pairs",
+    "namespace": "proliferation.mixed",
+    "title": "AA的、BB的、CC的→AA的",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认保留 Agent：当前 dataset 强判别，但不等于删除所有“的/地”并列；只压缩装饰性形容词堆叠，保留具体物性、动作条件和有信息量的排比。",
+    "source": {
+      "version": "rule-curation-v22",
+      "canonicalKey": "proliferation.mixed\t\t(?<=的)(?:、[\\u4e00-\\u9fff]{1,6}的)+|(?<=地)(?:、[\\u4e00-\\u9fff]{1,6}地)+",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=的)(?:、[\\u4e00-\\u9fff]{1,6}的)+|(?<=地)(?:、[\\u4e00-\\u9fff]{1,6}地)+"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.repeated-punctuation",
+    "namespace": "proliferation.mixed",
+    "title": "连续相同符号去重",
+    "level": "medium",
+    "enabled": false,
+    "note": "连续相同符号去重",
+    "source": {
+      "canonicalKey": "proliferation.mixed\t\t([,，。~～!！?？])\\1+|(?<=……)…+|(?<=——)—+",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([,，。~～!！?？])\\1+|(?<=……)…+|(?<=——)—+"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1"
+      ]
+    }
+  },
+  {
+    "id": "cn.proliferation.mixed.symbol-proliferation",
+    "namespace": "proliferation.mixed",
+    "title": "处理多种符号增殖",
+    "level": "medium",
+    "enabled": false,
+    "note": "处理多种符号增殖",
+    "source": {
+      "canonicalKey": "proliferation.mixed\t\t(?<=(?:^|[、。,，…~～])[\\u4e00-\\u9fff]{1,4})(?:[、。,，~～]|…{1,2}(?!…))(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=(?:^|[、。,，…~～])[\\u4e00-\\u9fff]{1,4})(?:[、。,，~～]|…{1,2}(?!…))(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

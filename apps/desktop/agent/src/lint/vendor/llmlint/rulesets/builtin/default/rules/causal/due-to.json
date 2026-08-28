@@ -1,0 +1,25 @@
+[
+  {
+    "id": "cn.causal.due-to.due-to-filler",
+    "namespace": "causal.due-to",
+    "title": "由于删除",
+    "level": "medium",
+    "enabled": false,
+    "source": {
+      "canonicalKey": "causal.due-to\t\t由于(?:的|地|得)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "由于(?:的|地|得)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

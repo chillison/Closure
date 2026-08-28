@@ -1,0 +1,407 @@
+[
+  {
+    "id": "cn.cliche.baguwen.amazing-possibility-modifier",
+    "namespace": "cliche.baguwen",
+    "title": "删“可能惊人的”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "cliche.baguwen\t\t可能惊人的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "可能惊人的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.death-grip-adverb",
+    "namespace": "cliche.baguwen",
+    "title": "删“得死死的”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“得死死的”是常见强度描写，当前 eval support 很低；只在它形成重复身体模板时删。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche.baguwen\t\t得死死的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "得死死的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.dialogue-colon-to-comma",
+    "namespace": "cliche.baguwen",
+    "title": "八股句式/短语删除",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：中文对白冒号是常见排版选择，当前 eval 中人类命中很高；不再作为 AI 味默认证据。",
+    "source": {
+      "canonicalKey": "cliche.baguwen\t\t：“",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "：“"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "，“"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.driftwood-metaphor",
+    "namespace": "cliche.baguwen",
+    "title": "删救命浮木比喻",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "cliche.baguwen\t\t，?仿佛那是一根救命的浮木",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "，?仿佛那是一根救命的浮木"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.even-is",
+    "namespace": "cliche.baguwen",
+    "title": "八股句式/短语删除",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“甚至是”是普通递进连接词，当前 dataset reference 侧不低于 AI 侧；保留资产给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v29",
+      "canonicalKey": "cliche.baguwen\t\t甚至是",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "甚至是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.extreme-degree",
+    "namespace": "cliche.baguwen",
+    "title": "删“到了极致”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“到了极致”是宽泛夸张词，当前 eval support 很低；只在它空转拔高时删。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche.baguwen\t\t到了极致",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "到了极致"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.inertia-cause",
+    "namespace": "cliche.baguwen",
+    "title": "删“因为惯性”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“因为惯性”可能是动作、物理或心理惯性的真实因果，不应作为默认 Agent 强提示。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.baguwen\t\t因为惯性",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "因为惯性"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.irrefutable-tone-colon",
+    "namespace": "cliche.baguwen",
+    "title": "删“语气不容置喙”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：语气强度和身体紧绷描写依赖人物状态与场景张力；当前无校准支撑，只在模板化拔高时修。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "cliche.baguwen\t\t语气不容置喙：",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "语气不容置喙："
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.irresistible-but",
+    "namespace": "cliche.baguwen",
+    "title": "删“但不可抗拒”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：语气强度和身体紧绷描写依赖人物状态与场景张力；当前无校准支撑，只在模板化拔高时修。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "cliche.baguwen\t\t但不可抗拒",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "但不可抗拒"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.point-reference",
+    "namespace": "cliche.baguwen",
+    "title": "八股句式/短语删除",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：(?:了|这)一点过宽，当前 eval 为 noise；保留给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v2",
+      "canonicalKey": "cliche.baguwen\t\t(?:了|这)一点",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:了|这)一点"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.shell-noun",
+    "namespace": "cliche.baguwen",
+    "title": "删抽象“外壳”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“外壳”是普通名词，只有在抽象包装腔里才需要处理。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.baguwen\t\t外壳",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "外壳"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.sudden-moment",
+    "namespace": "cliche.baguwen",
+    "title": "八股句式/短语删除",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“突然间/忽然间”是普通叙事转场，当前 dataset reference 侧高于 AI 侧；保留资产给项目显式开启。",
+    "source": {
+      "version": "rule-curation-v29",
+      "canonicalKey": "cliche.baguwen\t\t(?:突|忽)然间?，?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:突|忽)然间，?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.taut-neck",
+    "namespace": "cliche.baguwen",
+    "title": "删“绷得紧紧的”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：语气强度和身体紧绷描写依赖人物状态与场景张力；当前无校准支撑，只在模板化拔高时修。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "cliche.baguwen\t\t(?:脖颈绷|板)得紧紧的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:脖颈绷|板)得紧紧的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.unquestionable-claim",
+    "namespace": "cliche.baguwen",
+    "title": "删“不容置疑”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：已收窄为裸“不容置疑”断言，但旧报告仍为 weak 且当前无命中；只在它空转拔高时修。",
+    "source": {
+      "version": "rule-curation-v21",
+      "canonicalKey": "cliche.baguwen\t\t(?:与|却)?不容置疑",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:与|却)?不容置疑(?![的地])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.vague-amount-noun",
+    "namespace": "cliche.baguwen",
+    "title": "删虚指“一股/那股”",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：标点后的“一股”由 cn.modifier.measure.subject-measure-word 覆盖；这里保留句中“一股”和“那股”，避免同 span 量词重复提示。",
+    "source": {
+      "canonicalKey": "cliche.baguwen\t\t(?:一|那)股子?",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v14"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<![,，。])一股子?|那股子?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.baguwen.white-knuckles",
+    "namespace": "cliche.baguwen",
+    "title": "八股句式/短语删除",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前规则是“手指泛白”的窄规则，与 cn.cliche.hand-color-clause 在典型命中上同 span 重复；保留更宽手部颜色 canonical。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.baguwen\t\t，?手指泛白",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "，?手指泛白"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

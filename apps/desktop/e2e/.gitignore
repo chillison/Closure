@@ -1,0 +1,8 @@
+# e2e harness local artifacts (screenshots / snapshots written here by later phases)
+artifacts/
+
+# Playwright runtime output
+playwright-report/
+test-results/
+
+node_modules/

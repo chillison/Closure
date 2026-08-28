@@ -1,0 +1,48 @@
+[
+  {
+    "id": "story-deslop.stage-leak.tier1",
+    "namespace": "mechanical.stage-leak",
+    "title": "工程词泄漏",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop check-degeneration.js 的 tier1 工程词泄漏；纯写作流水线术语进入正文通常是生成退化，需要重写本段。",
+    "source": {
+      "canonicalKey": "META_TIER1_RE",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "细纲|情节点|卷纲|功能标签|目标情绪|字数目标|章首钩子|章尾钩子"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "把写作流水线术语改成角色或场景内可感知的表达；如果是生成退化，优先重写受影响段落。"
+    }
+  },
+  {
+    "id": "story-deslop.stage-leak.tier2",
+    "namespace": "mechanical.stage-leak",
+    "title": "章节元信息泄漏",
+    "level": "medium",
+    "review": "human",
+    "fixability": "manual",
+    "note": "移植自 story-deslop check-degeneration.js 的 tier2 章节/歧义词；角色在故事内阅读章节、系统面板或作者题材可能合法，默认交人工复核。",
+    "source": {
+      "canonicalKey": "META_TIER2_RE",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "第[一二三四五六七八九十百千万两0-9]+章|本章|这一章|上一章|下一章|上章|下章|前一章|后一章|前文|后文|伏笔|读者|任务描述"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "确认它是不是故事内真实载体；若不是，改成角色当下可感知的事件锚点或相对时间。"
+    }
+  }
+]

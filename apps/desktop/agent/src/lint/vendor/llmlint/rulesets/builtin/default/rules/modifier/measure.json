@@ -1,0 +1,125 @@
+[
+  {
+    "id": "cn.modifier.measure.empty-measure-word",
+    "namespace": "modifier.measure",
+    "title": "删空泛量词壳",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.modifier.measure.specific-measure-word 重叠率约 95%，保留跨题材判别更稳定的 canonical rule。",
+    "source": {
+      "canonicalKey": "modifier.measure\t\t一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(?:几分|一?股子?|[一某][种缕抹点道层声])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(?:几分|一?股子?|[一某][种缕抹点道层声])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.measure.hand-callus-adjective",
+    "namespace": "modifier.measure",
+    "title": "删除手部形容词",
+    "level": "medium",
+    "enabled": true,
+    "note": "删除手部形容词",
+    "source": {
+      "canonicalKey": "modifier.measure\t\t(?:[布长带生][满有着]|满是)[薄老厚]茧的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:[布长带生][满有着]|满是)[薄老厚]茧的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.measure.physiological-label",
+    "namespace": "modifier.measure",
+    "title": "删除生理/生理性",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：“生理性的/生理层面/生理本能”由 cn.vocabulary.academic-anatomy.physiological-academic-label 覆盖；这里仅保留生理眼泪/快感的独有前缀。",
+    "source": {
+      "canonicalKey": "modifier.measure\t\t生理性?(?=[眼泪]|快感)|生理(?:性|层面|本能)的",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v16"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "生理性?(?=[眼泪]|快感)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.measure.specific-measure-word",
+    "namespace": "modifier.measure",
+    "title": "删除特定量词",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：“一股/那股”已由 baguwen.vague-amount-noun 与 subject-measure-word 覆盖；“这种/那种”是普通指示代词，不再作为量词候选。",
+    "source": {
+      "canonicalKey": "modifier.measure\t\t一丝丝|一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(?:几分(?!钟)|一?股(?!沟)子?|[这那]种|[一某][种缕抹点道层声])(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v24"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "一丝丝|一丝(?!不[挂苟])|(?<=[这那着被是以用有了和出起到过成为])(?:几分(?!钟)|[一某][种缕抹点道层声])(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.modifier.measure.subject-measure-word",
+    "namespace": "modifier.measure",
+    "title": "删除主语的量词",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：保留标点后“一股”这类强判别量词壳；移除“这具/那具”，避免误删换身、转生题材中有实际指代功能的“这具身体”。",
+    "source": {
+      "canonicalKey": "modifier.measure\t\t(?<=^|[,，。])(?:一股(?!脑)子?|[这那]具)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v27"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=^|[,，。])一股(?!脑)子?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

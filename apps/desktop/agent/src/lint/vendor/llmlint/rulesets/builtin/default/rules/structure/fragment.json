@@ -1,0 +1,19 @@
+[
+  {
+    "id": "structure-dramatic-fragment",
+    "namespace": "structure.fragment",
+    "title": "戏剧化碎句",
+    "level": "low",
+    "note": "连续极短句制造假的力量感，例如「三年。两个人。一个想法。」。误杀防护：对话、刻意停顿节奏、诗性重复应保留——所以默认归 human 桶，由人工判断。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:[^，。！？、\\n]{1,5}。){3,}"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "若不是刻意节奏，合并成一句完整陈述：谁在什么时间做了什么。"
+    }
+  }
+]

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+# GitHub 发布占位（08-25 release-prep-naming）：仓库未建，私密安全通报链接暂不可用。
+# repo 公开后回填 url 为 https://github.com/<owner>/<repo>/security/advisories/new
+# 并取消下方注释。
+# contact_links:
+#   - name: Security vulnerability
+#     url: https://github.com/<owner>/<repo>/security/advisories/new
+#     about: Please report security issues privately, not as a public issue. See SECURITY.md.

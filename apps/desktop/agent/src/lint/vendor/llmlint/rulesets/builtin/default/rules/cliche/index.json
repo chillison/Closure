@@ -1,0 +1,1008 @@
+[
+  {
+    "id": "cn.cliche.awkward-fit-judgment",
+    "namespace": "cliche",
+    "title": "弱化抽象评断词",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“格格不入”是常见成语，当前 eval support 很低；只在它替代具体不协调细节时修。",
+    "source": {
+      "version": "rule-curation-v2",
+      "canonicalKey": "cliche\t\t格格不入",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "格格不入"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "不合拍"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.blank-face",
+    "namespace": "cliche",
+    "title": "弱化模板化面部描写",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“面无表情”是常见表情描写，当前 eval support 很低；只在同段模板化重复时修。",
+    "source": {
+      "version": "rule-curation-v2",
+      "canonicalKey": "cliche\t\t面无表情",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "面无表情"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "没什么表情"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.chest-rise",
+    "namespace": "cliche",
+    "title": "删“胸腔起伏”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t胸腔起伏",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "胸腔起伏"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.chest-vibration",
+    "namespace": "cliche",
+    "title": "删“胸膛震动”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t胸膛震动",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "胸膛震动"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.cold-touch-shell",
+    "namespace": "cliche",
+    "title": "删“冰凉的触感”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t冰凉的触感",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "冰凉的触感"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.contrast-summary",
+    "namespace": "cliche",
+    "title": "缩短总结式对比句",
+    "level": "medium",
+    "enabled": true,
+    "note": "缩短总结式对比句",
+    "source": {
+      "canonicalKey": "cliche\t\t形成鲜明对比",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "形成鲜明对比"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "反差很大"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.cup-collision",
+    "namespace": "cliche",
+    "title": "删“杯子碰撞”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：杯子/杯底/骨节的接触音效可能是正常动作细节；与 trailing-sound-clause 同类，只在无功能音效模板重复时删。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "cliche\t\t杯子碰撞",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "杯子碰撞"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.direct-mouth-arc",
+    "namespace": "cliche",
+    "title": "嘴角弧度改成直接动作",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：嘴角弧度家族旧报告 support 不足，且 direct/trailing 形态会同 span 重复；只在嘴角弧度成为模板化表情时修。",
+    "source": {
+      "version": "rule-curation-v20",
+      "canonicalKey": "cliche\t\t(?:^|[，,])(?:嘴角|唇角)(?:轻轻|微微|缓缓)?(?:勾起|扬起|牵起)(?:一抹|一点|些微)?弧度(?=。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:^|[，,])(?:嘴角|唇角)(?:轻轻|微微|缓缓)?(?:勾起|扬起|牵起)(?:一抹|一点|些微)?弧度(?=。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "笑了一下"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.drained-face",
+    "namespace": "cliche",
+    "title": "弱化模板化面色描写",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t面色尽失",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "面色尽失"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "脸色发白"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.gaze-emotion-container",
+    "namespace": "cliche",
+    "title": "删眼神情绪总结壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“眼神里带着…”可能是正常叙事压缩，当前 eval 仅 weak；只在它替代具体行动或心理推进时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t(?:眼神|眼底|眼中)(?:里)?(?:带着|满是|透着)[\\u4e00-\\u9fff]{1,8}(?=[，,。])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:眼神|眼底|眼中)(?:里)?(?:带着|满是|透着)[\\u4e00-\\u9fff]{1,8}(?=[，,。])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.hand-appearance-shell",
+    "namespace": "cliche",
+    "title": "删手部外观修饰壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t骨节分明的",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "骨节分明的"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.hand-color-clause",
+    "namespace": "cliche",
+    "title": "删除句子中各处分句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：手指/骨节泛白可能是具体动作压力或身体反应，旧报告 support 不足；只在重复身体模板时删。",
+    "source": {
+      "version": "rule-curation-v20",
+      "canonicalKey": "cliche\t\t[,，。](?:手指|骨节|指[尖节甲骨]|指关节)[\\u4e00-\\u9fff、]+(?:白了?|[白青血颜]色)(?=[,，。]|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，。](?:手指|骨节|指[尖节甲骨]|指关节)[\\u4e00-\\u9fff、]+(?:白了?|[白青血颜]色)(?=[,，。]|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.hand-whitening-detail",
+    "namespace": "cliche",
+    "title": "删手部泛白特写",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.cliche.hand-color-clause 在当前 eval 中 100% 同 span 重叠；保留更宽 canonical，避免手部泛白细节重复提示。",
+    "source": {
+      "canonicalKey": "cliche\t\t[,，](?:手指|骨节|指[尖节甲]|指关节)[\\u4e00-\\u9fff]{1,20}(?:白|[白青血颜]色)(?=[,，。])",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，](?:手指|骨节|指[尖节甲]|指关节)[\\u4e00-\\u9fff]{1,20}(?:白|[白青血颜]色)(?=[,，。])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.knuckle-crack",
+    "namespace": "cliche",
+    "title": "删“骨节作响”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：杯子/杯底/骨节的接触音效可能是正常动作细节；与 trailing-sound-clause 同类，只在无功能音效模板重复时删。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "cliche\t\t骨节作响",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "骨节作响"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.mid-sentence-summary",
+    "namespace": "cliche",
+    "title": "删句中总结腔",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.cliche.vague-transition-phrase 与 cn.cliche.trailing-sensory-clause 覆盖；保留 canonical，避免句中总结腔重复提示。",
+    "source": {
+      "canonicalKey": "cliche\t\t取而代之的[,，]?是|[，,](?:带着|[尾声]音|语[气调])[\\u4e00-\\u9fff]*(?=。)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "取而代之的[,，]?是|[，,](?:带着|[尾声]音|语[气调])[\\u4e00-\\u9fff]*(?=。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.mouth-corner-arc-cliche",
+    "namespace": "cliche",
+    "title": "删嘴角弧度套话",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.cliche.trailing-mouth-arc-clause 覆盖；保留尾部分句 canonical，避免嘴角弧度重复提示。",
+    "source": {
+      "canonicalKey": "cliche\t\t[,，]嘴[角唇][\\u4e00-\\u9fff、]{1,20}弧度(?=。)",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，]嘴[角唇][\\u4e00-\\u9fff、]{1,20}弧度(?=。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.personified-telling",
+    "namespace": "cliche",
+    "title": "都在诉说着→都显出",
+    "level": "medium",
+    "enabled": true,
+    "note": "弱化拟人化元叙述",
+    "source": {
+      "canonicalKey": "cliche\t\t都在诉说着",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "都在诉说着"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "都显出"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.personified-telling-short",
+    "namespace": "cliche",
+    "title": "都在诉说→都显出",
+    "level": "medium",
+    "enabled": true,
+    "note": "弱化拟人化元叙述；排除“都在诉说着”，避免与更长 canonical 规则重叠并产生半截候选替换。",
+    "source": {
+      "canonicalKey": "cliche\t\t都在诉说",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "都在诉说(?!着)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "都显出"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.quote-meta-as-if",
+    "namespace": "cliche",
+    "title": "仿佛在说→在说",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“仿佛/像/好像在说”需要判断前文是否已有足够动作和语气；当前 eval support 很低，只在它解释过度时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t仿佛在说",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "仿佛在说"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "在说"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.quote-meta-like",
+    "namespace": "cliche",
+    "title": "像是在说→在说",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“仿佛/像/好像在说”需要判断前文是否已有足够动作和语气；当前 eval support 很低，只在它解释过度时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t像是在说",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像是在说"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "在说"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.quote-meta-seems",
+    "namespace": "cliche",
+    "title": "好像在说→在说",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“仿佛/像/好像在说”需要判断前文是否已有足够动作和语气；当前 eval support 很低，只在它解释过度时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t好像在说",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "好像在说"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "在说"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.rough-fingertip-touch",
+    "namespace": "cliche",
+    "title": "删“粗糙的指腹”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t粗糙的指腹",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "粗糙的指腹"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.table-cup-touch",
+    "namespace": "cliche",
+    "title": "删“杯底触碰桌面”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：杯子/杯底/骨节的接触音效可能是正常动作细节；与 trailing-sound-clause 同类，只在无功能音效模板重复时删。",
+    "source": {
+      "version": "rule-curation-v18",
+      "canonicalKey": "cliche\t\t杯底触碰桌面",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "杯底触碰桌面"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.teeth-clenched-speech",
+    "namespace": "cliche",
+    "title": "从牙缝里挤出→说出",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“从牙缝里挤出”是常见咬字描写，当前 eval support 偏低；只在同类模板重复时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t从牙缝里挤出",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "从牙缝里挤出"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "说出"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.teeth-pressed-speech",
+    "namespace": "cliche",
+    "title": "从齿间挤出→说出",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：说话方式和声音空间感可能承载人物声音或场景调度；只在解释过度或重复时修。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t从齿间挤出",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "从齿间挤出"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "说出"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.throat-roll",
+    "namespace": "cliche",
+    "title": "删“喉咙滚出”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t喉咙滚出",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "喉咙滚出"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.tongue-roll",
+    "namespace": "cliche",
+    "title": "删“舌尖滚过”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t舌尖滚过",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "舌尖滚过"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.trailing-callus-clause",
+    "namespace": "cliche",
+    "title": "删尾部茧子分句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：茧子细节高度依赖题材和人物设定，当前 eval support 很低；只在它成为无功能尾部分句时删。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t[,，。][\\u4e00-\\u9fff、]+茧子?(?=。|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，。][\\u4e00-\\u9fff、]+茧子?(?=。|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.trailing-mouth-arc-clause",
+    "namespace": "cliche",
+    "title": "删尾部嘴角弧度分句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：嘴角弧度家族旧报告 support 不足，且 direct/trailing 形态会同 span 重复；只在嘴角弧度成为模板化表情时修。",
+    "source": {
+      "version": "rule-curation-v20",
+      "canonicalKey": "cliche\t\t[,，](?:嘴角|勾)[\\u4e00-\\u9fff、]+弧度(?=。|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，](?:嘴角|勾)[\\u4e00-\\u9fff、]+弧度(?=。|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.trailing-sensory-clause",
+    "namespace": "cliche",
+    "title": "删尾部感受分句",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：尾部分句只看叙述层，并只保留抽象情绪/气质/语气尾巴；破风声、指甲、喉咙、气味、温度和回音等具体物性信息不再整段提示。",
+    "source": {
+      "canonicalKey": "cliche\t\t[,，。](?:带着|展现|喉咙|指甲|[尾声]音|语[气调])[\\u4e00-\\u9fff、]+(?=。|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v26"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，。]带着(?:一种|某种|几分|一点点?|一丝|些许)[\\u4e00-\\u9fff、]*(?:感|意|审视|沉重|苦笑|庆幸|无奈|尾音|余韵|锐气)(?=。|[,，:：][“「\"])",
+        "[,，。]带着(?:更)?浓郁的[\\u4e00-\\u9fff、]*(?:气息|风格)(?=。|[,，:：][“「\"])",
+        "[,，。]语[气调](?:里|中)?(?:也)?带着(?:一种|某种|几分|一点点?|一丝|些许)[\\u4e00-\\u9fff、]+(?=。|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.trailing-sound-clause",
+    "namespace": "cliche",
+    "title": "删尾部音效分句",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“发出…声/响”常是正常动作音效，当前 eval 仅 weak；只在它成为无功能尾部分句或音效模板重复时删。",
+    "source": {
+      "canonicalKey": "cliche\t\t[,，]发出[\\u4e00-\\u9fff“”\"、]+[声音响](?=。|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v13"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，]发出[\\u4e00-\\u9fff“”\"、]+[声音响](?=。|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.trained-instinct",
+    "namespace": "cliche",
+    "title": "删机械化修饰",
+    "level": "medium",
+    "enabled": true,
+    "note": "删机械化修饰",
+    "source": {
+      "canonicalKey": "cliche\t\t训练有素的本能",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "训练有素的本能"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "本能"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.vague-transition-phrase",
+    "namespace": "cliche",
+    "title": "删特定词汇或短语",
+    "level": "medium",
+    "enabled": true,
+    "note": "默认收窄：裸“近乎”在当前 reference 中出现真实用法（如“近乎成本价”），Agent 默认只保留“取而代之的是”和更明确的“近乎于”。",
+    "source": {
+      "version": "rule-curation-v9",
+      "canonicalKey": "cliche\t\t(?<!套)近乎于?|取而代之的[,，]?是",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "近乎于|取而代之的[,，]?是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.voice-emotion-container",
+    "namespace": "cliche",
+    "title": "删声音状态容器壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：“声音/语气里带着…”可能是有效对白提示，当前 eval support 很低；只在它解释过度或重复时修。",
+    "source": {
+      "version": "rule-curation-v5",
+      "canonicalKey": "cliche\t\t(?:声音|语气|语调)里(?:带着|满是|透着)[\\u4e00-\\u9fff]{1,8}(?=[，,。])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:声音|语气|语调)里(?:带着|满是|透着)[\\u4e00-\\u9fff]{1,8}(?=[，,。])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.voice-evaluation-abrupt",
+    "namespace": "cliche",
+    "title": "删“声音格外突兀”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：说话方式和声音空间感可能承载人物声音或场景调度；只在解释过度或重复时修。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t声音格外突兀",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "声音格外突兀"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.voice-evaluation-clear",
+    "namespace": "cliche",
+    "title": "删“声音格外清晰”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：说话方式和声音空间感可能承载人物声音或场景调度；只在解释过度或重复时修。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t声音格外清晰",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "声音格外清晰"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.voice-travel-shell",
+    "namespace": "cliche",
+    "title": "删声音传递过程壳",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：说话方式和声音空间感可能承载人物声音或场景调度；只在解释过度或重复时修。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t(?:(?:声音|话音|嗓音)[\\u4e00-\\u9fff]{0,4}回荡|(?:声音|话音|嗓音)(?:贴着|顺着)[\\u4e00-\\u9fff]{0,6}传来)(?=[，,。])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:(?:声音|话音|嗓音)[\\u4e00-\\u9fff]{0,4}回荡|(?:声音|话音|嗓音)(?:贴着|顺着)[\\u4e00-\\u9fff]{0,6}传来)(?=[，,。])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.warm-palm-touch",
+    "namespace": "cliche",
+    "title": "删“掌心干燥温热”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t掌心干燥温热",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "掌心干燥温热"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.words-chewing",
+    "namespace": "cliche",
+    "title": "删“咀嚼字句”",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche\t\t咀嚼字句",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "咀嚼字句"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

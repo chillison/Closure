@@ -1,0 +1,20 @@
+[
+  {
+    "id": "rhetorical-setup",
+    "namespace": "rhetorical-question",
+    "title": "公式化设问",
+    "level": "medium",
+    "review": "human",
+    "note": "默认交人工：设问可能承担真实悬念或教学组织功能；当前 eval support 很低，只在下一句直接回答、设问本身无信息时修。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "为什么这么说|这意味着什么|这说明什么|你有没有想过|试想一下|换个角度想|你可能会问"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "若问题没有真正打开思考空间，删掉设问并直接陈述答案。"
+    }
+  }
+]

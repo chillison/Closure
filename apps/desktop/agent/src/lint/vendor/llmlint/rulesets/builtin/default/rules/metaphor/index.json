@@ -1,0 +1,269 @@
+[
+  {
+    "id": "cn.metaphor.big-joke-simile",
+    "namespace": "metaphor",
+    "title": "删假想情境比喻",
+    "level": "medium",
+    "enabled": true,
+    "note": "删假想情境比喻",
+    "source": {
+      "canonicalKey": "metaphor\t\t像是听到了什么天大的笑话",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像是听到了什么天大的笑话"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.comparison-preface",
+    "namespace": "metaphor",
+    "title": "删参照对比前半句",
+    "level": "medium",
+    "enabled": true,
+    "note": "删参照对比前半句",
+    "source": {
+      "canonicalKey": "metaphor\t\t不像[\\u4e00-\\u9fff，、“”‘’]{1,12}[，,]倒像",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "不像[\\u4e00-\\u9fff，、“”‘’]{1,12}[，,]倒像"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "像"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.drained-strength-simile",
+    "namespace": "metaphor",
+    "title": "缩短抽空感比喻",
+    "level": "medium",
+    "enabled": true,
+    "note": "缩短抽空感比喻",
+    "source": {
+      "canonicalKey": "metaphor\t\t像被抽干了力气",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像被抽干了力气"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "没了力气"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.inserted-simile-shell",
+    "namespace": "metaphor",
+    "title": "删插入式比喻壳",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：当前 eval 中 100% 被 cn.metaphor.simile-modifier-shell 覆盖；保留更宽比喻修饰 canonical，避免同一比喻壳重复提示。",
+    "source": {
+      "canonicalKey": "metaphor\t\t(?<=[\\u4e00-\\u9fff，,])(?:[好就]?像|仿佛|如[若同]|[宛犹][如若])[\\u4e00-\\u9fff]{1,10}(?:似的|一?般|一样)[的，,]?(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v3"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=[\\u4e00-\\u9fff，,])(?:[好就]?像|仿佛|如[若同]|[宛犹][如若])[\\u4e00-\\u9fff]{1,10}(?:似的|一?般|一样)[的，,]?(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.mind-ripple-metaphor",
+    "namespace": "metaphor",
+    "title": "涟漪类心理比喻改直述",
+    "level": "medium",
+    "enabled": true,
+    "note": "涟漪类心理比喻改直述",
+    "source": {
+      "canonicalKey": "metaphor\t\t(?:心湖|心海)(?:里|中)?(?:泛起|荡开|漾开|掀起)(?:层层|阵阵)?(?:涟漪|波澜)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:心湖|心海)(?:里|中)?(?:泛起|荡开|漾开|掀起)(?:层层|阵阵)?(?:涟漪|波澜)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "心里起了波动"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.sentence-final-simile-tail",
+    "namespace": "metaphor",
+    "title": "删句尾整段比喻尾巴",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：命中 100% 被 cn.metaphor.trailing-simile-clause 覆盖，保留覆盖略广且 lift 略高者。",
+    "source": {
+      "canonicalKey": "metaphor\t\t(?:[，,](?:[好就]?像|仿佛|如[若同]|[宛犹][如若]))[\\u4e00-\\u9fff]*(?=。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:[，,](?:[好就]?像|仿佛|如[若同]|[宛犹][如若]))[\\u4e00-\\u9fff]*(?=。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.simile-modifier-shell",
+    "namespace": "metaphor",
+    "title": "删除特定比喻类修饰语",
+    "level": "medium",
+    "enabled": true,
+    "note": "保持 human，不提回 agent：当前语料真人侧 35% 的文档命中（富集仅 2.8x），命中包含「犹如拗口令一般」「如是玩物一般」「仿佛是西瓜爆炸一般」这类出版小说里的有效比喻。比喻是叙述手段，密度过高才是问题——整篇判断交 story-deslop.metaphor-density 指纹，不要逐处当删除指令。",
+    "source": {
+      "version": "rule-curation-v32",
+      "canonicalKey": "metaphor\t\t(?<=[\\u4e00-\\u9fff,，])(?:如|仿佛|[好就]?像|[宛犹][如若])[\\u4e00-\\u9fff]{1,10}(?:似的|一样|一?般)[的地,，]?(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=[\\u4e00-\\u9fff,，])(?:如|仿佛|[好就]?像|[宛犹][如若])[\\u4e00-\\u9fff]{1,10}(?:似的|一样|一?般)[的地,，]?(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.stone-water-metaphor",
+    "namespace": "metaphor",
+    "title": "投石入水比喻改成直接结果",
+    "level": "medium",
+    "enabled": true,
+    "note": "投石入水比喻改成直接结果",
+    "source": {
+      "canonicalKey": "metaphor\t\t(?:像|仿佛|如同)(?:一颗|一粒|一块)?(?:石子|石头|碎石|巨石)(?:投入|投进|抛入|扔进|落入|沉入)(?:了)?(?:平静的?)?(?:心湖|心海|湖面|水面)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:像|仿佛|如同)(?:一颗|一粒|一块)?(?:石子|石头|碎石|巨石)(?:投入|投进|抛入|扔进|落入|沉入)(?:了)?(?:平静的?)?(?:心湖|心海|湖面|水面)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "一下打破了平静"
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.trailing-simile-clause",
+    "namespace": "metaphor",
+    "title": "删尾部比喻分句",
+    "level": "medium",
+    "enabled": true,
+    "note": "保持 human：当前语料真人侧 23% 的文档命中，且命中多是承担信息的有效比喻（如「仿佛在看讲述维多利亚时期故事的英剧」承担时代设定），不是装饰性比喻壳。加 {2,20} 长度上界排除规则越界——原无上界 `+` 会把「，像自己这样坐两个小时地铁到市中心已经能算是她半年以来出过最远的一次远门了」这类解释性长从句当尾部比喻壳；上界后 AI 召回只降 3%，富集 5.7x→6.4x。",
+    "source": {
+      "version": "rule-curation-v32",
+      "canonicalKey": "metaphor\t\t[,，。](?:[好就]?像|仿佛|如[若同]|[宛犹][如若])[\\u4e00-\\u9fff、]+(?=。|[,，:：][“「\"])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[,，。](?:[好就]?像|仿佛|如[若同]|[宛犹][如若])[\\u4e00-\\u9fff、]{2,20}(?=。|[,，:：][“「\"])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.weather-talk-simile",
+    "namespace": "metaphor",
+    "title": "删天气式比喻壳",
+    "level": "medium",
+    "enabled": true,
+    "note": "删天气式比喻壳",
+    "source": {
+      "canonicalKey": "metaphor\t\t像在谈论今天的天气",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "像在谈论今天的天气"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.metaphor.whole-sentence-stone-simile",
+    "namespace": "metaphor",
+    "title": "整句删投石类比喻",
+    "level": "medium",
+    "enabled": true,
+    "note": "整句删除投石变种比喻[选开]",
+    "source": {
+      "canonicalKey": "metaphor\t\t(?<=^|[。!！?？][”」]?)[\\u4e00-\\u9fff,，、]*(?:像|仿佛|如[同若]|[犹宛][如若])[\\u4e00-\\u9fff,，、]*[投掉扔抛落沉丢砸][在到进入向下了][\\u4e00-\\u9fff,，、]*。",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=^|[。!！?？][”」]?)[\\u4e00-\\u9fff,，、]*(?:像|仿佛|如[同若]|[犹宛][如若])[\\u4e00-\\u9fff,，、]*[投掉扔抛落沉丢砸][在到进入向下了][\\u4e00-\\u9fff,，、]*。"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

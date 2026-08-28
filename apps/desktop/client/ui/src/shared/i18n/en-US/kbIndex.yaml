@@ -1,0 +1,46 @@
+kbIndex:
+  pageSubtitle: "Inspect the derived retrieval index state and trigger manual rebuilds. The index is derived data and can always be rebuilt from source files."
+  loading: "Loading index state…"
+  # ── Craft (global) section ──
+  craftTitle: "Craft Knowledge Base"
+  craftSubtitle: "Global cross-project writing-craft reference library (~/.orison/craft-kb)."
+  # ── Story (per-project) section ──
+  storyTitle: "Current Project Setting Index"
+  storySubtitle: "Derived index of the current project's assets (images, etc.) and setting cards (character/location/…/golden finger)."
+  noProjectHint: "Open a project first to inspect or rebuild its setting index."
+  # ── Meta cells ──
+  count: "Entries"
+  projectAssets: "Assets (images)"
+  assetCards: "Setting cards"
+  settingMd: "Setting prose (settings/*.md)"
+  chapterChunks: "Chapter chunks"
+  chapterSummaries: "Chapter summaries"
+  pending: "Pending vectors"
+  pendingHint: "pending {n}"
+  model: "Embedding model"
+  modelNone: "Not configured"
+  modelPending: "Pending embed ({n})"
+  # dogfood #39 (T2 C2): make vector degradation visible — banner shown when an
+  # embedding model is configured but the derived index is degraded.
+  degradedTitle: "Vector retrieval degraded"
+  degradedPending: "{n} entries are missing vectors — they match via text search only for now."
+  degradedModel: "Existing vectors were built by \"{stored}\", which differs from the configured \"{configured}\". Rebuild to apply."
+  # CR-T2-006: mixed state (stored DISTINCT models > 1) — the single-model line can't describe it.
+  degradedMixed: "Existing vectors come from {n} different model versions — mixed vector spaces. A full rebuild is required."
+  degradedAction: "Click Rebuild (top right) to restore now; a failed rebuild retries automatically on the next launch."
+  # ── Rebuild buttons ──
+  rebuildCraft: "Rebuild Craft KB"
+  rebuildStory: "Rebuild Setting Index"
+  rebuilding: "Rebuilding…"
+  # ── Toasts ──
+  rebuildCraftSuccess: "Craft knowledge base rebuilt — {n} entries."
+  rebuildStorySuccess: "Setting index rebuilt — {n} entries."
+  indexedSuccess: "Setting-card index ready — {n} cards."
+  indexedError: "Setting-card indexing failed: {reason}"
+  statusLoadFailed: "Failed to load index state: {reason}"
+  # ── Rebuild error codes (模式 A) ──
+  errorNoEmbeddingModel: "No embedding model configured. Add and enable an embedding-capable model under \"Models\" first."
+  errorNoProjectPath: "Could not resolve the current project path. Please reopen the project and try again."
+  # CR-T2-005: a background rebuild sweep is in flight — concurrent re-embeds race the vector table.
+  errorSweepInProgress: "A background index rebuild (startup reconciliation) is in progress. Please try again once it finishes — this page refreshes automatically."
+  errorOperationFailed: "Rebuild encountered an error. Check the logs for details."

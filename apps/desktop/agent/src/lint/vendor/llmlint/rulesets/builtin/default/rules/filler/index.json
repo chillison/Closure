@@ -1,0 +1,83 @@
+[
+  {
+    "id": "filler-word-actually",
+    "namespace": "filler",
+    "title": "无意义填充词",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：其实/实际上/事实上可作角色口癖、语气转折或论证标记，当前 dataset reference 侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "其实|实际上|事实上"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "filler-worth-noting",
+    "namespace": "filler",
+    "title": "喉舌式开头",
+    "level": "medium",
+    "review": "human",
+    "note": "默认交人工：“值得注意的是/需要指出的是”在报告和技术说明中常承担真实组织功能；只在它形成助手腔开场帽子时删除。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "值得注意的是|需要指出的是|需要强调的是"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "filler-can-say",
+    "namespace": "filler",
+    "title": "弱化陈述词",
+    "level": "low",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“可以说/不得不说”在评论和角色口吻中常有语气功能，当前 dataset reference 侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "可以说|不得不说"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "filler-lets",
+    "namespace": "filler",
+    "title": "虚假邀请句式",
+    "level": "low",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“让我们”可能是正常号召、角色台词或说明文组织语，当前 dataset 真人侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "让我们"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "改为“我们”或直接陈述，避免虚假的邀请感。"
+    }
+  }
+]

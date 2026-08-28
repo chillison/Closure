@@ -1,0 +1,555 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { create } from 'zustand';
+import { createProjectSlice, type ProjectSlice } from '../src/shared/store/projectSlice';
+import { createCreativeFieldsSlice, type CreativeFieldsSlice } from '../src/shared/store/creativeFieldsSlice';
+import { createNovelChapterSlice, type NovelChapterSlice } from '../src/shared/store/novelChapterSlice';
+import { createRecentProjectsSlice, type RecentProjectsSlice } from '../src/shared/store/recentProjectsSlice';
+import { createBackgroundTasksSlice, type BackgroundTasksSlice } from '../src/shared/store/backgroundTasksSlice';
+import { installProjectSubscription } from '../src/shared/store/projectSubscription';
+import { loadLastProject, persistLastProject } from '../src/shared/store/workspaceSession';
+import type { ModelConfig } from '@orison/shared-contracts';
+
+declare global {
+  interface Window {
+    orisonDesktop: any;
+  }
+}
+
+type TestState =
+  ProjectSlice &
+  CreativeFieldsSlice &
+  NovelChapterSlice &
+  RecentProjectsSlice &
+  BackgroundTasksSlice & {
+    modelConfig: ModelConfig;
+  };
+
+const EMPTY_MODEL_CONFIG: ModelConfig = { keys: [] };
+
+const useTestStore = create<TestState>()((...a) => ({
+  modelConfig: EMPTY_MODEL_CONFIG,
+  ...createProjectSlice(...a),
+  ...createCreativeFieldsSlice(...a),
+  ...createNovelChapterSlice(...a),
+  ...createRecentProjectsSlice(...a),
+  ...createBackgroundTasksSlice(...a),
+}));
+
+// The clear-old-data / load-new-document behavior moved out of openProject
+// into a store subscription on currentProject (see projectSubscription.ts).
+// Install it on the test store so we exercise the CURRENT wiring.
+installProjectSubscription(useTestStore as any);
+
+function resetStore() {
+  useTestStore.setState({
+    currentProject: null,
+    activeModule: 'overview',
+    creativeFields: {},
+    fieldMetadata: {},
+    activeCreativeTab: 'world_setting',
+    pendingPatchBySession: {},
+        novelChapters: [],
+    activeChapterId: null,
+    chapterCandidate: null,
+    chapterCandidateStatus: 'idle',
+    chapterCandidateError: null,
+    memoryEntries: [],
+    selectedNovelRef: null,
+    autoModeState: null,
+    autoModeError: null,
+    recentProjects: [],
+    bgTasks: [],
+  });
+}
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (error?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
+async function flushMicrotasks() {
+  for (let i = 0; i < 8; i++) {
+    await Promise.resolve();
+  }
+}
+
+describe('projectSlice regressions', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    resetStore();
+    (globalThis.window as any) = globalThis.window ?? {};
+    (window as any).orisonDesktop = {
+      loadProjectDocument: vi.fn(async () => null),
+      listTasks: vi.fn(async () => []),
+      syncField: vi.fn(async () => undefined),
+      syncChaptersMeta: vi.fn(async () => ({ ok: true })),
+      readDirectory: vi.fn(async () => []),
+      readFile: vi.fn(async () => null),
+      // restoreLastProject 恢复前 probe（dogfood #16）：默认可达。
+      pathExists: vi.fn(async () => true),
+      // refreshWordCount fires via the currentProject subscription; stub it so
+      // the async call doesn't reject unhandled and fail the whole run.
+      wordCount: vi.fn(async () => 0),
+    };
+  });
+
+  it('会持久化并恢复上次打开的项目', async () => {
+    useTestStore.getState().openProject({
+      name: 'Last Project',
+      path: '/last-project',
+      type: 'novel',
+      logline: '上次写到这里',
+    });
+    await flushMicrotasks();
+
+    useTestStore.setState({
+      currentProject: null,
+      projectDocumentHydrated: false,
+      projectWordCount: 0,
+    });
+
+    useTestStore.getState().restoreLastProject();
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject).toMatchObject({
+      name: 'Last Project',
+      path: '/last-project',
+      type: 'novel',
+      logline: '上次写到这里',
+    });
+  });
+
+  // dogfood #16 回归：启动恢复最近项目前先 probe 可达性。目录已被删除（pathExists
+  // → false）或路径在 allowed-roots 之外（invoke reject）时，不再对坏路径连发
+  // load-document/read-directory/watch 刷错误屏、停在坏工作区，而是清掉
+  // lastProject 记录回落项目列表。
+  it('最近项目目录已不存在时会清掉记录并停在项目列表', async () => {
+    (window as any).orisonDesktop.pathExists = vi.fn(async () => false);
+    persistLastProject({ name: 'Gone Project', path: '/gone-project', type: 'novel' });
+
+    useTestStore.getState().restoreLastProject();
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject).toBeNull();
+    expect(loadLastProject()).toBeNull();
+    expect((window as any).orisonDesktop.pathExists).toHaveBeenCalledWith('/gone-project');
+    expect((window as any).orisonDesktop.loadProjectDocument).not.toHaveBeenCalled();
+  });
+
+  it('最近项目路径在允许范围外（probe reject）时同样回落项目列表', async () => {
+    (window as any).orisonDesktop.pathExists = vi.fn(() =>
+      Promise.reject(new Error('Path outside allowed scope')));
+    persistLastProject({ name: 'Outside', path: 'F:\\elsewhere\\project', type: 'novel' });
+
+    useTestStore.getState().restoreLastProject();
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject).toBeNull();
+    expect(loadLastProject()).toBeNull();
+    expect((window as any).orisonDesktop.loadProjectDocument).not.toHaveBeenCalled();
+  });
+
+  // ── CR-T2-002（2026-08-25）：probe 三态判定——桥缺失/非范围外异常**保留记录** ──
+  // 旧写法 `await ...?.pathExists?.() === true` 在桥缺失时 undefined === true 也走清记录
+  // 分支：瞬断/旧 preload 会销毁用户记录（下次启动再也回不来）。
+
+  it('CR-T2-002: 桥缺失（pathExists 未注入）→ 保留记录、本次不恢复、不清记录', async () => {
+    (window as any).orisonDesktop.pathExists = undefined;
+    persistLastProject({ name: 'Kept', path: '/kept-project', type: 'novel' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    useTestStore.getState().restoreLastProject();
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject).toBeNull(); // 本次不恢复
+    expect(loadLastProject()).toMatchObject({ path: '/kept-project' }); // 记录保留
+    expect((window as any).orisonDesktop.loadProjectDocument).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('CR-T2-002: probe reject 非范围外（IPC 瞬断）→ 保留记录、本次不恢复', async () => {
+    (window as any).orisonDesktop.pathExists = vi.fn(() =>
+      Promise.reject(new Error('Error processing argument')));
+    persistLastProject({ name: 'Kept2', path: '/kept-project-2', type: 'novel' });
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+
+    useTestStore.getState().restoreLastProject();
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject).toBeNull();
+    expect(loadLastProject()).toMatchObject({ path: '/kept-project-2' });
+    expect((window as any).orisonDesktop.loadProjectDocument).not.toHaveBeenCalled();
+    expect(warnSpy).toHaveBeenCalled();
+    warnSpy.mockRestore();
+  });
+
+  it('更新当前项目元数据时会同步上次打开项目快照', () => {
+    useTestStore.getState().openProject({
+      name: 'Old Name',
+      path: '/last-project',
+      type: 'novel',
+      logline: '旧一句话',
+      coverImage: '/last-project/old.png',
+    });
+
+    useTestStore.getState().updateProjectMeta({
+      name: 'New Name',
+      logline: '新一句话',
+      coverImage: '/last-project/new.png',
+    });
+
+    expect(loadLastProject()).toMatchObject({
+      name: 'New Name',
+      path: '/last-project',
+      type: 'novel',
+      logline: '新一句话',
+      coverImage: '/last-project/new.png',
+    });
+  });
+
+  it('openProject 会在保存失败时保留当前项目', async () => {
+    const saving = deferred<{ failed: string[] }>();
+    const saveAllOpenFiles = vi.fn(() => saving.promise);
+    (window as any).orisonDesktop.loadProjectDocument = undefined;
+    useTestStore.setState({
+      currentProject: { name: 'Project A', path: '/project-a', type: 'novel' },
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles,
+      setSaveStatus: vi.fn(),
+      setLastSavedAt: vi.fn(),
+    } as any);
+
+    useTestStore.getState().openProject({ name: 'Project B', path: '/project-b', type: 'novel' });
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-a');
+
+    saving.resolve({ failed: ['/project-a/chapter.md'] });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-a');
+    expect(saveAllOpenFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('openProject 会等待当前项目保存成功后再切换', async () => {
+    const saving = deferred<{ failed: string[] }>();
+    const saveAllOpenFiles = vi.fn(() => saving.promise);
+    (window as any).orisonDesktop.loadProjectDocument = undefined;
+    useTestStore.setState({
+      currentProject: { name: 'Project A', path: '/project-a', type: 'novel' },
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles,
+      setSaveStatus: vi.fn(),
+      setLastSavedAt: vi.fn(),
+    } as any);
+
+    useTestStore.getState().openProject({ name: 'Project B', path: '/project-b', type: 'novel' });
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-a');
+
+    saving.resolve({ failed: [] });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-b');
+    expect(saveAllOpenFiles).toHaveBeenCalledTimes(1);
+  });
+
+  it('openProject 会等待项目元数据保存后再切换', async () => {
+    const savingMeta = deferred<void>();
+    (window as any).orisonDesktop.loadProjectDocument = undefined;
+    (window as any).orisonDesktop.saveProjectMeta = vi.fn(() => savingMeta.promise);
+    useTestStore.setState({
+      currentProject: { name: 'Project A', path: '/project-a', type: 'novel' },
+      hasDirtyFiles: () => false,
+    } as any);
+    useTestStore.getState().updateProjectMeta({ name: 'Project A edited' });
+
+    useTestStore.getState().openProject({ name: 'Project B', path: '/project-b', type: 'novel' });
+
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-a');
+    expect((window as any).orisonDesktop.saveProjectMeta).toHaveBeenCalledWith(
+      '/project-a',
+      expect.objectContaining({ name: 'Project A edited' }),
+    );
+
+    savingMeta.resolve();
+    await flushMicrotasks();
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-b');
+  });
+
+  it('flushDirty 保存失败时会返回失败路径且不标记为已保存', async () => {
+    const setSaveStatus = vi.fn();
+    const setLastSavedAt = vi.fn();
+    useTestStore.setState({
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles: vi.fn(async () => ({ failed: ['/project/a.md'] })),
+      setSaveStatus,
+      setLastSavedAt,
+    } as any);
+
+    await expect(useTestStore.getState().flushDirty()).resolves.toEqual({ failed: ['/project/a.md'] });
+    expect(setSaveStatus.mock.calls).toEqual([['saving'], ['error']]);
+    expect(setLastSavedAt).not.toHaveBeenCalled();
+  });
+
+  it('refreshWordCount 保存失败时不会发布旧磁盘字数', async () => {
+    useTestStore.setState({
+      currentProject: { name: 'Project', path: '/project', type: 'novel' },
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles: vi.fn(async () => ({ failed: ['/project/a.md'] })),
+      setSaveStatus: vi.fn(),
+      setLastSavedAt: vi.fn(),
+    } as any);
+
+    await useTestStore.getState().refreshWordCount();
+
+    expect((window as any).orisonDesktop.wordCount).not.toHaveBeenCalled();
+    expect(useTestStore.getState().projectWordCount).toBe(0);
+  });
+
+  it('closeProject 保存失败时会保留当前项目', async () => {
+    useTestStore.setState({
+      currentProject: { name: 'Project', path: '/project', type: 'novel' },
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles: vi.fn(async () => ({ failed: ['/project/a.md'] })),
+    } as any);
+
+    await expect(useTestStore.getState().closeProject()).resolves.toEqual({
+      closed: false,
+      failed: ['/project/a.md'],
+    });
+    expect(useTestStore.getState().currentProject?.path).toBe('/project');
+  });
+
+  it('closeProject 保存期间切换项目时不会关闭新项目', async () => {
+    const saving = deferred<{ failed: string[] }>();
+    useTestStore.setState({
+      currentProject: { name: 'Project A', path: '/project-a', type: 'novel' },
+      hasDirtyFiles: () => true,
+      saveAllOpenFiles: vi.fn(() => saving.promise),
+      setSaveStatus: vi.fn(),
+      setLastSavedAt: vi.fn(),
+    } as any);
+
+    const closing = useTestStore.getState().closeProject();
+    useTestStore.setState({
+      currentProject: { name: 'Project B', path: '/project-b', type: 'novel' },
+      projectDocumentHydrated: true,
+      projectWordCount: 123,
+    });
+    saving.resolve({ failed: [] });
+
+    await expect(closing).resolves.toMatchObject({ closed: false });
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-b');
+  });
+
+  it('openProject 失败或无 novel 数据时会清空旧章节和创作字段', async () => {
+    useTestStore.setState({
+      creativeFields: { outline: { title: '旧提纲' } },
+      novelChapters: [
+        {
+          id: 'ch_old',
+          title: '旧章节',
+          sortOrder: 0,
+          status: 'draft',
+          sections: [{ id: 's1', sortOrder: 0, contentFile: 'chapters/old.md', wordCount: 100 }],
+        },
+      ],
+    });
+
+    useTestStore.getState().openProject({
+      name: 'Script Project',
+      path: '/script-project',
+      type: 'script',
+    });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().creativeFields).toEqual({});
+    expect(useTestStore.getState().novelChapters).toEqual([]);
+  });
+
+  it('项目切换后，旧项目迟到的 loadProjectDocument 结果不会污染当前项目', async () => {
+    const first = deferred<any>();
+    const second = deferred<any>();
+
+    (window as any).orisonDesktop.loadProjectDocument = vi
+      .fn()
+      .mockImplementationOnce(() => first.promise)
+      .mockImplementationOnce(() => second.promise);
+    (window as any).orisonDesktop.readDirectory = vi.fn(async () => [
+      {
+        name: 'chapters',
+        path: '/chapters',
+        isDir: true,
+        children: [{ name: 'ch_b.md', path: '/chapters/ch_b.md', isDir: false }],
+      },
+    ]);
+    (window as any).orisonDesktop.readFile = vi.fn(async () => '# B 章节\n\nB 正文');
+
+    useTestStore.getState().openProject({
+      name: 'Project A',
+      path: '/project-a',
+      type: 'novel',
+    });
+    useTestStore.getState().openProject({
+      name: 'Project B',
+      path: '/project-b',
+      type: 'novel',
+    });
+
+    second.resolve({
+      meta: { id: 'b' },
+      novel: {
+        chapters: [
+          {
+            id: 'ch_b',
+            title: 'B 章节',
+            sort_order: 0,
+            status: 'draft',
+            sections: [{ id: 'ch_b_s1', sort_order: 0, content_file: 'chapters/b.md', word_count: 12 }],
+          },
+        ],
+      },
+      outline_v2: { title: 'B 提纲' },
+    });
+    await flushMicrotasks();
+
+    first.resolve({
+      meta: { id: 'a' },
+      novel: {
+        chapters: [
+          {
+            id: 'ch_a',
+            title: 'A 章节',
+            sort_order: 0,
+            status: 'draft',
+            sections: [{ id: 'ch_a_s1', sort_order: 0, content_file: 'chapters/a.md', word_count: 99 }],
+          },
+        ],
+      },
+      outline_v2: { title: 'A 提纲' },
+    });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().currentProject?.path).toBe('/project-b');
+    expect(useTestStore.getState().creativeFields.outline).toEqual({ title: 'B 提纲' });
+    expect(useTestStore.getState().novelChapters.map((ch) => ch.id)).toEqual(['ch_b']);
+  });
+
+  it('打开手写 chapters 目录的项目时，会从磁盘派生章节元数据', async () => {
+    (window as any).orisonDesktop.loadProjectDocument = vi.fn(async () => ({
+      meta: { id: 'manual' },
+      outline_v2: { title: '手写项目' },
+    }));
+    (window as any).orisonDesktop.readDirectory = vi.fn(async () => [
+      {
+        name: 'chapters',
+        path: '/chapters',
+        isDir: true,
+        children: [
+          { name: '第10章.md', path: '/chapters/第10章.md', isDir: false },
+          { name: '第2章.md', path: '/chapters/第2章.md', isDir: false },
+          { name: '第1章.md', path: '/chapters/第1章.md', isDir: false },
+          { name: 'notes.txt', path: '/chapters/notes.txt', isDir: false },
+        ],
+      },
+    ]);
+    (window as any).orisonDesktop.readFile = vi.fn(async (fullPath: string) => {
+      if (fullPath.endsWith('/第1章.md')) return '# 开篇\n\n第一章正文';
+      if (fullPath.endsWith('/第2章.md')) return '# 第二章\n\n第二章正文';
+      if (fullPath.endsWith('/第10章.md')) return '# 第十章\n\n第十章正文';
+      return null;
+    });
+
+    useTestStore.getState().openProject({
+      name: 'Manual Project',
+      path: '/manual-project',
+      type: 'novel',
+    });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().novelChapters.map((ch) => ch.id)).toEqual(['第1章', '第2章', '第10章']);
+    expect(useTestStore.getState().novelChapters[0]).toMatchObject({
+      id: '第1章',
+      title: '开篇',
+      status: 'draft',
+      sections: [{ contentFile: 'chapters/第1章.md', wordCount: 8 }],
+    });
+    expect((window as any).orisonDesktop.syncChaptersMeta).toHaveBeenLastCalledWith('/manual-project', [
+      expect.objectContaining({
+        id: '第1章',
+        sections: [expect.objectContaining({ content_file: 'chapters/第1章.md', word_count: 8 })],
+      }),
+      expect.objectContaining({
+        id: '第2章',
+        sections: [expect.objectContaining({ content_file: 'chapters/第2章.md', word_count: 9 })],
+      }),
+      expect.objectContaining({
+        id: '第10章',
+        sections: [expect.objectContaining({ content_file: 'chapters/第10章.md', word_count: 9 })],
+      }),
+    ]);
+  });
+
+  it('磁盘派生章节会保留 project.yaml 里的标题状态和摘要', async () => {
+    (window as any).orisonDesktop.loadProjectDocument = vi.fn(async () => ({
+      meta: { id: 'manual' },
+      novel: {
+        chapters: [
+          {
+            id: '第1章',
+            title: '用户改过的标题',
+            sort_order: 9,
+            status: 'final',
+            summary: '用户摘要',
+            summary_source: 'user',
+            sections: [{ id: 'old-section', sort_order: 0, content_file: 'chapters/旧文件.md', word_count: 99 }],
+          },
+        ],
+      },
+    }));
+    (window as any).orisonDesktop.readDirectory = vi.fn(async () => [
+      {
+        name: 'chapters',
+        path: '/chapters',
+        isDir: true,
+        children: [
+          { name: '第1章.md', path: '/chapters/第1章.md', isDir: false },
+          { name: '第2章.md', path: '/chapters/第2章.md', isDir: false },
+        ],
+      },
+    ]);
+    (window as any).orisonDesktop.readFile = vi.fn(async (fullPath: string) => {
+      if (fullPath.endsWith('/第1章.md')) return '# 磁盘标题\n\n第一章正文';
+      if (fullPath.endsWith('/第2章.md')) return '# 新增章节\n\n第二章正文';
+      return null;
+    });
+
+    useTestStore.getState().openProject({
+      name: 'Manual Project',
+      path: '/manual-project',
+      type: 'novel',
+    });
+    await flushMicrotasks();
+
+    expect(useTestStore.getState().novelChapters).toMatchObject([
+      {
+        id: '第1章',
+        title: '用户改过的标题',
+        status: 'final',
+        summary: '用户摘要',
+        summarySource: 'user',
+        sections: [{ id: 'old-section', contentFile: 'chapters/第1章.md', wordCount: 10 }],
+      },
+      {
+        id: '第2章',
+        title: '新增章节',
+        status: 'draft',
+        sections: [{ contentFile: 'chapters/第2章.md', wordCount: 10 }],
+      },
+    ]);
+  });
+});

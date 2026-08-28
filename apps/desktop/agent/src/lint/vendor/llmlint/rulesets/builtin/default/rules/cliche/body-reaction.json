@@ -1,0 +1,172 @@
+[
+  {
+    "id": "cn.cliche.body-reaction.controlling-gaze",
+    "namespace": "cliche.body-reaction",
+    "title": "审视的目光→打量",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：已要求出现“目光/眼神”，但当前 eval 仍为 noise；只在目光描写替代具体动作或心理推进时修。",
+    "source": {
+      "version": "rule-curation-v4",
+      "canonicalKey": "cliche.body-reaction\t\t(?:探究|审视|掌控)(?:着)?(?:的|地)?(?:目光|眼神)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:探究|审视|掌控)(?:着)?(?:的|地)?(?:目光|眼神)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "打量"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.body-reaction.mouth-corner-lift-arc",
+    "namespace": "cliche.body-reaction",
+    "title": "嘴角与生理泪水",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的文本；保留资产，等待重新建模嘴角规则。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.body-reaction\t\t(?:嘴|唇)角挑起(?:了)?一(?:抹|丝|个)\\*(?:弧度|笑意)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:嘴|唇)角挑起(?:了)?一(?:抹|丝|个)\\*(?:弧度|笑意)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "唇角微扬",
+        "浅浅勾唇",
+        "眼尾弯了",
+        "唇边漾起浅浅的笑意",
+        "唇角悄然上扬"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.body-reaction.mouth-corner-smile-arc",
+    "namespace": "cliche.body-reaction",
+    "title": "嘴角与生理泪水",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的文本；保留资产，等待重新建模嘴角规则。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.body-reaction\t\t(?:嘴|唇)角勾起(?:了)?一(?:抹|丝|个)\\*(?:弧度|笑意)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:嘴|唇)角勾起(?:了)?一(?:抹|丝|个)\\*(?:弧度|笑意)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "浅笑了一下",
+        "微微一笑",
+        "莞尔一笑",
+        "抿唇轻笑",
+        "唇角微扬",
+        "浅浅勾唇",
+        "眼尾弯了弯，唇边漾起浅浅的笑意",
+        "唇角悄然上扬",
+        "眉眼柔和，嘴角微微提起"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.body-reaction.physiological-tears",
+    "namespace": "cliche.body-reaction",
+    "title": "生理泪水→泪水",
+    "level": "medium",
+    "enabled": true,
+    "review": "human",
+    "note": "默认交人工：身体/触感微细节可能是角色能直接感知的具体画面；只在它变成重复装饰性模板时删。",
+    "source": {
+      "version": "rule-curation-v19",
+      "canonicalKey": "cliche.body-reaction\t\t生理泪水",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "生理泪水"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "泪水"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.body-reaction.smile-arc-comma-marked",
+    "namespace": "cliche.body-reaction",
+    "title": "嘴角与生理泪水",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的文本；保留资产，等待重新建模嘴角规则。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.body-reaction\t\t(?:唇|嘴)角\\*，\\*(?:弧度|笑意)\\*(?:，|。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:唇|嘴)角\\*，\\*(?:弧度|笑意)\\*(?:，|。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "唇角微扬。",
+        "浅浅勾唇。",
+        "眼尾弯了弯, 唇边漾起浅浅的笑意。",
+        "唇角悄然上扬。"
+      ]
+    }
+  },
+  {
+    "id": "cn.cliche.body-reaction.smile-arc-marked",
+    "namespace": "cliche.body-reaction",
+    "title": "嘴角与生理泪水",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中带星号的文本；保留资产，等待重新建模嘴角规则。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "cliche.body-reaction\t\t(?:唇|嘴)角\\*(?:弧度|笑意)\\*(?:，|。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:唇|嘴)角\\*(?:弧度|笑意)\\*(?:，|。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "唇角微扬。",
+        "浅浅勾唇。",
+        "眼尾弯了弯, 唇边漾起浅浅的笑意。",
+        "唇角悄然上扬。"
+      ]
+    }
+  }
+]

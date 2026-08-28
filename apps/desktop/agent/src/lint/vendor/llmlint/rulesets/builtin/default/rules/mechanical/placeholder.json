@@ -1,0 +1,19 @@
+[
+  {
+    "id": "mechanical-placeholder",
+    "namespace": "mechanical.placeholder",
+    "title": "未填充占位符",
+    "level": "medium",
+    "note": "成稿里残留的模板占位符（如 {{...}}、[插入...]、（此处...）），是 AI 生成后忘记填写的痕迹。补全或删除。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "\\{\\{[^}\\n]{1,40}\\}\\}|\\[(?:插入|填写|此处填?|占位|待补充?|你的[^\\]\\n]{0,8}|姓名|名称|日期|地点|时间|公司名?|产品名?|TODO|FIXME|[A-Za-z][A-Za-z_]{1,20}|[xX]{2,})\\]|（(?:此处|请在此|占位|待补)[^）\\n]{0,15}）"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "用真实内容补全占位符，或删除残留模板。"
+    }
+  }
+]

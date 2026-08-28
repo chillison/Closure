@@ -1,0 +1,314 @@
+import { useState, useCallback, useMemo } from 'react';
+import { useAppStore } from '../../shared/store/appStore';
+import { useToastStore } from '../../shared/store/toastStore';
+import { useShallow } from 'zustand/react/shallow';
+import { useI18n } from '../../shared/i18n/useI18n';
+import { normalizePath } from '../../shared/utils/paths';
+import logoUrl from '../../assets/logo.png';
+import { NewProjectDialog } from '../../shared/components/NewProjectDialog';
+import { WindowControls, detectIsMac } from '../../shared/components/WindowControls';
+import { SettingsDialog } from '../../shared/components/SettingsDialog';
+import { AboutDialog } from '../../shared/components/AboutDialog';
+import { UpdateAvailableDialog } from '../../shared/components/UpdateAvailableDialog';
+import { ShortcutsDialog } from '../../shared/components/ShortcutsDialog';
+import { ExportDialog } from '../../shared/components/ExportDialog';
+import { useGlobalShortcuts } from '../../shared/hooks/useGlobalShortcuts';
+import { useOpenProject } from '../../shared/hooks/useOpenProject';
+import { MenuDropdown, type MenuItem } from './MenuDropdown';
+import { NotificationCenter } from '../notifications/NotificationCenter';
+
+export function TopBar() {
+  const isMac = detectIsMac();
+  const {
+    resolvedLocale, closeProject, currentProject, saveProject,
+    saveAllOpenFiles, requestCloseFile, reopenLastClosedFile, cycleActiveFile,
+    checkForUpdate, appVersion, openPalette, toggleProjectTree, toggleBottomPanel,
+    toggleAgentPanel, toggleAgentExpanded, toggleNotificationPanel, setTheme, closeAllFiles,
+    splitDirection, setSplit, refreshWordCount, openFile,
+    setSaveStatus, setLastSavedAt,
+    showSettings, setShowSettings, showAbout, setShowAbout,
+    showNewDialog, setShowNewDialog,
+  } = useAppStore(useShallow((s) => ({
+    resolvedLocale: s.resolvedLocale,
+    closeProject: s.closeProject,
+    currentProject: s.currentProject,
+    saveProject: s.saveProject,
+    saveAllOpenFiles: s.saveAllOpenFiles,
+    requestCloseFile: s.requestCloseFile,
+    reopenLastClosedFile: s.reopenLastClosedFile,
+    cycleActiveFile: s.cycleActiveFile,
+    checkForUpdate: s.checkForUpdate,
+    appVersion: s.appVersion,
+    openPalette: s.openPalette,
+    toggleProjectTree: s.toggleProjectTree,
+    toggleBottomPanel: s.toggleBottomPanel,
+    toggleAgentPanel: s.toggleAgentPanel,
+    toggleAgentExpanded: s.toggleAgentExpanded,
+    toggleNotificationPanel: s.toggleNotificationPanel,
+    setTheme: s.setTheme,
+    closeAllFiles: s.closeAllFiles,
+    splitDirection: s.splitDirection,
+    setSplit: s.setSplit,
+    refreshWordCount: s.refreshWordCount,
+    openFile: s.openFile,
+    setSaveStatus: s.setSaveStatus,
+    setLastSavedAt: s.setLastSavedAt,
+    showSettings: s.settingsDialogOpen,
+    setShowSettings: s.setSettingsDialogOpen,
+    showAbout: s.aboutDialogOpen,
+    setShowAbout: s.setAboutDialogOpen,
+    showNewDialog: s.newProjectDialogOpen,
+    setShowNewDialog: s.setNewProjectDialogOpen,
+  })));
+  const showToast = useToastStore((s) => s.showToast);
+  const { t } = useI18n(resolvedLocale);
+  const handleOpen = useOpenProject();
+
+  // showNewDialog / showSettings / showAbout are lifted to the store (above) so
+  // the command palette can open them too; shortcuts/export stay local to TopBar.
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+
+  const handleSave = useCallback(async () => {
+    const projectPath = currentProject?.path;
+    if (!projectPath) return;
+    setSaveStatus('saving');
+    try {
+      const result = await saveAllOpenFiles();
+      if (result.failed.length > 0) {
+        throw new Error(result.failed.map((path) => path.split(/[\\/]/).pop() ?? path).join(', '));
+      }
+      if (useAppStore.getState().currentProject?.path !== projectPath) return;
+      await saveProject();
+      if (useAppStore.getState().currentProject?.path !== projectPath) return;
+      // Sync word counts from saved files into novelChapters for overview
+      const state = useAppStore.getState();
+      const currentProjectPath = state.currentProject?.path;
+      if (currentProjectPath && state.novelChapters.length > 0) {
+        const base = normalizePath(currentProjectPath);
+        const updated = state.novelChapters.map((ch) => ({
+          ...ch,
+          sections: ch.sections.map((sec) => {
+            const fullPath = `${base}/${sec.contentFile}`;
+            const file = state.openFiles.find((f) => normalizePath(f.path) === fullPath);
+            if (!file) return sec;
+            const wc = file.content.replace(/\s/g, '').length;
+            return { ...sec, wordCount: wc };
+          }),
+        }));
+        state.setNovelChapters(updated);
+      }
+      await refreshWordCount();
+      // Surface an explicit, persistent "saved" state (matches autosave), so a
+      // manual Ctrl+S clearly reflects in the status bar — not just a toast.
+      setLastSavedAt(Date.now());
+      setSaveStatus('saved');
+      showToast(t('topbar.saved'));
+    } catch (err) {
+      setSaveStatus('error');
+      const reason = err instanceof Error ? err.message : String(err);
+      showToast(`${t('topbar.saveFailed')} — ${reason}`, 'error');
+    }
+  }, [currentProject?.path, saveProject, saveAllOpenFiles, refreshWordCount, setSaveStatus, setLastSavedAt, showToast, t]);
+
+  const handleCloseProject = useCallback(async () => {
+    const result = await closeProject();
+    if (result.closed) return;
+    if (!result.error && result.failed.length === 0) return;
+    setSaveStatus('error');
+    const reason = result.error
+      ?? result.failed.map((path) => path.split(/[\\/]/).pop() ?? path).join(', ');
+    showToast(`${t('topbar.saveFailed')} — ${reason}`, 'error');
+  }, [closeProject, setSaveStatus, showToast, t]);
+
+  // Route undo/redo to the focused editor (textarea / Tiptap contenteditable),
+  // which owns its own history. The legacy editorSlice undo stack drove a
+  // chapters store no live editor renders, so it never had a visible effect.
+  const dispatchEditCommand = useCallback((shift: boolean) => {
+    const active = document.activeElement as HTMLElement | null;
+    const editable =
+      active && (active.tagName === 'TEXTAREA' || active.tagName === 'INPUT' || active.isContentEditable)
+        ? active
+        : document.querySelector<HTMLElement>('.code-editor-textarea, .tiptap-content .tiptap');
+    if (editable) {
+      editable.focus();
+      editable.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'z', code: 'KeyZ', ctrlKey: true, metaKey: true, shiftKey: shift, bubbles: true }),
+      );
+      return;
+    }
+    const store = useAppStore.getState();
+    if (shift) {
+      store.redoField();
+    } else {
+      store.undoField();
+    }
+  }, []);
+  const handleUndo = useCallback(() => dispatchEditCommand(false), [dispatchEditCommand]);
+  const handleRedo = useCallback(() => dispatchEditCommand(true), [dispatchEditCommand]);
+
+  const handleImportDocx = useCallback(async () => {
+    const projectPath = currentProject?.path;
+    if (!projectPath) return;
+    try {
+      const rel = await window.orisonDesktop?.importDocx(projectPath);
+      if (!rel) return;
+      const fullPath = normalizePath(`${projectPath}${rel}`);
+      const content = (await window.orisonDesktop?.readFile(fullPath)) ?? '';
+      const name = rel.split(/[\\/]/).pop() ?? rel;
+      openFile(fullPath, name, content, { kind: 'text' });
+      await refreshWordCount();
+    } catch {
+      showToast(t('fileEditor.docxConvertFailed'), 'error');
+    }
+  }, [currentProject, openFile, refreshWordCount, showToast, t]);
+
+  const shortcuts = useMemo(() => ({
+    's': handleSave,
+    'z': handleUndo,
+    'Shift+z': handleRedo,
+    'y': handleRedo,
+    'n': () => setShowNewDialog(true),
+    'o': () => handleOpen(),
+    'w': () => {
+      const active = useAppStore.getState().activeFilePath;
+      if (active) requestCloseFile(active);
+    },
+    'Shift+t': () => { void reopenLastClosedFile(); },
+    'tab': () => cycleActiveFile(1),
+    'Shift+tab': () => cycleActiveFile(-1),
+    'p': () => openPalette('files'),
+    'Shift+p': () => openPalette('commands'),
+    'b': toggleProjectTree,
+    'j': toggleBottomPanel,
+    'Shift+a': toggleAgentExpanded,
+  }), [handleSave, handleUndo, handleRedo, handleOpen, requestCloseFile, reopenLastClosedFile, cycleActiveFile, openPalette, toggleProjectTree, toggleBottomPanel, toggleAgentExpanded]);
+
+  useGlobalShortcuts(shortcuts);
+
+  const closeMenu = useCallback(() => setOpenMenu(null), []);
+  const hasSavePath = !!currentProject?.path;
+  const modKey = isMac ? '⌘' : 'Ctrl+';
+
+  const activeFilePath = useAppStore((s) => s.activeFilePath);
+  const requestFind = useAppStore((s) => s.requestFind);
+
+  const fileItems: MenuItem[] = [
+    { type: 'action', label: t('topbar.newProject'), shortcut: `${modKey}N`, handler: () => setShowNewDialog(true) },
+    { type: 'action', label: t('topbar.openProject'), shortcut: `${modKey}O`, handler: handleOpen },
+    { type: 'action', label: t('topbar.openFolder'), handler: handleOpen },
+    { type: 'action', label: t('topbar.importDocx'), handler: () => { void handleImportDocx(); }, disabled: !hasSavePath },
+    { type: 'action', label: t('topbar.save'), shortcut: `${modKey}S`, handler: handleSave, disabled: !hasSavePath },
+    { type: 'action', label: t('topbar.saveAll'), shortcut: `${modKey}Shift+S`, handler: handleSave },
+    { type: 'action', label: t('topbar.export'), handler: () => setShowExport(true), disabled: !hasSavePath },
+    { type: 'separator' },
+    { type: 'action', label: t('topbar.closeFile'), shortcut: `${modKey}W`, handler: () => { if (activeFilePath) requestCloseFile(activeFilePath); }, disabled: !activeFilePath },
+    { type: 'action', label: t('topbar.closeAllFiles'), handler: closeAllFiles, disabled: !activeFilePath },
+    { type: 'separator' },
+    ...(currentProject
+      ? [{ type: 'action' as const, label: t('topbar.backToProjects'), handler: () => { void handleCloseProject(); } }]
+      : []),
+  ];
+
+  const editItems: MenuItem[] = [
+    { type: 'action', label: t('topbar.undo'), shortcut: `${modKey}Z`, handler: handleUndo },
+    { type: 'action', label: t('topbar.redo'), shortcut: isMac ? '⌘⇧Z' : 'Ctrl+Shift+Z', handler: handleRedo },
+    { type: 'separator' },
+    { type: 'action', label: t('topbar.find'), shortcut: `${modKey}F`, handler: () => requestFind('find'), disabled: !activeFilePath },
+    { type: 'action', label: t('topbar.replace'), shortcut: `${modKey}H`, handler: () => requestFind('replace'), disabled: !activeFilePath },
+  ];
+
+  const viewItems: MenuItem[] = [
+    { type: 'action', label: t('topbar.toggleProjectTree'), shortcut: `${modKey}B`, handler: toggleProjectTree },
+    { type: 'action', label: t('topbar.toggleBottomPanel'), shortcut: `${modKey}J`, handler: toggleBottomPanel },
+    { type: 'action', label: t('topbar.toggleAgentPanel'), handler: toggleAgentPanel },
+    { type: 'action', label: t('workspace.toggleWorkbench'), shortcut: isMac ? '⌘⇧A' : 'Ctrl+Shift+A', handler: toggleAgentExpanded },
+    { type: 'action', label: t('topbar.toggleNotifications'), handler: toggleNotificationPanel },
+    { type: 'separator' },
+    ...(activeFilePath ? [
+      { type: 'action' as const, label: t('topbar.splitOutline'), handler: () => setSplit(splitDirection === 'outline' ? 'none' : 'outline') },
+      { type: 'action' as const, label: t('topbar.splitRight'), handler: () => setSplit(splitDirection !== 'none' && splitDirection !== 'outline' ? 'none' : 'horizontal', activeFilePath) },
+      { type: 'action' as const, label: t('topbar.splitDown'), handler: () => setSplit(splitDirection !== 'none' && splitDirection !== 'outline' ? 'none' : 'vertical', activeFilePath) },
+      { type: 'separator' as const },
+    ] : []),
+    { type: 'action', label: t('topbar.themeLight'), handler: () => setTheme('light') },
+    { type: 'action', label: t('topbar.themeDark'), handler: () => setTheme('dark') },
+    { type: 'action', label: t('topbar.themeSystem'), handler: () => setTheme('system') },
+    { type: 'separator' },
+    { type: 'action', label: t('topbar.settings'), handler: () => setShowSettings(true) },
+  ];
+
+  const helpItems: MenuItem[] = [
+    { type: 'action', label: t('topbar.checkForUpdate'), handler: () => { void checkForUpdate(); } },
+    { type: 'separator' },
+    { type: 'action', label: t('topbar.about'), handler: () => setShowAbout(true) },
+    { type: 'action', label: t('topbar.shortcuts'), handler: () => setShowShortcuts(true) },
+  ];
+
+  const menus = [
+    { key: 'file', label: t('topbar.menuFile'), items: fileItems },
+    { key: 'edit', label: t('topbar.menuEdit'), items: editItems },
+    { key: 'view', label: t('topbar.menuView'), items: viewItems },
+    { key: 'help', label: t('topbar.menuHelp'), items: helpItems },
+  ];
+
+  const menuKeys = menus.map((m) => m.key);
+  const switchMenu = useCallback((dir: -1 | 1) => {
+    setOpenMenu((cur) => {
+      if (!cur) return null;
+      const idx = menuKeys.indexOf(cur);
+      return menuKeys[(idx + dir + menuKeys.length) % menuKeys.length];
+    });
+  }, [menuKeys]);
+
+  return (
+    <>
+      <header className="workspace-topbar">
+        {isMac && <div className="topbar-traffic-light-spacer" />}
+
+        <div className="workspace-brand">
+          <img src={logoUrl} alt="" className="workspace-brand-logo" />
+          {t('welcome.brand')}
+          {appVersion && <span className="workspace-brand-version">v{appVersion}</span>}
+        </div>
+
+        <nav className="topbar-menu" aria-label="Main Menu" role="menubar">
+            {menus.map((menu) => (
+              <div key={menu.key} className="topbar-menu-group">
+                <button
+                  type="button"
+                  className={`topbar-menu-trigger${openMenu === menu.key ? ' is-open' : ''}`}
+                  role="menuitem"
+                  aria-haspopup="true"
+                  aria-expanded={openMenu === menu.key}
+                  onClick={() => setOpenMenu(openMenu === menu.key ? null : menu.key)}
+                  onMouseEnter={() => { if (openMenu) setOpenMenu(menu.key); }}
+                >
+                  {menu.label}
+                </button>
+                {openMenu === menu.key && (
+                  <MenuDropdown
+                    items={menu.items}
+                    onClose={closeMenu}
+                    onPrevMenu={() => switchMenu(-1)}
+                    onNextMenu={() => switchMenu(1)}
+                  />
+                )}
+              </div>
+            ))}
+          </nav>
+
+        <NotificationCenter />
+        <WindowControls />
+      </header>
+
+      {showNewDialog && <NewProjectDialog onClose={() => setShowNewDialog(false)} />}
+      {showSettings && <SettingsDialog onClose={() => setShowSettings(false)} />}
+      {showAbout && <AboutDialog onClose={() => setShowAbout(false)} />}
+      {showShortcuts && <ShortcutsDialog onClose={() => setShowShortcuts(false)} />}
+      {showExport && <ExportDialog onClose={() => setShowExport(false)} />}
+      <UpdateAvailableDialog />
+    </>
+  );
+}

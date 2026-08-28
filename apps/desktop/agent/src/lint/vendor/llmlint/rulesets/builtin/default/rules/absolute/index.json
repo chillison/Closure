@@ -1,0 +1,21 @@
+[
+  {
+    "id": "lazy-extremes",
+    "namespace": "absolute",
+    "title": "懒惰绝对词",
+    "level": "low",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：“大家都/从来不/没有人/任何人都”等在小说叙述和对白中是普通范围表达，当前 dataset 真人侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "大家都|从来不|必然|毫无例外|没有人|任何人都"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "补充具体范围、对象或条件；如果无法限定，改成更准确的表达。"
+    }
+  }
+]

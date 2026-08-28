@@ -1,0 +1,30 @@
+[
+  {
+    "id": "story-deslop.micro-action-density",
+    "namespace": "rhythm.micro-action",
+    "title": "微动作复读",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 micro-action-tic；叙述层“了下/了一下”式轻量补语 ≥5 处且 ≥6/千字时提示。",
+    "source": {
+      "canonicalKey": "MICRO_TIC_PATTERN",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "了(?:[一两三几半])?[下阵圈道声眼口气会]"}
+      ],
+      "minHits": 5,
+      "perKilo": 6
+    },
+    "action": {
+      "type": "suggest",
+      "message": "合并重复动作 beat，换成具体细节或角色反馈，不要给每个动作都补一个轻反应尾巴。"
+    }
+  }
+]

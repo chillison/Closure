@@ -1,0 +1,26 @@
+[
+  {
+    "id": "story-deslop.low-connective-density",
+    "namespace": "rhythm.low-connective",
+    "title": "低连接密度",
+    "level": "medium",
+    "review": "human",
+    "fixability": "manual",
+    "note": "handler 移植自 story-deslop：引号外叙述功能词/白话连接同时偏低，且中长承接句不足才提示。误杀风险较高，默认交人工判断。",
+    "source": {
+      "canonicalKey": "low-connective-density handler",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "low-connective-density"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "恢复必要连接和句群，不要全局补词；先判断文本是否故意采用电报体或短镜头。"
+    }
+  }
+]

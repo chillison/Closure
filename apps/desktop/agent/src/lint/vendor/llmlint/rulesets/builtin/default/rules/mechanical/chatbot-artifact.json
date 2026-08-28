@@ -1,0 +1,21 @@
+[
+  {
+    "id": "mechanical-chatbot-artifact",
+    "namespace": "mechanical.chatbot-artifact",
+    "title": "聊天机器人泄漏标记",
+    "level": "medium",
+    "note": "复制 AI 输出时带进来的内部标记：ChatGPT 的 contentReference / oaicite、Bing 引用角标、chatgpt utm 参数等。直接删除。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        ":contentReference\\[oaicite[^\\]]*\\](?:\\{[^}]*\\})?|oaicite|turn\\d+(?:search|view|news|image)\\d+|【\\d+†[^】]*】|utm_source=(?:chatgpt|openai)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

@@ -1,0 +1,59 @@
+{
+  "name": "@orison/desktop-shell",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Closure — AI-powered novel-writing IDE",
+  "author": "AoharuCat",
+  "type": "module",
+  "main": "dist/main/index.cjs",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist": "pnpm build && electron-builder --config electron-builder.yml",
+    "dist:win": "pnpm build && electron-builder --config electron-builder.yml --win",
+    "dist:mac": "pnpm build && electron-builder --config electron-builder.yml --mac",
+    "dist:linux": "pnpm build && electron-builder --config electron-builder.yml --linux",
+    "gen:icons": "node scripts/generate-icons.mjs",
+    "pack:portable": "pnpm build && electron-builder --config electron-builder.portable.yml --dir",
+    "pack:dir": "pnpm build && electron-builder --config electron-builder.portable.yml --dir",
+    "test": "vitest --run",
+    "lint": "echo shell lint placeholder",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@orison/desktop-agent": "workspace:*",
+    "@orison/desktop-local-bff": "workspace:*",
+    "@orison/model-protocols": "workspace:*",
+    "@orison/shared-contracts": "workspace:*",
+    "@orison/story-sync": "workspace:*",
+    "@photostructure/sqlite-vec": "^1.2.0",
+    "better-sqlite3": "12.9.0",
+    "electron-updater": "^6.3.9",
+    "isomorphic-git": "^1.37.6",
+    "mammoth": "1.9.0",
+    "node-html-parser": "^9.0.1",
+    "pdfjs-dist": "^6.2.108",
+    "pino": "^9.7.0",
+    "turndown": "^7.2.0"
+  },
+  "optionalDependencies": {
+    "pino-pretty": "^13.0.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/js-yaml": "^4.0.9",
+    "@types/react": "^19.1.2",
+    "@types/react-dom": "^19.1.2",
+    "@types/turndown": "^5.0.5",
+    "@vitejs/plugin-react": "4.7.0",
+    "electron": "^37.10.3",
+    "electron-builder": "^26.0.12",
+    "electron-vite": "^5.0.0",
+    "js-yaml": "^4.1.1",
+    "material-symbols": "0.31.8",
+    "png-to-ico": "^3.0.1",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "vitest": "^3.1.4"
+  }
+}

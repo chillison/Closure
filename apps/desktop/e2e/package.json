@@ -1,0 +1,19 @@
+{
+  "name": "@orison/desktop-e2e",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Playwright Electron e2e harness for the Closure/Orison desktop app. Drives a real creative flow (real LLM, user fills API key in the visible window) to verify new/changed UI per Story.",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit",
+    "drive": "tsx src/drive.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.62.0",
+    "@types/node": "^24.0.1",
+    "electron": "^37.10.3",
+    "tsx": "^4.19.0",
+    "typescript": "^5.8.3"
+  }
+}

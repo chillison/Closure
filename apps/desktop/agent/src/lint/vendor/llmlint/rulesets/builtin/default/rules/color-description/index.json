@@ -1,0 +1,170 @@
+[
+  {
+    "id": "cn.color-description.crisp-voice-ideophone",
+    "namespace": "color-description",
+    "title": "脆生生→软糯/娇憨",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t脆生生",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "脆生生"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "甜甜",
+        "奶声奶气",
+        "稚嫩",
+        "软糯",
+        "娇憨"
+      ]
+    }
+  },
+  {
+    "id": "cn.color-description.glans-purple-color",
+    "namespace": "color-description",
+    "title": "删龟头颜色描写",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t龟头泛着(?:紫红|紫黑|红紫|暗红)色?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "龟头泛着(?:紫红|紫黑|红紫|暗红)色?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.color-description.pale-color-ideophone",
+    "namespace": "color-description",
+    "title": "白花花→白皙/雪白",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t白花花",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "白花花"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "白皙",
+        "雪白",
+        "白净",
+        "莹白",
+        "白嫩",
+        "软白",
+        "凝脂般",
+        "光洁",
+        "粉白",
+        "嫩白",
+        "奶白",
+        "粉嫩",
+        "洁白",
+        "白润"
+      ]
+    }
+  },
+  {
+    "id": "cn.color-description.purple-dark-color-modifier",
+    "namespace": "color-description",
+    "title": "删紫黑色修饰",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t(?:深紫|紫红|紫黑|红紫|暗红|发黑|发紫)色?的?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:深紫|紫红|紫黑|红紫|暗红|发黑|发紫)色?的?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.color-description.purple-red-color-result",
+    "namespace": "color-description",
+    "title": "成紫红色→起",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t成(?:紫红|紫黑|红紫|暗红)色",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "成(?:紫红|紫黑|红紫|暗红)色"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "起"
+      ]
+    }
+  },
+  {
+    "id": "cn.color-description.white-fresh-ideophone",
+    "namespace": "color-description",
+    "title": "白生生→白净/嫩白",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "color-description\t\t白生生",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "白生生"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "白皙",
+        "雪白",
+        "白净",
+        "莹白",
+        "白嫩",
+        "软白",
+        "凝脂般",
+        "光洁",
+        "粉白",
+        "嫩白",
+        "奶白",
+        "粉嫩",
+        "洁白",
+        "白润"
+      ]
+    }
+  }
+]

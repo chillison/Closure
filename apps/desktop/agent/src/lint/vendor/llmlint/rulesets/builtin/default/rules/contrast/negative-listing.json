@@ -1,0 +1,73 @@
+[
+  {
+    "id": "negative-listing",
+    "namespace": "contrast.negative-listing",
+    "title": "负向列举",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：旧宽泛规则在当前 eval 中为 noise，且已由 story-deslop.negation-parade.* 两条叙述层校准规则接管；保留给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:不是|并非)[^。！？\\n]{0,24}(?:。|，|,|；|;)?\\s*(?:也不是|不是|并非)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "如果否定项没有纠正常见误解，建议直接陈述真正判断。"
+    }
+  },
+  {
+    "id": "story-deslop.negation-parade.repeated-none",
+    "namespace": "contrast.negative-listing",
+    "title": "没有X，没有Y 否定排比",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 2026-07 blocking 校准；只收“没/没有”连排，不收真人叙述常见的“不哭不闹”类“不X”排比；默认排除后接“只有/只是/只会”和“然而/但/却”的场景，避免重复或真实转折误伤。",
+    "source": {
+      "canonicalKey": "NEGATION_PARADE_PATTERNS[0]",
+      "importedFrom": "oh-story-claudecode/story-deslop",
+      "version": "rule-curation-v18"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:没有[^。！？!?\\n，,]{1,12}[，,]){2}(?![^。！？!?\\n，,]{0,6}(?:只(?:是|会|有)|然而|但(?:是)?|却))"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉否定清单，直接写现场实际有什么；最多保留一个最有信息量的否定。"
+    }
+  },
+  {
+    "id": "story-deslop.negation-parade.only-turn",
+    "namespace": "contrast.negative-listing",
+    "title": "先否定后只是收肯定",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 2026-07 blocking 校准；抓“没X，没有Y。只是Z”式否定铺垫后肯定收束。",
+    "source": {
+      "canonicalKey": "NEGATION_PARADE_PATTERNS[1]",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "没(?:有)?[^。！？!?\\n，,]{1,12}[，,]\\s*没(?:有)?[^。！？!?\\n，,]{1,16}[，,。][^。！？!?\\n，,]{0,6}只(?:是|会|有)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "把前置否定压缩到必要信息，直接写“只是/只会/只有”后的真实动作或状态。"
+    }
+  }
+]

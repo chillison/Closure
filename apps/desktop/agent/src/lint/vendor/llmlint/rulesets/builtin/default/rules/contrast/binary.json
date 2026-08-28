@@ -1,0 +1,136 @@
+[
+  {
+    "id": "not-but-structure",
+    "namespace": "contrast.binary",
+    "title": "二元对比结构",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：与 cn.sentence.compound.contrastive-turn-preface 高度重叠；保留给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "不是[^。！？\\n，,；;]*?[，,；;]?\\s*而是"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "判断前半部分是否在纠正真实误解；若只是制造戏剧化，可直接陈述“而是”后的内容。"
+    }
+  },
+  {
+    "id": "not-x-is-y",
+    "namespace": "contrast.binary",
+    "title": "问题定义对比",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：旧定义式对比规则与 story-deslop.not-is-comparison handler 重叠，且 handler 已处理确认语、对白和合成词豁免。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:问题|答案|关键)不是[^。！？\\n，,；;]*?[，,；;]?\\s*(?:是|在于)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "判断前半部分是否在重新框定问题；若只是铺垫反转，改为直接陈述核心判断。"
+    }
+  },
+  {
+    "id": "cn.contrast.binary.binary-contrast-comma",
+    "namespace": "contrast.binary",
+    "title": "不是而是",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：旧 curated 模式依赖字面星号，实测没有稳定命中；二元对比统一交给 story-deslop.not-is-comparison handler。",
+    "source": {
+      "canonicalKey": "contrast.binary\t\t(?:，|。)\\*(?:既不是|是|不是)\\*，(?:是|不是|而是|只是)\\*，",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)\\*(?:既不是|是|不是)\\*，(?:是|不是|而是|只是)\\*，"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.contrast.binary.binary-contrast-period",
+    "namespace": "contrast.binary",
+    "title": "不是而是",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：旧 curated 模式依赖字面星号，实测没有稳定命中；二元对比统一交给 story-deslop.not-is-comparison handler。",
+    "source": {
+      "canonicalKey": "contrast.binary\t\t(?:，|。)\\*(?:既不是|是|不是)\\*，(?:是|不是|而是|只是)\\*。",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)\\*(?:既不是|是|不是)\\*，(?:是|不是|而是|只是)\\*。"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "story-deslop.not-is-comparison",
+    "namespace": "contrast.binary",
+    "title": "不是A，是B 对比状态机",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "handler 移植自 story-deslop 2026-07 blocking 校准：确认语、either-or、合成词、反问尾巴与对白排除；真人基线要求 ≈0 命中。",
+    "source": {
+      "canonicalKey": "not-is-comparison handler",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "not-is-comparison"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "如果前半句不是在纠正常见误解，删掉否定铺垫，直接写肯定项或用细节完成对比。"
+    }
+  },
+  {
+    "id": "story-deslop.reverse-not-is",
+    "namespace": "contrast.binary",
+    "title": "反序不是对比",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 2026-07 blocking 校准；用于抓“是A，不是B”反序对比。前字排除表避开还是/只是/但是/于是等合成词，真人校准 0 命中。",
+    "source": {
+      "canonicalKey": "REVERSE_NOT_IS_PATTERN",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<![不就也还只可但于倒像若要正便总老更最算怕凡或即自竟原本仍许净光单尽])是(?!不|[的啊呀呢][，,])([^。！？!?\\n，,]{1,12})[，,]\\s*(?:而)?不是(?![吗么吧])([^。！？!?\\n]{1,20})"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉后置否定，直接写 A 的具体表现，或用细节让读者自己完成对比。"
+    }
+  }
+]

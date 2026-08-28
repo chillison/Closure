@@ -1,0 +1,28 @@
+[
+  {
+    "id": "story-deslop.voice-contrast",
+    "namespace": "cliche.voice-contrast",
+    "title": "音量反差腔",
+    "level": "high",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 2026-07 校准检测器；《万疆》20 章与 demo 前 20 章 0 命中。用于抓“声音不高/不大…却/但…”的叙述层反差模板。",
+    "source": {
+      "canonicalKey": "VOICE_CONTRAST_PATTERN",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "声音(?:并)?不[大高响亮][^。！？!?\\n]{0,16}[却但偏]"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉音量铺垫，直接写声音造成的具体效果，例如谁停手、哪排安静或场内出现什么反应。"
+    }
+  }
+]

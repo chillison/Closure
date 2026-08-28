@@ -1,0 +1,232 @@
+@import "./tokens.css";
+@import "./scales.css";
+
+/* Import order matches the original monolithic layout so cascade-sensitive
+ * overrides (e.g. `.image-gen-inspector-*` rules coming after `.image-gen-*`,
+ * or `components.css` sitting last as a reset-like layer) resolve unchanged.
+ *
+ * Organization is folder-based — order is preserved. */
+
+@import "./base/welcome.css";
+
+@import "./layout/topbar.css";
+@import "./layout/workspace.css";
+@import "./layout/statusbar.css";
+@import "./layout/notifications.css";
+@import "./layout/sidebar.css";
+@import "./layout/settings.css";
+
+
+/* editor/ holds what used to be a single 2000-line editor.css. Split order
+ * mirrors the original section order (tiptap → script → image-gen
+ * → image-dialog → novel → file). */
+@import "./editor/tiptap.css";
+@import "./editor/script.css";
+@import "./editor/image-gen.css";
+@import "./editor/image-dialog.css";
+@import "./editor/novel.css";
+@import "./editor/file.css";
+@import "./editor/timeline.css";
+@import "./editor/outline.css";
+
+@import "./layout/pages.css";
+@import "./base/components.css";
+@import "../../features/agent-panel/agent-panel.css";
+@import "../../features/agent-panel/style-input-dialog.css";
+@import "../../features/structure/structure.css";
+
+/* ── Reset ── */
+#root {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+body {
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── App wallpaper（08-25 设置：全窗口壁纸式背景，唯一层不分区）──
+ * z-index: -1 + position: fixed paints it above the canvas background (body's
+ * --background propagates to the canvas, so it stays as the color showing
+ * through at opacity < 1) and below ALL other content — no panel, dialog, or
+ * overlay can be covered by construction. pointer-events: none keeps it inert;
+ * inset: 0 survives window resize. A failed image load just leaves the layer
+ * empty (CSS background-image has no error path) — tolerated by construction. */
+.app-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ── 08-26 dogfood 拍板：可选磨砂层 ──
+ * blur 打在壁纸层自身（不是逐面板 backdrop-filter——大面积 blur 逐面算开销大，
+ * 且各面已有透明度梯度）。scale 1.05 过扫：blur 会把层外虚空采样进边缘，不过扫
+ * 四周会有一圈发虚的暗边。固定半径 20px（用户要的是「可选开关」不是旋钮）；
+ * 与 opacity 独立正交——先调不透明度再磨砂，或反之，均合法。 */
+.app-wallpaper--frost {
+  filter: blur(20px);
+  transform: scale(1.05);
+}
+
+/* With a wallpaper set, EVERY surface becomes translucent so the wallpaper
+ * shows through app-wide — panels differ ONLY by opacity (三层梯度：大面板
+ * → 容器 → 卡片/输入，逐层更实；用户 08-26 拍板「替换所有背景，不同面板仅透明
+ * 度该有区别」，取代 08-25「面板不透明盖壁纸」旧边界）。tokens.css 是生成物
+ * （DO NOT EDIT），故 override 落此处；html[data-wallpaper]（0,1,1）> [data-theme]
+ * （0,1,0）——无壁纸时 token 纯色原样，零影响。 */
+html[data-wallpaper] {
+  --background: transparent;
+  /* 第一层：大面板（侧栏 / agent 面板 / 底部面板 / 主 surface） */
+  --surface: rgba(250, 249, 247, 0.6);
+  --sidebar-bg: rgba(244, 243, 241, 0.6);
+  --project-tree-bg: rgba(244, 243, 241, 0.6);
+  --agent-panel-bg: rgba(244, 243, 241, 0.6);
+  --agent-panel-header-bg: rgba(244, 243, 241, 0.6);
+  --bottom-panel-bg: rgba(250, 249, 247, 0.6);
+  --bottom-panel-header-bg: rgba(244, 243, 241, 0.6);
+  --bottom-panel-toolbar-bg: rgba(244, 243, 241, 0.6);
+  /* 第二层：容器（技能区 / 输入底 / chip / 搜索框） */
+  --surface-container-low: rgba(244, 243, 241, 0.68);
+  --surface-container: rgba(239, 238, 236, 0.74);
+  --surface-variant: rgba(227, 226, 224, 0.74);
+  --agent-panel-skills-bg: rgba(239, 238, 236, 0.74);
+  --agent-panel-tail-bg: rgba(239, 238, 236, 0.74);
+  --assets-search-bg: rgba(239, 238, 236, 0.74);
+  --input-bg: rgba(239, 238, 236, 0.74);
+  --chip-bg: rgba(233, 232, 230, 0.74);
+  /* 第三层：卡片 / 高位容器 / 聚焦输入（最实，保正文可读） */
+  --surface-container-high: rgba(233, 232, 230, 0.86);
+  --surface-container-highest: rgba(227, 226, 224, 0.9);
+  --surface-container-lowest: rgba(255, 255, 255, 0.92);
+  --card-bg: rgba(255, 255, 255, 0.86);
+  --card-bg-hover: rgba(244, 243, 241, 0.86);
+  --assets-card-bg: rgba(255, 255, 255, 0.9);
+  --agent-panel-card-bg: rgba(250, 249, 247, 0.8);
+  --input-bg-focus: rgba(255, 255, 255, 0.92);
+}
+
+html[data-wallpaper][data-theme="dark"] {
+  --background: transparent;
+  /* 暗色面板叠亮壁纸易「灰蒙」——各层比 light 略实一档 */
+  --surface: rgba(30, 33, 32, 0.68);
+  --sidebar-bg: rgba(37, 40, 39, 0.68);
+  --project-tree-bg: rgba(37, 40, 39, 0.68);
+  --agent-panel-bg: rgba(37, 40, 39, 0.68);
+  --agent-panel-header-bg: rgba(37, 40, 39, 0.68);
+  --bottom-panel-bg: rgba(30, 33, 32, 0.68);
+  --bottom-panel-header-bg: rgba(37, 40, 39, 0.68);
+  --bottom-panel-toolbar-bg: rgba(37, 40, 39, 0.68);
+  --surface-container-low: rgba(37, 40, 39, 0.78);
+  --surface-container: rgba(44, 47, 46, 0.8);
+  --surface-variant: rgba(65, 68, 67, 0.8);
+  --agent-panel-skills-bg: rgba(44, 47, 46, 0.8);
+  --agent-panel-tail-bg: rgba(44, 47, 46, 0.8);
+  --assets-search-bg: rgba(44, 47, 46, 0.8);
+  --input-bg: rgba(44, 47, 46, 0.8);
+  --chip-bg: rgba(54, 57, 56, 0.8);
+  --surface-container-high: rgba(54, 57, 56, 0.88);
+  --surface-container-highest: rgba(65, 68, 67, 0.9);
+  --surface-container-lowest: rgba(17, 19, 18, 0.92);
+  --card-bg: rgba(17, 19, 18, 0.88);
+  --card-bg-hover: rgba(37, 40, 39, 0.88);
+  --assets-card-bg: rgba(17, 19, 18, 0.9);
+  --agent-panel-card-bg: rgba(30, 33, 32, 0.82);
+  --input-bg-focus: rgba(17, 19, 18, 0.92);
+}
+
+/* 两个全页基面让位（--background: transparent 之外的双保险，保留原规则） */
+html[data-wallpaper] .projects-page,
+html[data-wallpaper] .workspace-shell {
+  background: transparent;
+}
+
+/* ── Global scrollbar（08-26 壁纸半透明面板拍板的收尾）──
+ * 默认 Chromium 滚动条自带不透明灰轨道，叠在半透明面板上突兀。全局统一：
+ * 轨道透明（面板/壁纸透出）+ thumb 半透明 token 色（hover 加深）。无壁纸时
+ * 同样成立（透出的是面板底色），非壁纸模式零回归风险——轨道本就近乎面板色。
+ * 窄条 + 无上下箭头，对齐桌面写作应用惯例。 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--outline);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ── Skip-link (a11y) ──
+ * Hidden offscreen, visible on focus for keyboard navigation. */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  z-index: var(--z-tooltip);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--surface-container-highest);
+  color: var(--on-surface);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-base);
+  text-decoration: none;
+}
+.skip-link:focus {
+  left: var(--space-lg);
+  top: var(--space-lg);
+}
+
+/* ── Keyboard focus ring (a11y) ──
+ * Many controls reset `outline: none` for mouse use. :focus-visible restores
+ * a visible ring for keyboard/AT navigation only — it does not fire on click,
+ * so existing custom :focus border styling stays intact. Placed last so it
+ * wins over the scattered `outline: none` resets via source order. */
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-ring-offset);
+  border-radius: var(--radius-2xs);
+}
+
+/* Inputs/textarea/contenteditable already show a focus border; keep their
+ * ring tight to the field rather than offset. */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[contenteditable]:focus-visible {
+  outline-offset: 0;
+}
+
+/* The main prose editor surface signals focus via the caret; a full-surface
+ * ring there is redundant and visually heavy. */
+.tiptap-content .tiptap:focus-visible {
+  outline: none;
+}
+
+/* ── Reduced motion ──
+ * Respect the OS-level preference: collapse transitions/animations to a
+ * near-instant duration rather than 0 so state changes still register. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

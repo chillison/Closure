@@ -1,0 +1,322 @@
+import { useShallow } from 'zustand/react/shallow';
+import { useAppStore } from '../../shared/store/appStore';
+import { useI18n } from '../../shared/i18n/useI18n';
+import { Tooltip } from '../../shared/components/Tooltip';
+import { AgentMessages } from './AgentMessages';
+import { AgentInput } from './AgentInput';
+import { AgentHistory } from './AgentHistory';
+import { AgentSettings } from './AgentSettings';
+import { PatchReviewPanel } from './PatchReviewPanel';
+import { ChapterReviewPanel } from './ChapterReviewPanel';
+import { AuthorProfilePatchCard, pendingAuthorProfilePatchResults } from './AuthorProfilePatchCard';
+import { SettingMdPatchCard, pendingSettingMdPatchResults } from './SettingMdPatchCard';
+import { batchProgressFrom, findActiveBatch } from './batchMeta';
+import { roleLabel } from './toolMeta';
+import { GEAR_OPTIONS, gearLabelKey } from './gearMeta';
+import { deriveChildActivity } from './messageGrouping';
+import type { ParticipationGear } from '@orison/shared-contracts';
+import { deriveSessionBadge, type SessionBadgeState } from '../../shared/store/agentEvents';
+import { compactAgentSession } from '../../shared/api/agent';
+import { useToastStore } from '../../shared/store/toastStore';
+import { useEffect, useMemo, useState } from 'react';
+
+type PanelView = 'chat' | 'history' | 'settings';
+
+export function AgentPanel() {
+  const {
+    agentMessages, activeSessionRunning, agentError,
+    newAgentSession, loadAgentSessions, loadAgentSkills,
+    agentSessionId,
+    hasPendingPatch, resolvedLocale,
+    agentExpanded, toggleAgentExpanded,
+    hasPausedReview,
+    agentParticipationGear, setAgentParticipationGear,
+    agentSessions,
+    resolvedAuthorProfilePatches, resolvedSettingMdPatches,
+  } = useAppStore(useShallow((s) => ({
+    agentMessages: s.agentMessages,
+    activeSessionRunning: s.activeSessionRunning,
+    agentError: s.agentError,
+    newAgentSession: s.newAgentSession,
+    loadAgentSessions: s.loadAgentSessions,
+    loadAgentSkills: s.loadAgentSkills,
+    agentSessionId: s.agentSessionId,
+    // dogfood T1 Stage 3（r8 键控）：挂载门只看当前视图会话的键（后台挂起卡不顶前台面板）。
+    hasPendingPatch: s.agentSessionId ? s.pendingPatchBySession[s.agentSessionId] !== undefined : false,
+    resolvedLocale: s.resolvedLocale,
+    hasPausedReview: s.agentSessionId ? s.pausedReviewBySession[s.agentSessionId] !== undefined : false,
+    agentExpanded: s.agentExpanded,
+    toggleAgentExpanded: s.toggleAgentExpanded,
+    agentParticipationGear: s.agentParticipationGear,
+    setAgentParticipationGear: s.setAgentParticipationGear,
+    agentSessions: s.agentSessions,
+    // dogfood R2 #25：suggest 档审阅卡钉底收集的 resolved 侧输入。
+    resolvedAuthorProfilePatches: s.resolvedAuthorProfilePatches,
+    resolvedSettingMdPatches: s.resolvedSettingMdPatches,
+  })));
+
+  const { t } = useI18n(resolvedLocale);
+  const showToast = useToastStore((s) => s.showToast);
+  const [view, setView] = useState<PanelView>('chat');
+  // 全屏态的历史细栏（dogfood 2026-08-21）：expanded 时历史钮开/关左侧 rail 快速切换
+  // 会话（聊天不被顶掉）；docked 态维持整面视图切换。
+  const [historyRailOpen, setHistoryRailOpen] = useState(false);
+  // dogfood T1 Stage 3 D3：新建会话**不再中断**在途 run（弹窗退役——切走后 run 进后台，
+  // 徽标 + 停止钮接岗）。新建只重置视图。
+
+  // Story 3.5: active-batch banner — mechanically derived from the most recent
+  // batch tool-result metadata (running/paused only; terminal or absent → hidden).
+  const activeBatch = useMemo(() => findActiveBatch(agentMessages), [agentMessages]);
+  const activeBatchProgress = useMemo(
+    () => (activeBatch ? batchProgressFrom(activeBatch) : null),
+    [activeBatch],
+  );
+
+  // dogfood T1 Stage 3（design §5.5 徽标状态机）：面板头部聚合徽标——当前项目**其他**会话
+  // 的非 idle 态计数（当前视图会话的状态在输入区/消息流已可见，不重复计）。无后台活动
+  // 不占位（design §7.4）。完整视觉打磨在 S4/S5，此处为基础呈现（token 化样式）。
+  const backgroundBadges = useAppStore(useShallow((s) => {
+    const counts: Record<'running' | 'awaiting_confirm' | 'awaiting_review', number> = {
+      running: 0, awaiting_confirm: 0, awaiting_review: 0,
+    };
+    for (const sess of s.agentSessions) {
+      if (sess.id === s.agentSessionId) continue;
+      const badge = deriveSessionBadge(s, sess.id);
+      if (badge !== 'idle') counts[badge] += 1;
+    }
+    return counts;
+  }));
+
+  // dogfood T1 Stage 5（design §6.4/§7.4，D5）：当前会话活跃 child 组聚合徽标——
+  // progress_activity 图标 + 角色 chip 组 + 「第 N 步」摘要（最活跃组）。空闲不占位。
+  // dogfood T1 CR-T1-036：活跃判定升级为整次派发级（deriveChildActivity 透传
+  // activeSessionRunning——turn 间隙迟滞窗内不把徽标打 null）。
+  const childActivity = useMemo(
+    () => deriveChildActivity(agentMessages, activeSessionRunning),
+    [agentMessages, activeSessionRunning],
+  );
+
+  // dogfood R2 #25：suggest 档审阅卡（author_profile / setting_md）**未决时钉底**——
+  // 卡若只在消息流内联位置，run 继续就被后续消息顶出视野，用户错过待决审核点。
+  // resolved map 一写：钉底卡消失、内联原位出现存档态（store 驱动双端切换，无 DOM 搬运）。
+  const pendingAuthorProfileCards = useMemo(
+    () => pendingAuthorProfilePatchResults(agentMessages, resolvedAuthorProfilePatches),
+    [agentMessages, resolvedAuthorProfilePatches],
+  );
+  const pendingSettingMdCards = useMemo(
+    () => pendingSettingMdPatchResults(agentMessages, resolvedSettingMdPatches),
+    [agentMessages, resolvedSettingMdPatches],
+  );
+
+  const expandLabel = agentExpanded
+    ? t('workspace.collapseWorkbench')
+    : t('workspace.expandWorkbench');
+
+  useEffect(() => {
+    void loadAgentSkills();
+  }, [loadAgentSkills]);
+
+  const handleShowHistory = () => {
+    loadAgentSessions();
+    if (agentExpanded) {
+      // docked→expanded 切换时 view 可能残留 'history'——先清回 chat 再开 rail，
+      // 否则整面历史与细栏同时渲染（dogfood 2026-08-21 复现：docked 点历史→展开→再点历史）。
+      setView('chat');
+      setHistoryRailOpen((v) => !v);
+    } else {
+      setView('history');
+    }
+  };
+
+  // thinking adapters task（design §3.2 触发 ①）：手动压缩。run 进行中禁用（压缩会
+  // 重排在途 run 的消息面，与档位切换同款 mid-run 门）。false 是布尔契约通道，不可
+  // 分辨具体原因（会话不在 / 无可压缩 / D4 同项目他 run 占用 / 运行时未接线）——文案
+  // 并列列出，不再断言单一原因（CR-017）；成功路径的 toast 由 compaction 流事件统一弹。
+  const handleCompactContext = async () => {
+    if (!agentSessionId) return;
+    try {
+      const ok = await compactAgentSession(agentSessionId);
+      if (!ok) showToast(t('agent.compactNotExecuted'), 'info', 3000);
+    } catch {
+      showToast(t('agent.compactFailed'), 'error', 3000);
+    }
+  };
+
+  // 展开进入全屏时若正停在整面历史视图，回落聊天（全屏语义 = 工作台；历史走右侧细栏）。
+  useEffect(() => {
+    if (agentExpanded && view === 'history') setView('chat');
+  }, [agentExpanded, view]);
+
+  const badgeText = (badge: SessionBadgeState): string =>
+    badge === 'running' ? t('agent.badgeRunning')
+      : badge === 'awaiting_confirm' ? t('agent.badgeAwaitingConfirm')
+        : badge === 'awaiting_review' ? t('agent.badgeAwaitingReview')
+          : '';
+
+  return (
+    <div className="agent-panel">
+      <div className="agent-panel-header">
+        <span className="agent-panel-title">{t('agent.title')}</span>
+        {/* dogfood T1 Stage 5（D5）：当前会话活跃 child 聚合徽标（design §7.4——图标 +
+            角色 chip 组 + 「第 N 步」摘要，样式同 7.3 动作标签；空闲不占位）。
+            dogfood T1 CR-T1-046：chip 补 source 维度（`sourceLabel · role`，与
+            ChildBadge/组头一致）；图标**静态**（progress 图形承载语义）——同类旋转
+            动画收敛至组图标一处（§7.7「同屏同时最多各一处」）。 */}
+        {childActivity && (
+          <div className="agent-panel-child-activity" role="status" title={t('agent.badgeRunning')}>
+            <span className="material-symbols-outlined agent-child-activity-icon" aria-hidden="true">progress_activity</span>
+            {childActivity.roles.map((r) => (
+              <span
+                key={`${r.source}:${r.role}`}
+                className="agent-child-activity-chip"
+                title={`${r.source}:${r.role}`}
+              >
+                {(r.source === 'skill' ? t('agent.childSkill') : t('agent.childSubagent'))} · {roleLabel(r.role, t)}
+              </span>
+            ))}
+            {childActivity.step > 0 && (
+              <span className="agent-child-activity-step">{t('agent.childStep', { step: childActivity.step })}</span>
+            )}
+          </div>
+        )}
+        {(backgroundBadges.running > 0 || backgroundBadges.awaiting_confirm > 0 || backgroundBadges.awaiting_review > 0) && (
+          <div className="agent-panel-badges" role="status">
+            {backgroundBadges.running > 0 && (
+              <span className="agent-badge agent-badge--running" title={badgeText('running')}>
+                <span className="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+                {backgroundBadges.running}
+              </span>
+            )}
+            {backgroundBadges.awaiting_confirm > 0 && (
+              <span className="agent-badge agent-badge--confirm" title={badgeText('awaiting_confirm')}>
+                <span className="material-symbols-outlined" aria-hidden="true">pending_actions</span>
+                {backgroundBadges.awaiting_confirm}
+              </span>
+            )}
+            {backgroundBadges.awaiting_review > 0 && (
+              <span className="agent-badge agent-badge--review" title={badgeText('awaiting_review')}>
+                <span className="material-symbols-outlined" aria-hidden="true">rate_review</span>
+                {backgroundBadges.awaiting_review}
+              </span>
+            )}
+          </div>
+        )}
+        <div className="agent-panel-header-actions">
+          {/* Story 3.5: gear quick switch (design §2.1 三入口之一 — header 快捷).
+              Disabled mid-run like the other selects; mid-run switching goes
+              through the chat command (leader's set_participation_gear tool). */}
+          <select
+            className="agent-panel-gear-select"
+            value={agentParticipationGear}
+            onChange={(e) => setAgentParticipationGear(e.target.value as ParticipationGear)}
+            disabled={activeSessionRunning}
+            title={t('agent.gearTitle')}
+            aria-label={t('agent.gearTitle')}
+          >
+            {GEAR_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>{t(o.i18nKey)}</option>
+            ))}
+          </select>
+          {/* dogfood 2026-08-21：档位光看名字看不懂——info 悬停解释。 */}
+          <Tooltip label={t('agent.gearHelp')} placement="bottom" multiline>
+            <span className="agent-mode-help material-symbols-outlined" aria-hidden="true">info</span>
+          </Tooltip>
+          {/* thinking adapters task：手动压缩上下文（红线/顶满自动触发在 runtime 内部）。 */}
+          <button
+            type="button"
+            className="agent-panel-icon-btn"
+            onClick={() => { void handleCompactContext(); }}
+            disabled={!agentSessionId || activeSessionRunning}
+            title={t('agent.compactContext')}
+            aria-label={t('agent.compactContext')}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">compress</span>
+          </button>
+          <button
+            type="button"
+            className={`agent-panel-icon-btn${agentExpanded ? ' is-active' : ''}`}
+            onClick={toggleAgentExpanded}
+            title={expandLabel}
+            aria-label={expandLabel}
+            aria-pressed={agentExpanded}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {agentExpanded ? 'close_fullscreen' : 'open_in_full'}
+            </span>
+          </button>
+          <button
+            type="button"
+            className={`agent-panel-icon-btn${view === 'settings' ? ' is-active' : ''}`}
+            onClick={() => setView(view === 'settings' ? 'chat' : 'settings')}
+            title={t('agent.settings')}
+            aria-label={t('agent.settings')}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">settings</span>
+          </button>
+          <button
+            type="button"
+            className="agent-panel-icon-btn"
+            // dogfood T1 Stage 3 D3：新建会话不中断在途 run（二次确认弹窗退役，徽标接岗）。
+            onClick={() => newAgentSession()}
+            title={t('agent.newConversation')}
+            aria-label={t('agent.newConversation')}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">add</span>
+          </button>
+          <button
+            type="button"
+            className={`agent-panel-icon-btn${view === 'history' || (agentExpanded && historyRailOpen) ? ' is-active' : ''}`}
+            onClick={handleShowHistory}
+            title={t('agent.history')}
+            aria-label={t('agent.history')}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">history</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="agent-panel-body">
+        {view === 'history' ? (
+          <AgentHistory onClose={() => setView('chat')} />
+        ) : view === 'settings' ? (
+          <AgentSettings onClose={() => setView('chat')} />
+        ) : (
+          <div className="agent-panel-main">
+            {/* Story 3.5: active batch strip — gear + scene progress, straight from
+                the latest batch metadata. No active batch → nothing rendered. */}
+            {activeBatch && activeBatchProgress && (
+              <div className="agent-batch-banner">
+                <span className="material-symbols-outlined" aria-hidden="true">stacks</span>
+                <span className="agent-batch-banner-text">
+                  {t('agent.batchBannerActive')}
+                  {' · '}
+                  {t('agent.batchProgressScenes', { done: activeBatchProgress.done, total: activeBatchProgress.total })}
+                  {' · '}
+                  {t(gearLabelKey(activeBatchProgress.gear))}
+                </span>
+              </div>
+            )}
+            <AgentMessages messages={agentMessages} loading={activeSessionRunning} error={agentError} />
+            {hasPendingPatch && <PatchReviewPanel />}
+            {/* R2 #25：suggest 档审阅卡未决钉底（mirror PatchReviewPanel 位——滚动区外
+                恒可见）；resolved 后自动回消息流内联原位。 */}
+            {pendingSettingMdCards.map((r, i) => (
+              <SettingMdPatchCard key={`pinned-setting-md-${i}`} result={r} />
+            ))}
+            {pendingAuthorProfileCards.map((r, i) => (
+              <AuthorProfilePatchCard key={`pinned-author-profile-${i}`} result={r} />
+            ))}
+            {hasPausedReview && <ChapterReviewPanel />}
+            <AgentInput />
+          </div>
+        )}
+        {/* 全屏态历史细栏：挂右侧（历史钮在头部右侧，就近原则），聊天不被顶掉 */}
+        {agentExpanded && historyRailOpen && (
+          <aside className="agent-history-rail">
+            <AgentHistory onClose={() => setHistoryRailOpen(false)} />
+          </aside>
+        )}
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,3827 @@
+/* ── Agent Panel ── */
+
+.agent-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--agent-panel-bg);
+  border-left: 1px solid var(--outline-variant);
+  overflow: hidden;
+}
+
+.agent-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+/* 头部下方主体：横向 flex 容器（全屏态可挂历史细栏），聊天主列在其内。 */
+.agent-panel-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.agent-panel-main {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* 全屏态历史细栏（dogfood 2026-08-21）：260px 右栏（历史钮在头部右侧，就近原则），
+ * 快速切换会话，聊天不被顶掉。背景继承 .agent-panel 不另设（与面板同色）。 */
+.agent-history-rail {
+  display: flex;
+  width: 260px;
+  flex-shrink: 0;
+  min-height: 0;
+  border-left: 1px solid var(--outline-variant);
+}
+
+.agent-history-rail .agent-history {
+  width: 100%;
+}
+
+.agent-panel-title {
+  font-weight: 600;
+  font-size: var(--text-base);
+  color: var(--on-surface);
+}
+
+.agent-panel-header-actions {
+  display: flex;
+  gap: var(--space-3xs);
+}
+
+.agent-panel-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background var(--duration-base), color var(--duration-base);
+}
+.agent-panel-icon-btn:hover {
+  background: var(--hover-overlay);
+  color: var(--on-surface);
+}
+/* thinking adapters task：手动压缩钮 mid-run/无会话禁用（gear select 同款）。 */
+.agent-panel-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.agent-panel-icon-btn:disabled:hover {
+  background: transparent;
+  color: var(--on-surface-variant);
+}
+.agent-panel-icon-btn .material-symbols-outlined {
+  font-size: 1.125rem;
+}
+
+/* ── Story 3.5: participation gear quick select (header) + active batch banner ── */
+
+.agent-panel-gear-select {
+  font-size: var(--text-2xs);
+  padding: 0.15rem 0.3rem;
+  margin-right: var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--on-surface);
+  cursor: pointer;
+  outline: none;
+  max-width: 5.5rem;
+}
+.agent-panel-gear-select:focus {
+  border-color: var(--accent);
+}
+.agent-panel-gear-select:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.agent-batch-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-lg);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+.agent-batch-banner .material-symbols-outlined {
+  font-size: var(--text-md);
+  color: var(--accent-strong);
+}
+.agent-batch-banner-text {
+  font-size: var(--text-2xs);
+  color: var(--accent-strong);
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Messages ── */
+
+.agent-messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.agent-messages-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--outline);
+  gap: var(--space-md);
+}
+.agent-messages-empty .material-symbols-outlined {
+  font-size: 2.5rem;
+  opacity: 0.4;
+}
+.agent-messages-empty p {
+  font-size: var(--text-base);
+  margin: 0;
+}
+
+/* Story 8.6 D13：空态邀请卡——标题 + 示例起点 chip（点击预填发送）。 */
+.agent-messages-empty .agent-messages-empty-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+.agent-messages-empty .agent-messages-empty-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-sm);
+}
+.agent-messages-empty .agent-empty-chip {
+  padding: 0.3rem 0.75rem;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.agent-messages-empty .agent-empty-chip:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+
+/* ── Message Items ── */
+
+.agent-msg {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  position: relative; /* 从此截断按钮（右上角绝对定位）的定位锚 */
+}
+
+/* 从此截断（dogfood 2026-08-21）：悬停显现的剪刀钮，纯对话尾巴专用。 */
+.agent-msg-truncate {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container-lowest);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease, background var(--duration-fast) ease;
+  z-index: 1;
+}
+
+.agent-msg:hover .agent-msg-truncate {
+  opacity: 1;
+}
+
+.agent-msg-truncate:hover {
+  background: var(--error-bg);
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.agent-msg-truncate .material-symbols-outlined {
+  font-size: 14px;
+}
+
+.agent-msg-label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* dogfood R2 #29：子代理消息标签变体——标签行内联图标 + 具体名称（视觉语汇复用
+   .agent-child-badge 的 accent 图标，让子代理气泡一眼可辨）。 */
+.agent-msg-label--child {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.agent-msg-label--child .material-symbols-outlined {
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+.agent-msg-content {
+  font-family: var(--reading-font-family);
+  font-weight: var(--reading-font-weight);
+  font-size: calc(var(--text-base) * var(--reading-font-scale));
+  line-height: 1.5;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-msg-user .agent-msg-content {
+  background: var(--surface-container-high);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-lg);
+}
+
+.agent-tool-call-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0.2rem 0.5rem;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+.agent-tool-call-badge .material-symbols-outlined {
+  font-size: var(--text-md);
+}
+
+/* R2 #30：工具参数流指示徽章——accent 语汇 + 旋转图标（活性别于静态调用徽标）。 */
+.agent-tool-call-badge--live {
+  align-self: flex-start;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.agent-tool-call-live-icon {
+  animation: agent-spin 1.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-tool-call-live-icon {
+    animation: none;
+  }
+}
+
+@keyframes agent-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Loading ── */
+
+.agent-message-loading {
+  display: flex;
+  gap: var(--space-2xs);
+  padding: 0.5rem 0;
+}
+
+.agent-loading-dot {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: var(--radius-circle);
+  background: var(--on-surface-variant);
+  animation: agent-dot-pulse 1.2s infinite;
+}
+.agent-loading-dot:nth-child(2) { animation-delay: 0.2s; }
+.agent-loading-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes agent-dot-pulse {
+  0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
+  30% { opacity: 1; transform: scale(1); }
+}
+
+/* ── Error ── */
+
+.agent-message-error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--error);
+  background: var(--error-bg);
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-sm);
+}
+
+.agent-message-error .material-symbols-outlined {
+  font-size: var(--text-md);
+  flex-shrink: 0;
+}
+
+.agent-message-error-text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* dogfood T1 Stage 4（design §7.6）：重试钮 = 次级按钮（outline-variant 边、on-surface 文字） */
+.agent-message-error-retry {
+  flex-shrink: 0;
+  padding: var(--space-3xs) var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-standard);
+}
+
+.agent-message-error-retry:hover {
+  background: var(--hover-overlay);
+}
+
+/* ── Streaming（dogfood T1 Stage 4，design §7.1/§7.2）── */
+
+/* dogfood T1 CR-T1-038a：流停滞提示（60s 无 delta——caret 永闪的假活破除）。非错误态：
+ * warning 色轻提示（静默断流 ≠ 失败，新 delta 到达自动摘标），同 error 条的形态但退后一层。 */
+.agent-stream-stalled {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-2xs);
+  font-size: var(--text-xs);
+  color: var(--warning);
+}
+
+.agent-stream-stalled .material-symbols-outlined {
+  font-size: var(--text-sm);
+  flex-shrink: 0;
+}
+
+/* 流式 caret：accent 色 1.5px 竖线，挂在正文生长点（渐进轨尾轨末尾）。blink ≥0.8s
+ * （keyframes 豁免 motion token，同 spinner 惯例）；reduced-motion 常亮不闪。终帧移除
+ * class 即消失。
+ * dogfood R2 #11④（findings #11④）：正文结构改为「头部 MD 块 + 尾轨纯文本」两层——
+ * 有尾轨时 caret 落在尾轨（inline ::after 恰在生长文字之后）；尾轨暂空（头部刚追平）
+ * 时落回头部最后一个块级元素内（旧 .agent-msg-md 直挂 MD 块的等位形态）。ChainRunCard
+ * 等直挂 MD 块的既有用法由首选择器 :not(.agent-msg-md-head) 兼容不变。 */
+.agent-msg-md--streaming > :not(.agent-msg-md-head):last-child::after,
+.agent-msg-md--streaming > .agent-msg-md-head:last-child > :last-child::after {
+  content: '';
+  display: inline-block;
+  width: 1.5px;
+  height: 0.95em;
+  margin-left: 0.15em;
+  vertical-align: text-bottom;
+  background: var(--accent);
+  border-radius: var(--radius-pill);
+  animation: agent-caret-blink 1s steps(1, end) infinite;
+}
+
+/* dogfood R2 #11④：流式尾轨——头部 250ms 节流 MD 边界之后的逐字生长纯文本段
+ * （每 rAF 更新，零解析开销）。pre-wrap 与 MD 正文换行表现一致；排版继承
+ * .agent-msg-md（同字号/行高，段内过渡无跳变）。 */
+.agent-stream-tail {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+@keyframes agent-caret-blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0; }
+}
+
+/* ── Reasoning 折叠块（#27② 深度思考，design §7.2）── */
+
+.agent-reasoning {
+  position: relative;
+  margin: var(--space-xs) 0;
+  background: var(--surface-container-low);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/* 左缘 2px accent-soft 指示条——一眼可辨「这是思考不是产出」 */
+.agent-reasoning::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-soft);
+}
+
+.agent-reasoning-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  padding: var(--space-2xs) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-reasoning-header:hover {
+  background: var(--hover-overlay);
+}
+
+.agent-reasoning-header .material-symbols-outlined {
+  font-size: var(--text-md);
+}
+
+.agent-reasoning-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 流式期 shimmer 扫光活动指示（design §7.2 收起态「思考中」可感） */
+.agent-reasoning-shimmer {
+  flex-shrink: 0;
+  width: 1.4rem;
+  height: 0.18rem;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, transparent 0%, var(--accent) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: agent-reasoning-shimmer 1.4s linear infinite;
+}
+
+@keyframes agent-reasoning-shimmer {
+  from { background-position: 200% 0; }
+  to { background-position: -200% 0; }
+}
+
+.agent-reasoning-chevron {
+  flex-shrink: 0;
+  font-size: var(--text-md);
+}
+
+/* 展开后小一号字（--text-xs，on-surface-variant）——视觉退后由字号 + 配色承担。
+ * dogfood R2 #11（findings #11③）：原「等宽退后一层」设计（--font-mono）已被用户否决
+ * ——等宽字体渲染中文丑，改跟随全局字体（inherit）。字号与配色保留。 */
+.agent-reasoning-body {
+  padding: var(--space-xs) var(--space-md) var(--space-sm) var(--space-lg);
+  font-family: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 16rem;
+  overflow-y: auto;
+  animation: agent-reasoning-expand var(--duration-slow) var(--ease-standard);
+}
+
+@keyframes agent-reasoning-expand {
+  from { opacity: 0; transform: translateY(-0.15rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ── 动效降级（design §7：reduced-motion 下持续动画转静态）── */
+
+@media (prefers-reduced-motion: reduce) {
+  /* caret 常亮不闪（§7.1；R2 #11④ 选择器随头部/尾轨两层结构同步） */
+  .agent-msg-md--streaming > :not(.agent-msg-md-head):last-child::after,
+  .agent-msg-md--streaming > .agent-msg-md-head:last-child > :last-child::after {
+    animation: none;
+  }
+
+  /* shimmer 降级为静态 accent 点（§7.2） */
+  .agent-reasoning-shimmer {
+    width: 0.35rem;
+    height: 0.35rem;
+    border-radius: var(--radius-circle);
+    background: var(--accent);
+    animation: none;
+  }
+
+  /* CR-12（dogfood R2 BMad CR）：outline diff 新增卷的一次性脉冲转静态成功色边框
+   *（0%/100% 关键帧态即终态——对照 caret/shimmer 降级先例，新卷仍可辨）。 */
+  .outline-diff-phase--new {
+    animation: none;
+    border-color: var(--success);
+  }
+
+  /* dogfood T1 Stage 5（§7.3/§7.4 D5）：旋转图标停帧（静态 progress_activity 仍可辨）；
+   * success 完成点不闪不淡出（1s 后由组件摘除）。CR-T1-046：聚合徽标图标已静态
+   * （旋转收敛至组图标一处），此处只余组图标与完成点。 */
+  .agent-child-group-icon--spin,
+  .agent-child-group-dot--done {
+    animation: none;
+  }
+
+  .agent-reasoning-body {
+    animation: none;
+  }
+}
+
+/* ── Tool Card ── */
+
+.agent-tool-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.agent-tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+.agent-tool-card-header:hover {
+  background: var(--hover-overlay);
+}
+.agent-tool-card-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+.agent-tool-card-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.agent-tool-card-summary {
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  opacity: 0.85;
+}
+
+.agent-tool-card-chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.agent-tool-card-name {
+  flex: 1;
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.agent-tool-card-status {
+  color: var(--accent);
+  font-size: 0.75rem;
+}
+
+.agent-tool-card-status--error {
+  color: var(--error, #e5484d);
+}
+
+.agent-tool-card--error {
+  border-color: var(--error, #e5484d);
+}
+
+.agent-tool-card-body {
+  padding: var(--space-md);
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface);
+}
+
+.agent-tool-card-output {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  max-height: 12rem;
+  overflow-y: auto;
+}
+
+.agent-tool-card-image {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xs);
+}
+
+/* ── dogfood R2 #12（findings #12）：子代理产出卡（DispatchDraftCard）──
+ *
+ * 三派发工具（story/episode planner + researcher）ok:true 的整段草案/调研报告专用呈现。
+ * 基座参照 .agent-tool-card 但**默认展开**、视觉上比工具卡更「产出物」：accent 左缘条
+ * （mirror .agent-reasoning::before 左缘条的做法，但语义是交付物——取实色 accent，
+ * 同 .agent-batch-group 先例）。body = MD 渲染（.agent-msg-md 排版）+ ~24rem 内滚。 */
+.agent-dispatch-draft {
+  border: 1px solid var(--outline-variant);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  overflow: hidden;
+}
+
+.agent-dispatch-draft-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: none;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+.agent-dispatch-draft-header:hover {
+  background: var(--hover-overlay);
+}
+.agent-dispatch-draft-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+.agent-dispatch-draft-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.agent-dispatch-draft-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+/* 产出类型徽标（大纲草案/分集草案/调研报告）：accent-soft 填充 pill。 */
+.agent-dispatch-draft-badge {
+  flex-shrink: 0;
+  padding: 0.08rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+}
+
+.agent-dispatch-draft-chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+
+.agent-dispatch-draft-body {
+  padding: var(--space-md);
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface);
+}
+
+.agent-dispatch-draft-body .agent-msg-md {
+  max-height: 24rem;
+  overflow-y: auto;
+  padding-right: var(--space-3xs);
+}
+
+/* ── dogfood R2 批次 D1：大纲草案卡 footer「到大纲面板查看 →」次级钮（mockup ①卡
+   btn-ghost 形态——transparent 底 + accent 描边，非主 CTA）。 ── */
+.agent-dispatch-draft-footer {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-xs);
+}
+
+.agent-dispatch-draft-jump {
+  padding: var(--space-2xs) var(--space-sm);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.agent-dispatch-draft-jump:hover {
+  background: var(--accent-soft);
+}
+
+/* ── dogfood R2 #81（findings #81）：链内结构化指令 JSON 折叠卡（ChainDirectiveCard）──
+ *
+ * child 消息里的链产出机器 JSON（导演五段指令）整体形态命中时替代正文通道。**默认折叠**
+ * （对照 .agent-dispatch-draft 默认展开——那是给人审的交付物，这是机器内部产出，人读价值
+ * 在「已产出 · N 条」事实 + 需要时的原文抽查）。基座 mirror .agent-reasoning 折叠块族
+ *（同为「非正文」语义：surface-container-low 底 + border-subtle + accent-soft 左缘条
+ * + 展开后小一号 on-surface-variant 字），body = JSON 原文 verbatim pre-wrap 内滚。 */
+.agent-chain-directive {
+  position: relative;
+  margin: var(--space-xs) 0;
+  background: var(--surface-container-low);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+/* 左缘 2px accent-soft 指示条（mirror .agent-reasoning::before——「这是机器产出不是正文」） */
+.agent-chain-directive::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent-soft);
+}
+
+.agent-chain-directive-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  padding: var(--space-2xs) var(--space-md);
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-chain-directive-header:hover {
+  background: var(--hover-overlay);
+}
+
+.agent-chain-directive-header .material-symbols-outlined {
+  font-size: var(--text-md);
+}
+
+.agent-chain-directive-icon {
+  flex-shrink: 0;
+}
+
+.agent-chain-directive-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-chain-directive-chevron {
+  flex-shrink: 0;
+  font-size: var(--text-md);
+}
+
+.agent-chain-directive-body {
+  padding: var(--space-xs) var(--space-md) var(--space-sm) var(--space-lg);
+}
+
+/* JSON 原文 verbatim：pre-wrap + 内滚上限（mirror .agent-reasoning-body 视觉退后处理；
+ * 字体跟随全局——R2 #11③ 等宽渲染中文已被用户否决，JSON 内中文 directive 同理）。 */
+.agent-chain-directive-json {
+  margin: 0;
+  font-family: inherit;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+/* ── Work steps (grouped tool calls within one turn) ── */
+
+.agent-work-steps {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.agent-work-steps-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 0;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: var(--text-xs);
+  text-align: left;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+.agent-work-steps-header:hover {
+  background: var(--hover-overlay);
+}
+.agent-work-steps-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+.agent-work-steps-title {
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+.agent-work-steps-count {
+  margin-left: auto;
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+}
+
+.agent-work-steps-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding-left: var(--space-md);
+  border-left: 2px solid var(--outline-variant);
+  margin-left: var(--space-xs);
+}
+
+/* ── Child execution badge (nested skill / subagent step) ── */
+
+.agent-child-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0.15rem 0.45rem;
+  margin-bottom: var(--space-2xs);
+  background: var(--agent-panel-skills-bg);
+  color: var(--on-surface-variant);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+}
+.agent-child-badge .material-symbols-outlined {
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+/* ── Child execution group (collapsible tree for multiple child events) ── */
+
+.agent-child-group {
+  margin: var(--space-xs) 0;
+  padding-left: calc(var(--depth, 1) * var(--space-xl));
+  border-left: 2px solid var(--accent-soft);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  /* dogfood T1 Stage 5（design §7.3 组完成过渡）：活跃→完成头部/左缘条回中性色。 */
+  transition: border-color var(--duration-slow) var(--ease-standard);
+}
+
+.agent-child-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: var(--notice-bg);
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration-slow) var(--ease-standard);
+}
+
+.agent-child-group-header:hover {
+  background: var(--hover-overlay);
+}
+
+.agent-child-group-header .material-symbols-outlined {
+  font-size: var(--text-sm);
+  color: var(--accent);
+}
+
+/* dogfood T1 Stage 5（design §7.3，D5）：活跃组头部态——accent-soft 底 + 左缘 accent
+ * 指示条（外层 border-left）+ progress_activity 旋转图标，与空闲折叠组一眼区分。 */
+.agent-child-group--active {
+  border-left-color: var(--accent);
+}
+
+.agent-child-group--active .agent-child-group-header,
+.agent-child-group--active .agent-child-group-header:hover {
+  background: var(--accent-soft);
+}
+
+.agent-child-group-icon--spin {
+  animation: agent-child-icon-spin 1s linear infinite;
+}
+
+@keyframes agent-child-icon-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* 「当前动作」chip（design §7.3）：--radius-pill、surface-container-high 底、--text-xs。
+ * 工具名英文 id 原文（#38 中文化另枝）。 */
+.agent-child-group-action {
+  flex-shrink: 0;
+  max-width: 45%;
+  padding: 0.08rem 0.45rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-xs);
+  font-weight: 400;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* 活动状态点（design §7.3）：收起态活跃时留头部右侧；完成转 success 一闪后淡出。 */
+.agent-child-group-dot {
+  flex-shrink: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+}
+
+.agent-child-group-dot--done {
+  background: var(--success);
+  animation: agent-child-dot-done 1s var(--ease-standard) forwards;
+}
+
+@keyframes agent-child-dot-done {
+  0%, 55% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.agent-child-group-label {
+  flex: 1;
+  text-align: left;
+}
+
+.agent-child-group-depth {
+  font-size: var(--text-3xs);
+  color: var(--outline);
+}
+
+.agent-child-group-count {
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+}
+
+.agent-child-group-chevron {
+  font-size: 16px !important;
+  color: var(--on-surface-variant) !important;
+  transition: transform var(--duration-base) var(--ease-standard);
+}
+
+.agent-child-group-body {
+  padding: var(--space-xs) 0 var(--space-xs) var(--space-md);
+  /* dogfood T1 Stage 5（design §7.3）：展开/进组过渡 --duration-slow --ease-standard
+   *（挂载动画——Collapsible 卸载即收，无退出动画面）。 */
+  animation: agent-child-body-in var(--duration-slow) var(--ease-standard);
+}
+
+@keyframes agent-child-body-in {
+  from { opacity: 0; transform: translateY(-0.15rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 工具卡/消息进组 fade-in（design §7.3）：新到达的组内消息渐现，streaming flush 更新
+ *（同 id 复用 DOM 节点）不重触发。 */
+.agent-child-group-body > * {
+  animation: agent-child-item-in var(--duration-base) var(--ease-enter);
+}
+
+@keyframes agent-child-item-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* ── Story 3.5: BatchGroup（连续同 batchId 进度消息，默认折叠 + 实时进度行）── */
+
+.agent-batch-group {
+  border: 1px solid var(--outline-variant);
+  border-left: 2px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.agent-batch-group-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-xs) var(--space-md);
+  border: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+.agent-batch-group-header:hover {
+  background: var(--hover-overlay);
+}
+.agent-batch-group-header .material-symbols-outlined {
+  font-size: var(--text-sm);
+}
+.agent-batch-group-icon {
+  color: var(--accent);
+  flex-shrink: 0;
+}
+.agent-batch-group-title {
+  font-weight: 500;
+  color: var(--on-surface);
+  flex-shrink: 0;
+}
+.agent-batch-group-progress {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+.agent-batch-group-scene {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.agent-batch-group-gear {
+  flex-shrink: 0;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+}
+.agent-batch-group-count {
+  margin-left: auto;
+  flex-shrink: 0;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+}
+.agent-batch-group-chevron {
+  font-size: 16px !important;
+  color: var(--on-surface-variant) !important;
+}
+.agent-batch-group-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  animation: ctx-menu-in 0.1s var(--ease-enter);
+}
+
+/* ── Story 3.5: BatchReportCard（report 消息下的 L1→L2→L3 渐进披露卡）── */
+
+.agent-batch-report-slot {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.agent-batch-report {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.agent-batch-report-title {
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  padding: 0.35rem 0.6rem;
+  background: var(--surface-container-high);
+}
+.agent-batch-report-empty {
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+.agent-batch-report-row {
+  border-top: 1px solid var(--outline-variant);
+}
+.agent-batch-report-row--error {
+  background: var(--error-bg, transparent);
+}
+.agent-batch-report-row-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: var(--space-2xs) var(--space-md);
+  border: 0;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 0.75rem;
+  text-align: left;
+  transition: background var(--duration-fast);
+}
+.agent-batch-report-row-header:hover {
+  background: var(--hover-overlay);
+}
+.agent-batch-report-row-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+.agent-batch-report-row-label {
+  font-weight: 500;
+  color: var(--on-surface);
+  flex-shrink: 0;
+}
+.agent-batch-report-row-summary {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  opacity: 0.85;
+}
+.agent-batch-report-row-status {
+  color: var(--accent);
+  font-size: 0.75rem;
+  flex-shrink: 0;
+}
+.agent-batch-report-row-status--error {
+  color: var(--error, #e5484d);
+}
+.agent-batch-report-row-chevron {
+  flex-shrink: 0;
+  opacity: 0.6;
+}
+.agent-batch-report-row-output {
+  padding: 0 var(--space-md) var(--space-xs);
+}
+.agent-batch-report-pre {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+.agent-batch-report-full-btn {
+  margin-top: var(--space-2xs);
+  border: 0;
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-2xs);
+  cursor: pointer;
+  padding: 0;
+}
+.agent-batch-report-full-btn:hover {
+  text-decoration: underline;
+}
+
+/* ── Confirm Card ── */
+
+.agent-confirm-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--notice-bg);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.agent-confirm-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--on-surface);
+  margin-bottom: var(--space-xs);
+}
+.agent-confirm-card-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+.agent-confirm-card-input {
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-md);
+  margin: 0 0 0.5rem;
+  max-height: 8rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-confirm-card-actions {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.agent-confirm-btn {
+  padding: 0.3rem 0.75rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+.agent-confirm-btn:hover { opacity: 0.85; }
+
+.agent-confirm-btn-accept {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.agent-confirm-btn-reject {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+/* ── Passage relocate confirm card ── */
+.agent-passage-resolve-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--notice-bg);
+  padding: var(--space-md) var(--space-lg);
+  margin-bottom: var(--space-md);
+}
+
+.agent-passage-resolve-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--on-surface);
+  margin-bottom: 0.4rem;
+}
+.agent-passage-resolve-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+.agent-passage-resolve-empty {
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+  padding: 0.25rem 0;
+}
+
+.agent-passage-resolve-list {
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.agent-passage-resolve-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: 0.3rem 0.5rem;
+}
+
+.agent-passage-resolve-excerpt {
+  flex: 1;
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-passage-resolve-btn {
+  flex-shrink: 0;
+  padding: 0.25rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--accent);
+  color: var(--on-accent);
+  transition: opacity var(--duration-fast);
+}
+.agent-passage-resolve-btn:hover { opacity: 0.85; }
+
+.agent-passage-resolve-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.agent-passage-resolve-cancel {
+  padding: 0.25rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  transition: opacity var(--duration-fast);
+}
+.agent-passage-resolve-cancel:hover { opacity: 0.85; }
+
+/* ── User message references ── */
+.agent-msg-references {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: var(--space-xs);
+}
+
+/* ── Input Area ── */
+
+.agent-input-area {
+  flex-shrink: 0;
+  border-top: 1px solid var(--outline-variant);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--agent-panel-header-bg);
+}
+
+.agent-input-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.agent-input-select {
+  font-size: var(--text-xs);
+  padding: 0.2rem 0.4rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--on-surface);
+  cursor: pointer;
+  outline: none;
+}
+.agent-input-select:focus {
+  border-color: var(--accent);
+}
+
+/* ── Input Row ── */
+
+.agent-input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-xs);
+}
+
+.agent-input-textarea {
+  flex: 1;
+  /* dogfood 2026-08-21：放大走输入区顶边拖拽条（.agent-input-resize）——原生右下角
+   * resize 在底部停靠布局里底边被钉死，拖下反而向上长，方向直觉相反。注意必须显式
+   * resize:none：textarea 浏览器默认 resize:both，漏写则原生把手仍在。手动高度由
+   * AgentInput 落盘 storage 持久；程序侧 auto-grow 下限 = 用户高度。 */
+  resize: none;
+  min-height: 2.4rem;
+  max-height: 40vh;
+  overflow-y: auto;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--on-surface);
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  padding: 0.4rem 0.5rem;
+  line-height: 1.4;
+  outline: none;
+  transition: border-color var(--duration-fast);
+}
+
+/* 输入区顶边拖拽条：往上拖变大、往下拖变小（底部停靠的方向直觉）。 */
+.agent-input-resize {
+  height: 6px;
+  margin: 0 0.2rem 1px;
+  border-radius: var(--radius-2xs);
+  cursor: ns-resize;
+  background: transparent;
+  transition: background var(--duration-fast);
+  flex-shrink: 0;
+  touch-action: none;
+}
+
+.agent-input-resize:hover,
+.agent-input-resize:active {
+  background: var(--outline-variant);
+}
+.agent-input-textarea:focus {
+  border-color: var(--accent);
+}
+.agent-input-textarea::placeholder {
+  color: var(--outline);
+}
+
+.agent-input-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+  flex-shrink: 0;
+}
+.agent-input-btn:hover { opacity: 0.85; }
+.agent-input-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.agent-input-btn .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+/* ── History ── */
+
+.agent-history {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+}
+
+.agent-history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--on-surface);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.agent-history-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-xs);
+}
+
+.agent-history-empty {
+  padding: var(--space-2xl) var(--space-lg);
+  text-align: center;
+  font-size: var(--text-sm);
+  color: var(--outline);
+}
+
+.agent-history-item {
+  display: flex;
+  align-items: center;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast);
+}
+.agent-history-item:hover {
+  background: var(--hover-overlay);
+}
+
+.agent-history-item-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.5rem 0.6rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+}
+
+/* R2 #14：懒建草稿行——非按钮（当前视图即新会话，点击无动作），中和 cursor。 */
+.agent-history-item-btn--draft {
+  cursor: default;
+  opacity: 0.85;
+}
+
+.agent-history-item-title {
+  font-size: var(--text-base);
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-history-item-meta {
+  font-size: 0.68rem;
+  color: var(--outline);
+}
+
+.agent-history-item-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--outline);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity var(--duration-fast), color var(--duration-fast);
+}
+.agent-history-item:hover .agent-history-item-delete { opacity: 1; }
+.agent-history-item-delete:hover { color: var(--error); }
+.agent-history-item-delete .material-symbols-outlined { font-size: var(--text-lg); }
+
+/* ── dogfood T1 Stage 3：会话徽标状态机（design §7.4；基础呈现，完整视觉打磨 S4/S5）──
+   三态语义色走 theme token（--accent/--warning/--info，亮暗双主题同源），无裸色值。 */
+
+.agent-history-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  flex-shrink: 0;
+  max-width: 5.5rem;
+}
+
+.agent-history-badge-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex-shrink: 0;
+}
+
+.agent-history-badge--running .agent-history-badge-dot { background: var(--accent); }
+.agent-history-badge--awaiting_confirm .agent-history-badge-dot { background: var(--warning); }
+.agent-history-badge--awaiting_review .agent-history-badge-dot { background: var(--info); }
+
+.agent-history-badge-label {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.agent-history-badge--running .agent-history-badge-label { color: var(--accent-strong); }
+.agent-history-badge--awaiting_confirm .agent-history-badge-label { color: var(--warning); }
+.agent-history-badge--awaiting_review .agent-history-badge-label { color: var(--info); }
+
+/* 后台 run 行内停止钮（紧凑 icon button，常显——运行中随时可停）。 */
+.agent-history-item-stop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-sm);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: color var(--duration-fast), background var(--duration-fast);
+}
+.agent-history-item-stop:hover { color: var(--error); background: var(--hover-overlay); }
+.agent-history-item-stop .material-symbols-outlined { font-size: var(--text-base); }
+
+/* 面板头部聚合徽标（当前项目其他会话的非 idle 态计数；无后台活动不占位）。 */
+.agent-panel-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-left: var(--space-xs);
+}
+
+.agent-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-3xs);
+}
+.agent-badge .material-symbols-outlined { font-size: var(--text-sm); }
+
+.agent-badge--running { color: var(--accent-strong); background: var(--accent-soft); }
+.agent-badge--confirm { color: var(--warning); background: var(--warning-bg); }
+.agent-badge--review { color: var(--info); background: var(--surface-container-high); }
+
+/* dogfood T1 Stage 5（design §7.4，D5）：面板头部活跃 child 聚合徽标——accent-soft 底
+ *（running 语义色同 agent-badge--running）+ 图标 + 角色 chip 组（chip 样式同 §7.3
+ * 动作标签）+ 「第 N 步」摘要。空闲不占位（组件层空即无）。
+ * dogfood T1 CR-T1-046（§7.7 动画收敛）：图标**静态**（progress 图形承载语义）——
+ * 同类旋转动画收敛至组图标一处（多 live 组并流时 AgentMessages 只标首个组旋转）。 */
+.agent-panel-child-activity {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  margin-left: var(--space-xs);
+  padding: 0.12rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-xs);
+}
+
+.agent-child-activity-icon {
+  font-size: var(--text-sm);
+}
+
+.agent-child-activity-chip {
+  max-width: 7rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-child-activity-step {
+  flex-shrink: 0;
+  padding-right: 0.15rem;
+}
+
+/* ── Diff Card (suggest mode) ── */
+
+.agent-diff-card {
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  margin-top: var(--space-xs);
+}
+
+.agent-diff-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--notice-bg);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--on-surface);
+}
+.agent-diff-card-header .material-symbols-outlined {
+  font-size: var(--text-lg);
+  color: var(--accent);
+}
+
+.agent-diff-card-body {
+  padding: var(--space-md);
+  background: var(--surface);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+  color: var(--on-surface-variant);
+  max-height: 10rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-diff-card-actions {
+  display: flex;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border-top: 1px solid var(--outline-variant);
+  background: var(--agent-panel-header-bg);
+}
+
+/* Story 8.6 R4：AuthorProfilePatchCard 的 note 原文块（「这一笔要记什么」——diff 面之上）。 */
+.agent-author-profile-note-block {
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--outline-variant);
+}
+.agent-author-profile-note-label {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+.agent-author-profile-note {
+  margin: var(--space-2xs) 0 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.agent-diff-btn {
+  padding: 0.25rem 0.6rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--duration-fast);
+}
+.agent-diff-btn:hover { opacity: 0.85; }
+
+.agent-diff-btn-accept {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+.agent-diff-btn-reject {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.agent-diff-expand-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  margin-left: auto;
+}
+.agent-diff-expand-btn:hover {
+  background: var(--surface-container-highest);
+}
+.agent-diff-expand-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* ── Side-by-Side Diff ── */
+.diff-side-by-side {
+  border: 1px solid var(--outline-variant);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+  /* dogfood 2026-08-21：diff 对象是中文散文非代码，裸 monospace 让中文回退到系统字体，
+     与卡内其他文本（ narration/按钮/列头）混排不统一。统一 UI 字体；行号对齐由
+     grid 行结构保证，不依赖等宽。 */
+  font-family: var(--font-ui);
+  font-size: var(--text-xs);
+}
+
+.diff-sbs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 0.6rem;
+  background: var(--agent-panel-header-bg);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.diff-sbs-filename {
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+
+.diff-sbs-actions {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+}
+
+.diff-sbs-btn {
+  border: none;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: var(--text-2xs);
+  cursor: pointer;
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+.diff-sbs-btn .material-symbols-outlined { font-size: 14px; }
+.diff-sbs-btn--accept { background: var(--accent); color: var(--on-accent); }
+.diff-sbs-btn--reject { background: var(--error); color: var(--on-accent); }
+
+/* Story 7.5 BMad CR Blind-001：split 视图用 CSS grid 按行渲染（2 列），每 DiffLine 的左右 cell
+   占同一 grid row → 浏览器同步行高，消除换行阶梯错位（中文长段落核心场景）。 */
+.diff-sbs-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.diff-sbs-col-header {
+  padding: var(--space-2xs) var(--space-md);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  background: var(--agent-panel-skills-bg);
+  border-bottom: 1px solid var(--outline-variant);
+  position: sticky;
+  top: 0;
+  /* dogfood 2026-08-21：粘性列头必须压在滚动内容之上——无 z-index 时后进 DOM 的
+     cell（含行号）在滚动时画到灰色列头上面（用户实录「行号在灰色底之上」）。 */
+  z-index: 1;
+}
+
+/* dogfood 2026-08-21：左右列中缝分隔线。grid 子项顺序 = [左列头, 右列头, (左cell,
+   右cell)×N]，odd 位恒为左列（含左列头）——border-right 贯穿整列成连续竖线。 */
+.diff-sbs-grid > :nth-child(odd) {
+  border-right: 1px solid var(--outline-variant);
+}
+
+.diff-sbs-view-toggle .material-symbols-outlined { font-size: 16px; }
+
+/* 单个 cell（grid 内一格）。grid row 内左右 cell 等高对齐（修复 Blind-001 阶梯错位）。 */
+.diff-sbs-cell {
+  display: flex;
+  min-height: 1.4em;
+  line-height: 1.4em;
+  white-space: pre;
+  align-items: flex-start;
+}
+
+.diff-sbs-ln {
+  width: 2.5em;
+  text-align: right;
+  padding-right: 0.4em;
+  color: var(--on-surface-variant);
+  opacity: 0.5;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* Story 7.5：词级 highlight 在行内 span 上；pre-wrap 让长段落（中文一行常很长）换行可读，
+   不再用 ellipsis 裁剪（裁了词级红绿就看不见）。grid 化后左右 cell 同行等高，换行不对齐问题已解。 */
+.diff-sbs-text {
+  flex: 1;
+  padding: 0 0.3em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.diff-sbs-cell--add { background: var(--diff-add-bg); }
+.diff-sbs-cell--remove { background: var(--diff-remove-bg); }
+
+/* Story 7.5：词级 highlight（GitHub 式行内红绿词块）。用 strong 变体（行级普通底 / 词级强底）。 */
+.diff-word--add {
+  background: var(--diff-add-bg-strong);
+  border-radius: 2px;
+}
+.diff-word--remove {
+  background: var(--diff-remove-bg-strong);
+  border-radius: 2px;
+  text-decoration: line-through;
+  text-decoration-color: var(--error);
+  text-decoration-thickness: from-font;
+  opacity: 0.85;
+}
+
+/* Story 7.5：unified 视图（单列，- / + / 空格 前缀，GitHub unified 格式）。 */
+.diff-unified-body {
+  overflow-x: auto;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.diff-unified-line {
+  display: flex;
+  min-height: 1.4em;
+  line-height: 1.4em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.diff-unified-sign {
+  width: 1.5em;
+  flex-shrink: 0;
+  text-align: center;
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+  user-select: none;
+}
+.diff-unified-text {
+  flex: 1;
+  padding-right: 0.3em;
+}
+.diff-unified-line--add { background: var(--diff-add-bg); }
+.diff-unified-line--remove { background: var(--diff-remove-bg); }
+
+/* ── Markdown rendering in assistant messages ── */
+
+.agent-msg-md {
+  font-family: var(--reading-font-family);
+  font-weight: var(--reading-font-weight);
+  font-size: calc(0.8rem * var(--reading-font-scale));
+  line-height: 1.55;
+  color: var(--on-surface);
+}
+
+.agent-msg-md p { margin: 0.3rem 0; }
+.agent-msg-md p:first-child { margin-top: 0; }
+.agent-msg-md p:last-child { margin-bottom: 0; }
+
+.agent-msg-md strong { font-weight: 600; }
+
+.agent-msg-md code {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  padding: 0.1rem 0.3rem;
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+}
+
+.agent-msg-md pre {
+  margin: 0.4rem 0;
+  padding: 0.5rem 0.6rem;
+  border-radius: 0.4rem;
+  background: var(--surface-container);
+  overflow-x: auto;
+}
+
+.agent-msg-md pre code {
+  padding: 0;
+  background: none;
+}
+
+.agent-msg-md ul, .agent-msg-md ol {
+  margin: 0.3rem 0;
+  padding-left: 1.2rem;
+}
+
+.agent-msg-md li { margin: 0.15rem 0; }
+
+.agent-msg-md a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.agent-msg-md a:hover { text-decoration: underline; }
+
+.agent-msg-md h1, .agent-msg-md h2, .agent-msg-md h3 {
+  margin: 0.5rem 0 0.25rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.agent-msg-md h1 { font-size: var(--text-lg); }
+.agent-msg-md h2 { font-size: 0.9rem; }
+.agent-msg-md h3 { font-size: 0.84rem; }
+
+.agent-msg-md blockquote {
+  margin: 0.3rem 0;
+  padding-left: 0.6rem;
+  border-left: 3px solid var(--border-default);
+  color: var(--on-surface-variant);
+}
+
+/* ── Agent Panel header active state ── */
+
+.agent-panel-icon-btn.is-active {
+  background: var(--active-indicator);
+  color: var(--accent);
+}
+
+/* ── Settings panel ── */
+
+.agent-settings {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.agent-settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.agent-settings-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.agent-settings-body {
+  padding: var(--space-md) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.agent-settings-section {
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+  overflow: hidden;
+}
+
+.agent-settings-section-title {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--on-surface-variant);
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.agent-settings-placeholder {
+  padding: 0.6rem;
+  font-size: 0.75rem;
+  color: var(--on-surface-variant);
+}
+
+/* ── Story 3.5: participation gear settings section ── */
+
+.agent-settings-note {
+  margin: 0;
+  padding: 0.45rem 0.6rem 0;
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+}
+
+.agent-settings-subtitle {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--on-surface);
+  padding: 0.45rem 0.6rem 0.2rem;
+}
+
+.agent-settings-gear-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2xs);
+  padding: 0.45rem 0.6rem;
+}
+
+.agent-settings-gear-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+  cursor: pointer;
+}
+.agent-settings-gear-option.is-selected {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-weight: 500;
+}
+.agent-settings-gear-option input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.agent-settings-cat-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: 0.2rem 0.6rem;
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+  cursor: pointer;
+}
+.agent-settings-cat-row input {
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.agent-settings-gear-cats,
+.agent-settings-gear-trust {
+  padding-bottom: 0.45rem;
+}
+
+/* ── Attachment UI ── */
+
+.agent-input-attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-bottom: var(--space-xs);
+}
+
+.agent-attachment-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: var(--radius-pill);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+/* Selection attachment: wider quoted preview, not a tight pill. */
+.agent-attachment-chip-quote {
+  max-width: 100%;
+  border-radius: var(--radius-sm);
+  font-weight: 500;
+}
+
+.agent-attachment-quote-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-style: italic;
+}
+
+.agent-attachment-remove {
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  line-height: 1;
+}
+
+.agent-attachment-remove .material-symbols-outlined {
+  font-size: var(--text-2xs);
+}
+
+.agent-attachment-remove:hover {
+  color: var(--error);
+}
+
+.agent-input-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  position: relative;
+}
+
+.agent-attach-menu {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  margin-bottom: 0.3rem;
+  min-width: 180px;
+  max-height: 240px;
+  overflow-y: auto;
+  background: var(--surface-container-high);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+  z-index: var(--z-dropdown);
+  padding: 0.3rem 0;
+}
+
+.agent-attach-section-title {
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+  padding: 0.3rem 0.6rem 0.15rem;
+}
+
+.agent-attach-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  width: 100%;
+  padding: 0.3rem 0.6rem;
+  border: none;
+  background: none;
+  color: var(--on-surface);
+  font-size: 0.74rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.agent-attach-item:hover {
+  background: var(--menu-item-hover);
+}
+
+.agent-attach-item .material-symbols-outlined {
+  font-size: var(--text-md);
+  color: var(--on-surface-variant);
+}
+
+/* ── Settings skill packages ── */
+
+.agent-settings-pkg {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.agent-settings-pkg:last-child { border-bottom: none; }
+
+.agent-settings-pkg-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.4rem 0.6rem;
+}
+
+.agent-settings-pkg-expand {
+  display: flex;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--on-surface-variant);
+}
+
+.agent-settings-pkg-expand .material-symbols-outlined { font-size: var(--text-lg); }
+
+.agent-settings-pkg-name {
+  flex: 1;
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.agent-settings-pkg-count {
+  font-size: 0.66rem;
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--radius-pill);
+}
+
+.agent-settings-pkg-path {
+  padding: 0 0.6rem 0.3rem 2rem;
+  font-size: 0.62rem;
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+}
+
+.agent-settings-skills-list {
+  padding: 0 0.6rem 0.3rem 2rem;
+}
+
+.agent-settings-skill-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0.25rem 0;
+}
+
+.agent-settings-skill-name {
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.agent-settings-skill-desc {
+  flex: 1;
+  font-size: 0.66rem;
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Toggle switch ── */
+
+.agent-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  margin-left: auto;
+}
+
+.agent-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+
+.agent-toggle-track {
+  width: 28px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--outline-variant);
+  transition: background var(--duration-base);
+  position: relative;
+}
+
+.agent-toggle-track::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-circle);
+  background: var(--surface);
+  transition: transform var(--duration-base);
+}
+
+.agent-toggle input:checked + .agent-toggle-track {
+  background: var(--accent);
+}
+
+.agent-toggle input:checked + .agent-toggle-track::after {
+  transform: translateX(12px);
+}
+
+.agent-toggle input:disabled + .agent-toggle-track {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.agent-toggle-sm .agent-toggle-track {
+  width: 22px;
+  height: 13px;
+}
+
+.agent-toggle-sm .agent-toggle-track::after {
+  width: 9px;
+  height: 9px;
+}
+
+.agent-toggle-sm input:checked + .agent-toggle-track::after {
+  transform: translateX(9px);
+}
+
+.agent-typewriter-skip {
+  display: inline-block;
+  margin-top: var(--space-xs);
+  padding: 2px 8px;
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.agent-typewriter-skip:hover {
+  background: var(--hover-overlay);
+}
+
+/* ── Patch Review (Story 1.5 Phase A — resurrected) ── */
+
+.patch-review {
+  flex-shrink: 0;
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface);
+}
+
+.patch-review-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.patch-review-meta {
+  margin: var(--space-3xs) 0 var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+
+.patch-review-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  margin-bottom: var(--space-xs);
+}
+
+.patch-review-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+  cursor: pointer;
+}
+
+.patch-review-item input[type='checkbox'] {
+  flex-shrink: 0;
+  margin: 0;
+}
+
+/* dogfood 2026-08-21：此前零样式吃到原生默认按钮块（太大）。紧凑图标钮，
+ * 与展开钮同族。 */
+.patch-review-lock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.1rem;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.patch-review-lock-btn:hover {
+  background: var(--hover-overlay);
+}
+
+.patch-review-lock-btn.is-locked {
+  color: var(--accent);
+}
+
+.patch-review-lock-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+/* dogfood 2026-08-21：补丁行展开详情（现值 → 新值）。 */
+.patch-review-item-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
+.patch-review-expand-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  padding: 0.1rem;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.patch-review-expand-btn:hover {
+  background: var(--hover-overlay);
+}
+
+.patch-review-expand-btn .material-symbols-outlined {
+  font-size: 16px;
+}
+
+.patch-review-detail {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  margin: var(--space-2xs) 0 var(--space-xs) 1.4rem;
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container-low);
+}
+
+.patch-review-detail-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.patch-review-detail-label {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--on-surface-variant);
+}
+
+.patch-review-detail pre {
+  margin: 0;
+  max-height: 14rem;
+  overflow: auto;
+  /* dogfood R2 #24：mirror .diff-side-by-side 2026-08-21 先例——patch 值是中文散文非代码，
+     等宽让中文回退系统字体，与全界面不统一。统一 UI 字体。 */
+  font-family: var(--font-ui);
+  font-size: var(--text-3xs);
+  line-height: 1.45;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.patch-review-field {
+  font-weight: 600;
+}
+
+.patch-review-action {
+  padding: 1px var(--space-3xs);
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  background: var(--chip-bg);
+  border-radius: var(--radius-sm);
+}
+
+.patch-review-agent {
+  color: var(--on-surface-variant);
+}
+
+.patch-review-issues {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  margin-left: auto;
+}
+
+.patch-review-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  padding: 0 var(--space-3xs);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+}
+
+.patch-review-badge--error {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.patch-review-badge--warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.patch-review-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.patch-review-apply-btn,
+.patch-review-reject-btn {
+  flex: 1;
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.patch-review-apply-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.patch-review-apply-btn:hover {
+  /* CR-002: hover to --accent-strong (was --surface-container-high) so the white
+   * CTA keeps contrast + its accent identity on hover, matching the
+   * `.structure-empty-cta:hover` treatment. */
+  background: var(--accent-strong);
+}
+
+.patch-review-reject-btn {
+  background: transparent;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+}
+
+.patch-review-reject-btn:hover {
+  background: var(--hover-overlay);
+}
+
+/* ── dogfood R2 批次 D1：outline / episode_outlines patch 结构化 diff 卡（OutlinePatchDiff，
+   mockup ui-mockup-draft-review.html Ⓐ卡）。语义色全走 theme token（spec ui/theme-tokens：
+   --success/--error/--warning/--info + diff-add/remove-bg，亮暗双主题同源，无裸色值）。 ── */
+
+.outline-diff {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+/* 顶部统计 chips（+N 卷 · +N 转折点 · N 字段改写）。 */
+.outline-diff-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+.outline-diff-chip {
+  padding: 1px var(--space-2xs);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  color: var(--success);
+  background: var(--diff-add-bg);
+}
+
+.outline-diff-chip--muted {
+  color: var(--on-surface-variant);
+  background: var(--chip-bg);
+}
+
+.outline-diff-chip--changed {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.outline-diff-chip--removed {
+  color: var(--error);
+  background: var(--diff-remove-bg);
+}
+
+/* 核心字改写行：label 列 + 旧值（删除线）→ 新值。 */
+.outline-diff-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-diff-row {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  gap: var(--space-2xs);
+  align-items: start;
+}
+
+.outline-diff-row-label {
+  padding-top: 2px;
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+.outline-diff-value {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.outline-diff-old {
+  color: var(--on-surface-variant);
+  font-size: var(--text-3xs);
+  text-decoration: line-through;
+  text-decoration-color: var(--error);
+  word-break: break-word;
+}
+
+.outline-diff-new {
+  color: var(--on-surface);
+  font-size: var(--text-xs);
+  word-break: break-word;
+}
+
+/* 改写/新增/删除小标签（mockup .tag / .pill-new）。 */
+.outline-diff-tag {
+  display: inline-block;
+  margin-right: var(--space-3xs);
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-2xs);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  color: var(--success);
+  background: var(--diff-add-bg);
+}
+
+.outline-diff-tag--removed {
+  color: var(--error);
+  background: var(--diff-remove-bg);
+}
+
+/* 卷阶段卡（新增卷 = 绿描边 + 2s 脉冲一次，mockup .phase-mini/.new-glow）。 */
+.outline-diff-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.outline-diff-section-label {
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.outline-diff-phase {
+  padding: var(--space-2xs) var(--space-xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface);
+}
+
+.outline-diff-phase--new {
+  border-color: var(--success);
+  animation: outline-diff-new-pulse 2s var(--ease-standard) 1;
+}
+
+@keyframes outline-diff-new-pulse {
+  0%, 100% { border-color: var(--success); }
+  50% { border-color: var(--outline-variant); }
+}
+
+.outline-diff-phase--removed .outline-diff-phase-title-text {
+  color: var(--on-surface-variant);
+  text-decoration: line-through;
+  text-decoration-color: var(--error);
+}
+
+.outline-diff-phase-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+/* 新增卷字段网格：label + 值成对（mockup .ph-fields）。 */
+.outline-diff-phase-fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 1px var(--space-xs);
+  margin-top: var(--space-3xs);
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+.outline-diff-phase-fields b {
+  font-weight: 500;
+  color: var(--on-surface-variant);
+}
+
+/* 既有卷字段变化行：label + 旧→新。 */
+.outline-diff-phase-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin-top: var(--space-3xs);
+}
+
+.outline-diff-phase-change {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  gap: var(--space-2xs);
+  align-items: start;
+}
+
+.outline-diff-phase-change-label {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+/* 转折点行：type 徽章（core=琥珀/secondary=蓝/fork=紫→accent，无紫 token 的 token 纪律取舍）。 */
+.outline-diff-tp {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  padding: 1px 0;
+  font-size: var(--text-xs);
+}
+
+.outline-diff-tp-type {
+  flex-shrink: 0;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-2xs);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+}
+
+.outline-diff-tp-type--core {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.outline-diff-tp-type--secondary {
+  color: var(--info);
+  background: var(--info-bg);
+}
+
+.outline-diff-tp-type--fork {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+/* 约束一行式：added 绿 / removed 红 / changed 旧→新。 */
+.outline-diff-constraint {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--text-3xs);
+}
+
+.outline-diff-constraint--added > span:last-child {
+  color: var(--success);
+}
+
+.outline-diff-constraint--removed > span {
+  color: var(--on-surface-variant);
+}
+
+/* episode_outlines 一行式（R1 简版：id + purpose，changed 标黄）。 */
+.outline-diff-ep-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.outline-diff-ep {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  font-size: var(--text-3xs);
+}
+
+.outline-diff-ep-id {
+  flex-shrink: 0;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  color: var(--on-surface-variant);
+}
+
+.outline-diff-ep-purpose {
+  color: var(--on-surface);
+  word-break: break-word;
+}
+
+.outline-diff-ep--added .outline-diff-ep-purpose {
+  color: var(--success);
+}
+
+.outline-diff-ep--changed .outline-diff-ep-purpose {
+  color: var(--warning);
+}
+
+.outline-diff-ep--removed .outline-diff-ep-purpose {
+  color: var(--on-surface-variant);
+  text-decoration: line-through;
+  text-decoration-color: var(--error);
+}
+
+/* ── Story 3.3 线 A：结构校验改时提议题区（pendingPatchIssues 非空时显示）── */
+
+.patch-review-issues-section {
+  margin-top: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.patch-review-issues-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  font-size: var(--text-xs);
+}
+
+.patch-review-issues-counts {
+  display: inline-flex;
+  gap: var(--space-3xs);
+}
+
+/* severity 色分用 theme-tokens（spec ui/theme-tokens：--error/--warning/--on-surface-variant），
+   非 structure.css 的 .validation-badge（跨 feature 不 import，用本包专属 class）。 */
+.patch-review-severity-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4em;
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-full, 999px);
+  font-size: var(--text-2xs, 0.7rem);
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.patch-review-severity-count--error {
+  background: var(--error);
+  color: var(--on-error, #fff);
+}
+
+.patch-review-severity-count--warning {
+  background: var(--warning);
+  color: var(--on-warning, #000);
+}
+
+.patch-review-severity-count--info {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.patch-review-issues-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+/* per-issue 呈现换 InsightCard（Story 3.7 #1）：旧 .patch-review-issue* 行级 class 由
+   insight-card 段接管（severity 色条 = .insight-card--${sev}）；suggestion/targets/
+   按钮样式见下方 insight 段（.patch-review-issue-suggestion / -targets）。 */
+
+/* ── Chapter Review (Story 4.3 + Story 7.1 B1 selection-driven revision) ── */
+
+.chapter-review {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-md) var(--space-lg);
+  border-top: 1px solid var(--outline-variant);
+  background: var(--surface);
+}
+
+.chapter-review-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+  color: var(--on-surface);
+}
+
+.chapter-review-stage,
+.chapter-review-resuming {
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-draft-content,
+.chapter-review-brief-content {
+  margin: 0;
+  padding: var(--space-xs);
+  font-size: var(--text-sm);
+  white-space: pre-wrap;
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.chapter-review-draft .tiptap-wrapper {
+  padding: var(--space-xs);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm);
+  max-height: 22rem;
+  overflow-y: auto;
+}
+
+.chapter-review-draft .tiptap-content {
+  /* readonly TipTap — keep readable line length but allow selection highlight. */
+  font-size: var(--text-sm);
+  color: var(--on-surface);
+}
+
+.chapter-review-meta {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-empty,
+.chapter-review-verdict-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+
+/* dogfood R2 #83/#84（2026-08-28）：写前挂起说明卡——出发核查矛盾/偏离 pause（无草稿），
+   呈矛盾/偏离明细 + redo/abort（无「继续写」）。 */
+.chapter-review-suspension {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-xs);
+  background: var(--surface-container-low);
+  border-left: 3px solid var(--warning, #e0a030);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-suspension-hint,
+.chapter-review-suspension-note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.chapter-review-suspension-list {
+  margin: 0;
+  padding-left: var(--space-lg);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.chapter-review-suspension-list li {
+  margin: var(--space-3xs) 0;
+  white-space: pre-wrap;
+}
+
+.chapter-review-suspension-note {
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-feedback {
+  resize: vertical;
+  padding: var(--space-2xs) var(--space-xs);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  color: var(--on-surface);
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-feedback:disabled {
+  opacity: 0.5;
+}
+
+.chapter-review-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.chapter-review-actions button,
+.chapter-review-selection-actions button,
+.chapter-review-intent-actions button {
+  flex: 1;
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.chapter-review-actions button:disabled,
+.chapter-review-selection-actions button:disabled,
+.chapter-review-intent-actions button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chapter-review-continue-btn,
+.chapter-review-compile-btn,
+.chapter-review-intent-confirm-btn {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.chapter-review-continue-btn:hover:not(:disabled),
+.chapter-review-compile-btn:hover:not(:disabled),
+.chapter-review-intent-confirm-btn:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.chapter-review-redo-btn,
+.chapter-review-abort-btn,
+.chapter-review-clear-selection-btn,
+.chapter-review-intent-edit-btn,
+.chapter-review-intent-cancel-btn {
+  background: transparent;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--outline-variant);
+}
+
+.chapter-review-redo-btn:hover:not(:disabled),
+.chapter-review-abort-btn:hover:not(:disabled),
+.chapter-review-clear-selection-btn:hover:not(:disabled),
+.chapter-review-intent-edit-btn:hover:not(:disabled),
+.chapter-review-intent-cancel-btn:hover:not(:disabled) {
+  background: var(--hover-overlay);
+}
+
+/* ── Story 7.1 B1: selection box + RevisionIntent confirm card ── */
+
+.chapter-review-selection-box {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-xs);
+  background: var(--surface-container-low);
+  border: 1px dashed var(--outline-variant);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-selection-hint {
+  margin: 0;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.chapter-review-selection-quote {
+  margin: 0;
+  padding: var(--space-2xs) var(--space-xs);
+  font-size: var(--text-xs);
+  font-style: italic;
+  color: var(--on-surface-variant);
+  background: var(--surface);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-sm);
+  max-height: 6rem;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.chapter-review-instruction-input {
+  resize: vertical;
+  padding: var(--space-2xs) var(--space-xs);
+  font-size: var(--text-xs);
+  font-family: inherit;
+  color: var(--on-surface);
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-instruction-input:disabled {
+  opacity: 0.5;
+}
+
+.chapter-review-selection-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+.chapter-review-intent-error {
+  margin: 0;
+  padding: var(--space-2xs) var(--space-xs);
+  font-size: var(--text-xs);
+  color: var(--error);
+  background: var(--error-bg);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-intent-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  /* Story 3.7 #6（design D7）：外框对齐 InsightCard 视觉语言——border-left 色条（Intent 确认卡
+     无 severity → 中性 on-surface-variant，同 .insight-card 缺省档）。 */
+  border-left: 3px solid var(--on-surface-variant);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-intent-card-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+/* Story 3.7 #6（design D7）：确认卡标题行 = 标题 + 来源 badge（InsightCard header 同语言）。 */
+.chapter-review-intent-card-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+.chapter-review-intent-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.chapter-review-intent-field > strong {
+  font-size: var(--text-3xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-intent-details,
+.chapter-review-intent-locked-list {
+  margin: 0;
+  padding-left: var(--space-sm);
+}
+
+.chapter-review-intent-locked-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+/* Story 3.7 #6（design D7）：authority 标签（原 .chapter-review-intent-authority is-hard/is-soft）
+   并入 badge 位——迁移到下方 insight-* 段的 .insight-card-badge--hard/--soft（token 色分保留）。 */
+
+.chapter-review-intent-locked-field {
+  font-weight: 600;
+}
+
+.chapter-review-intent-locked-evidence {
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-intent-locked-empty {
+  color: var(--on-surface-variant);
+  font-style: italic;
+}
+
+.chapter-review-intent-provenance {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.chapter-review-intent-provenance > p {
+  margin: 0;
+  display: flex;
+  gap: var(--space-2xs);
+  align-items: flex-start;
+}
+
+.chapter-review-intent-edit {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.chapter-review-intent-edit > label {
+  font-size: var(--text-3xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+.chapter-review-intent-json {
+  resize: vertical;
+  min-height: 8rem;
+  padding: var(--space-2xs) var(--space-xs);
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: var(--text-3xs);
+  color: var(--on-surface);
+  background: var(--surface);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+}
+
+.chapter-review-intent-json:disabled {
+  opacity: 0.5;
+}
+
+.chapter-review-intent-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
+
+/* ── Story 3.7：InsightCard 统一洞察卡（结构议题 #1 / Reader-Audit findings #2 /
+     revision-guard findings #4 共用展示壳）。severity 色分走 theme token
+     （spec ui/theme-tokens：--error/--warning/--info border-left 色条，延续 3.3 议题区
+     border-left 色条语言），无 severity → 中性 --on-surface-variant。 ── */
+
+.insight-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-left: 3px solid var(--on-surface-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+}
+
+.insight-card--error {
+  border-left-color: var(--error);
+}
+
+.insight-card--warning {
+  border-left-color: var(--warning);
+}
+
+.insight-card--info {
+  border-left-color: var(--info);
+}
+
+/* D5b 同章旧卡降级（ReviewFindingsCard 新鲜度门用）：muted 由卡组级
+   .review-findings-card--stale 承担（整组降级，非单卡）。 */
+
+.insight-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.insight-card-title {
+  color: var(--on-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 折叠态 ≤2 行（design D2）；展开态移除本 class 显全文。 */
+.insight-card-title--clamped {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.insight-card-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2xs);
+  flex-wrap: wrap;
+}
+
+.insight-card-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.insight-card-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3xs);
+  font-size: var(--text-3xs);
+  font-weight: 600;
+  line-height: 1.6;
+  border-radius: var(--radius-pill);
+}
+
+/* 来源 badge = 填充 chip；维度 badge = 描边 chip（两类信息视觉可分）。 */
+.insight-card-badge--source {
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+.insight-card-badge--dimension {
+  color: var(--on-surface-variant);
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+}
+
+/* Story 3.7 #6（design D7）：authority hard/soft 标签并入 badge 位——复用 .insight-card-badge 基座
+   （pill/字号/字重），语义色保留 theme token（hard=error / soft=warning，原
+   chapter-review-intent-authority is-hard/is-soft 色分原样迁移）。 */
+.insight-card-badge--hard {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.insight-card-badge--soft {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.insight-card-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  margin-left: auto;
+}
+
+.insight-card-btn {
+  padding: var(--space-3xs) var(--space-xs);
+  font-size: var(--text-2xs, 0.7rem);
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.insight-card-btn--apply {
+  border: 0;
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.insight-card-btn--apply:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+/* 禁用（D11 agentLoading 门 + D5b stale 全组禁用）：纯视觉反馈，行为由受控 prop 驱动。 */
+.insight-card-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --secondary = 次级按钮共用样式（ignore/expand 同款描边；Story 3.7 #6 Intent 确认卡
+   编辑/取消按钮借用作视觉对齐，D7「提取共用 class 到 insight-* 段」）。 */
+.insight-card-btn--ignore,
+.insight-card-btn--expand,
+.insight-card-btn--secondary {
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+  color: var(--on-surface-variant);
+}
+
+/* CR-004：禁用态 hover 不反馈（:not(:disabled) 与 --apply 对齐——stale 全组禁用后无假反馈）。 */
+.insight-card-btn--ignore:hover:not(:disabled),
+.insight-card-btn--expand:hover:not(:disabled),
+.insight-card-btn--secondary:hover:not(:disabled) {
+  background: var(--hover-overlay);
+}
+
+.insight-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding-top: var(--space-3xs);
+  border-top: 1px solid var(--border-subtle);
+}
+
+.insight-card-grounding {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-2xs);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-2xs, 0.7rem);
+}
+
+.insight-card-grounding-quote {
+  color: var(--on-surface);
+}
+
+.insight-card-grounding-location {
+  color: var(--on-surface-variant);
+}
+
+/* before→after 箭头（guard evidence 改前→改后对照语言；#4 grounding 复用）。 */
+.insight-card-grounding-before,
+.insight-card-grounding-after {
+  color: var(--on-surface);
+  word-break: break-word;
+}
+
+/* 折叠态紧凑 grounding 行（WP0 controller 修正）：quote+location 单行 line-clamp:1。
+   -webkit-box 覆盖基类的 flex（嵌套 span 折成一行文本参与 clamp）；title 属性带全文。 */
+.insight-card-grounding--compact {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Story 3.7 #2：ReviewFindingsCard 卡组（write_chapter tool result 的 reader-audit
+     findings 结构化呈现，AgentMessageItem tool 分支 findings 档平铺替换该 result 的
+     默认呈现位）。卡组头 = 工具名小字 + route badge +（stale 时）新鲜度 badge。 ── */
+
+.review-findings-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.review-findings-card-header {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  font-size: var(--text-2xs, 0.7rem);
+  color: var(--on-surface-variant);
+}
+
+/* toolId 小字（D5：tool 元信息由卡头保留——findings 卡替换该 tool 默认呈现位后仍可识别来源工具）。 */
+.review-findings-card-tool {
+  color: var(--on-surface-variant);
+}
+
+.review-findings-card-route {
+  padding: 0 var(--space-3xs);
+  font-weight: 600;
+  line-height: 1.6;
+  border-radius: var(--radius-pill);
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+/* D5b 新鲜度门：同章已有后续审核——非最新卡组降级（muted + badge）。 */
+.review-findings-card-stale {
+  padding: 0 var(--space-3xs);
+  font-weight: 600;
+  line-height: 1.6;
+  border-radius: var(--radius-pill);
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.review-findings-card--stale {
+  opacity: 0.6;
+}
+
+/* CR-001：完整审核原文逐字保底呈现（裁决依据/警示/指引只在 result.output 里）。
+   mirror DiffCard 卡体（agent-diff-card-body 的 pre-wrap 先例）。 */
+.review-findings-card-output {
+  margin: var(--space-2xs) 0 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-size: var(--text-2xs);
+  line-height: 1.6;
+  color: var(--on-surface-variant);
+  border-left: 2px solid var(--outline-variant);
+}
+
+.review-findings-card-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+/* ── Story 3.7 #1：PatchReviewIssues per-issue InsightCard 展开态 children
+     （suggestion / targets 列表 / 在时间线修复 + 应用并补充）。 ── */
+
+.patch-review-issue-suggestion {
+  color: var(--on-surface-variant);
+}
+
+.patch-review-issue-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+  font-size: var(--text-2xs, 0.7rem);
+  color: var(--on-surface-variant);
+}
+
+.patch-review-issue-target {
+  padding: 0 var(--space-3xs);
+  line-height: 1.6;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+}
+
+.insight-card-child-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3xs);
+}
+
+/* ── Story 3.7 #4（design D6）：ChapterReviewPanel guard findings（revision-guard art-mode 卡）——
+     per-finding InsightCard 列表（纯展示降级卡：无 onApply/onIgnore，决策单位是卡级三档）+
+     展开态 explanation。 ── */
+
+.chapter-review-guard-findings {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.chapter-review-guard-finding-explanation {
+  color: var(--on-surface-variant);
+  word-break: break-word;
+}
+
+/* ── ChainRunCard（dogfood T1 Stage 6，design §7.5）：写章链运行卡 ──
+ *
+ * 卡容器：--radius-lg + --shadow-soft + surface 底，与消息流留 --space-md 间距；全 token 化。
+ * 头部 = 节点步进条（已完成 = 实心 success 点 / 当前 = accent 呼吸点 / 未来 = outline-variant
+ * 空心点，节点名 --text-3xs on-surface-variant、当前节点名 accent）；正文区 = 阶段二章稿流式
+ * 文本（复用 agent-msg-md 排版 + 流式 caret）；paused 降级为仅步进条（让位 ChapterReviewPanel）。 */
+
+.chain-run-card {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-soft);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.chain-run-card-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.chain-run-card-icon {
+  font-size: var(--text-md);
+  color: var(--accent);
+  flex-shrink: 0;
+}
+
+.chain-run-card-title {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface);
+  flex-shrink: 0;
+}
+
+/* 中断/失败标（design §7.5 中断/失败态）：warning / error 语义色小标 */
+.chain-run-card-tag {
+  flex-shrink: 0;
+  padding: 0 var(--space-3xs);
+  font-size: var(--text-3xs);
+  line-height: 1.6;
+  border-radius: var(--radius-pill);
+}
+
+.chain-run-card-tag--warning {
+  color: var(--warning);
+  background: var(--warning-bg, var(--hover-overlay));
+}
+
+.chain-run-card-tag--error {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+/* 运行中三点（复用 agent-loading-dot，右侧内联紧凑形态） */
+.chain-run-card-running {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* 节点步进条：水平排布，换行容错（22 节点名全展开在窄面板会折行） */
+.chain-run-card-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-md);
+}
+
+.chain-run-card-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.chain-run-card-step-dot {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: var(--radius-circle);
+  flex-shrink: 0;
+  /* 未来节点：outline-variant 空心点（缺省态） */
+  border: 1px solid var(--outline-variant);
+  background: transparent;
+}
+
+.chain-run-card-step-dot--done {
+  border-color: var(--success);
+  background: var(--success);
+}
+
+.chain-run-card-step-dot--current {
+  border-color: var(--accent);
+  background: var(--accent);
+  animation: chain-step-breathe 1.4s var(--ease-standard) infinite;
+}
+
+.chain-run-card-step-dot--error {
+  border-color: var(--error);
+  background: var(--error);
+}
+
+@keyframes chain-step-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.72); }
+}
+
+.chain-run-card-step-label {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+}
+
+.chain-run-card-step-label--current {
+  color: var(--accent);
+}
+
+/* 正文区：流式章稿（agent-msg-md 复用排版 + caret）/ JSON 节点期占位 */
+.chain-run-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.chain-run-card-body .agent-msg-md {
+  font-size: var(--text-sm);
+  max-height: 24rem;
+  overflow-y: auto;
+  padding-right: var(--space-3xs);
+}
+
+.chain-run-card-placeholder {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) 0;
+}
+
+.chain-run-card-placeholder-label {
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+}
+
+.chain-run-card-stream-meta {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+.chain-run-card-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* paused 精简态：仅步进条（ChapterReviewPanel 接管正文审阅面，§7.5 不叠加两卡） */
+.chain-run-card--compact .chain-run-card-running {
+  display: none;
+}
+
+/* 动效降级（§7.7）：呼吸点在 reduced-motion 下静态 */
+@media (prefers-reduced-motion: reduce) {
+  .chain-run-card-step-dot--current {
+    animation: none;
+  }
+}
+
+/* ── 体量门折叠视图（SideBySideDiff LARGE_DIFF_TOTAL_CHARS 超限降级）──
+ * dogfood R2 真机实测：108KB create_file 逐行表初始挂载与 accept 重协调各秒级。
+ * 摘要 + 预览的轻量块，预览 max-height 滚动（非完整渲染）。 */
+.diff-sbs-folded-note {
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+}
+
+.diff-sbs-folded-stats {
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--structure-grid-line, var(--outline-variant));
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+.diff-sbs-folded-preview {
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+  padding: var(--space-xs) var(--space-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--on-surface-variant);
+}
+
+.diff-sbs-folded-hint {
+  padding: var(--space-2xs) var(--space-sm) var(--space-xs);
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+}

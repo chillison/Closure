@@ -1,0 +1,19 @@
+[
+  {
+    "id": "mechanical-homoglyph",
+    "namespace": "mechanical.homoglyph",
+    "title": "拉丁同形字混淆",
+    "level": "low",
+    "note": "西里尔 / 希腊字母里长得像拉丁字母的同形字（如用西里尔 е 冒充拉丁 e），常见于绕过 AI 检测。确认不是有意的外文引用后，改回正常拉丁字母。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "[аеорсхукмнвтАЕОРСХУКМНВТіјѕ\\u03BF\\u03B1\\u03C1\\u039F\\u0391\\u03A1]"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "若非有意使用外文，把同形字改回对应的拉丁字母；否则保留。"
+    }
+  }
+]

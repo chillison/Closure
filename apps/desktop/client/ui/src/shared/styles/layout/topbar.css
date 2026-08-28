@@ -1,0 +1,430 @@
+/* ── Top Bar ── */
+.workspace-topbar {
+  position: relative;
+  z-index: var(--z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 0 1.5rem;
+  height: 38px;
+  border-bottom: 1px solid var(--border-default);
+  background: var(--surface);
+  backdrop-filter: blur(10px);
+  -webkit-app-region: drag;
+}
+
+.workspace-topbar button,
+.workspace-topbar input,
+.workspace-topbar select,
+.workspace-topbar a {
+  -webkit-app-region: no-drag;
+}
+
+/* macOS 红绿灯占位 */
+.topbar-traffic-light-spacer {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.workspace-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs, 6px);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  flex-shrink: 0;
+}
+
+/* 08-25 logo：项目名左侧的品牌图（用户拍板「左上角项目名称左边加 logo」；08-26 放大）。 */
+.workspace-brand-logo {
+  width: 24px;
+  height: 24px;
+  display: block;
+}
+
+/* ── Menu Bar ── */
+.topbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  flex: 1;
+}
+
+.topbar-menu-group {
+  position: relative;
+}
+
+.topbar-menu-trigger {
+  display: inline-flex;
+  align-items: center;
+  height: 26px;
+  padding: 0 0.6rem;
+  border: 0;
+  border-radius: var(--radius-2xs);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  white-space: nowrap;
+  -webkit-app-region: no-drag;
+}
+
+.topbar-menu-trigger:hover,
+.topbar-menu-trigger.is-open {
+  background: var(--menu-item-hover);
+  color: var(--on-surface);
+}
+
+.topbar-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  padding: 0.25rem 0;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.4rem;
+  box-shadow: var(--shadow-elevated);
+}
+
+.topbar-menu-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: var(--space-xs) var(--space-lg);
+  border: 0;
+  background: transparent;
+  color: var(--on-surface);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  gap: var(--space-2xl);
+}
+
+.topbar-menu-item:hover:not(:disabled) {
+  background: var(--menu-item-hover);
+}
+
+.topbar-menu-item.is-focused:not(:disabled) {
+  background: var(--menu-item-hover);
+}
+
+.topbar-menu-item:disabled {
+  color: var(--outline);
+  cursor: default;
+}
+
+.topbar-menu-shortcut {
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.topbar-menu-separator {
+  height: 1px;
+  margin: var(--space-2xs) var(--space-md);
+  background: var(--outline-variant);
+}
+
+/* ── Window Controls (Windows/Linux) ── */
+.window-controls {
+  display: flex;
+  align-items: stretch;
+  margin-left: auto;
+  margin-right: -1.5rem;
+  -webkit-app-region: no-drag;
+}
+
+.window-control {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 100%;
+  min-height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--on-surface);
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.window-control:hover {
+  background: var(--hover-overlay);
+}
+
+.window-control-close:hover {
+  background: var(--window-close-hover);
+  color: var(--on-accent);
+}
+
+/* ── New Project Dialog ── */
+.topbar-new-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-confirm-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  background: var(--overlay-backdrop);
+}
+
+.topbar-new-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+  padding: var(--space-2xl);
+  border-radius: var(--radius-lg);
+  background: var(--surface-container-lowest);
+  box-shadow: var(--shadow-soft);
+  min-width: 320px;
+}
+
+.topbar-new-dialog-actions {
+  display: flex;
+  gap: var(--space-md);
+  margin-top: auto;
+}
+
+/* .auth-submit 是登录表单的全宽按钮（width:100%）——混进并排按钮行会把 flex:1
+ * 的取消键挤到零宽、汉字竖排（dogfood 2026-08-20）。行内改 auto 并等分两键。 */
+.topbar-new-dialog-actions .auth-submit {
+  width: auto;
+  flex: 1;
+}
+
+.topbar-new-dialog-actions .projects-cancel {
+  white-space: nowrap;
+}
+
+.workspace-brand-version {
+  margin-left: var(--space-sm);
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  color: var(--on-surface-variant);
+  letter-spacing: 0;
+  opacity: 0.7;
+}
+
+.update-release-notes {
+  margin: 0.5rem 0 0;
+  padding: 0.6rem 0.75rem;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-ui);
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  text-align: left;
+  white-space: pre-wrap;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.update-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-md);
+  margin-top: var(--space-xl);
+  width: 100%;
+}
+
+.update-btn-secondary,
+.update-btn-primary {
+  min-width: 88px;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-lg);
+  font: inherit;
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: background-color var(--duration-fast) ease, border-color var(--duration-fast) ease;
+}
+
+.update-btn-secondary {
+  background: transparent;
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface);
+}
+
+.update-btn-secondary:hover {
+  background: var(--hover-overlay);
+}
+
+.update-btn-primary {
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  color: var(--surface-container-lowest);
+}
+
+.update-btn-primary:hover {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+}
+
+.update-major-banner {
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.85rem;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-lg);
+  color: var(--accent-strong);
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: left;
+}
+
+.update-progress {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  margin-top: var(--space-xl);
+}
+
+.update-progress-track {
+  width: 100%;
+  height: 8px;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.update-progress-bar {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width var(--duration-slow) ease;
+}
+
+.update-progress-label {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant);
+  text-align: right;
+}
+
+/* ── Account Dialog Profile ── */
+.account-dialog-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: 0.5rem 0;
+}
+
+.account-dialog-avatar {
+  font-size: 40px;
+  color: var(--on-surface-variant);
+}
+
+.account-dialog-info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  min-width: 0;
+}
+
+.account-dialog-name {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-dialog-email {
+  font-size: var(--text-base);
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── About Dialog ── */
+.about-dialog-body {
+  align-items: center;
+  text-align: center;
+  gap: var(--space-xs);
+}
+
+.about-dialog-brand {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.about-dialog-version {
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+  font-weight: 500;
+}
+
+.about-dialog-desc {
+  margin: 0.5rem 0 0;
+  font-size: var(--text-md);
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+}
+
+/* ── Shortcuts Dialog ── */
+
+.shortcuts-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.shortcuts-section-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+  margin: 0 0 0.5rem;
+}
+
+.shortcuts-list {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.shortcuts-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.3rem 0;
+}
+
+.shortcuts-row dt {
+  font-size: var(--text-md);
+  color: var(--on-surface);
+}
+
+.shortcuts-row dd {
+  margin: 0;
+}
+
+.shortcuts-row kbd {
+  font-family: inherit;
+  font-size: 0.75rem;
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: 4px;
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+}

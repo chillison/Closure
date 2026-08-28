@@ -1,0 +1,190 @@
+import type {
+  ModelCapability,
+  ModelLimits,
+  ModelRegistry,
+  ModelRegistryEntry,
+  ThinkingKind,
+} from './contracts/model';
+
+// Inline the registry data at build time — avoids runtime YAML parsing in the renderer.
+const REGISTRY_ENTRIES: ModelRegistryEntry[] = [
+  // Image models
+  { pattern: 'dall-e-*', capability: 'image', alias: 'DALL·E' },
+  { pattern: 'gpt-image-*', capability: 'image', alias: 'GPT Image' },
+  { pattern: 'stable-diffusion-*', capability: 'image', alias: 'Stable Diffusion' },
+  { pattern: 'sd-*', capability: 'image', alias: 'SD' },
+  { pattern: 'sdxl-*', capability: 'image', alias: 'SDXL' },
+  { pattern: 'flux-*', capability: 'image', alias: 'Flux' },
+  { pattern: 'midjourney*', capability: 'image', alias: 'Midjourney' },
+  { pattern: 'playground-*', capability: 'image', alias: 'Playground' },
+  { pattern: 'imagen-*', capability: 'image', alias: 'Imagen' },
+  // Video models
+  { pattern: 'sora*', capability: 'video', alias: 'Sora' },
+  { pattern: 'veo*', capability: 'video', alias: 'Veo' },
+  { pattern: 'cogvideox*', capability: 'video', alias: 'CogVideoX' },
+  { pattern: 'kling*', capability: 'video', alias: 'Kling' },
+  { pattern: 'runway*', capability: 'video', alias: 'Runway' },
+  { pattern: 'pika*', capability: 'video', alias: 'Pika' },
+  { pattern: 'luma*', capability: 'video', alias: 'Luma' },
+  { pattern: 'minimax-video*', capability: 'video', alias: 'MiniMax Video' },
+  { pattern: 'wan-*', capability: 'video', alias: 'Wan' },
+  // Rerank models (KB retrieval rerank stage, Story 2.1). Cross-encoder scorers
+  // - NOT embedders. Listed BEFORE `bge-*` so `bge-reranker-*` resolves to
+  // capability 'rerank' rather than 'embedding' (the `bge-*` glob below would
+  // otherwise swallow it - the VS1 imprecision is now resolved).
+  { pattern: 'bge-reranker-*', capability: 'rerank', alias: 'BGE Reranker' },
+  { pattern: 'jina-reranker*', capability: 'rerank', alias: 'Jina Reranker' },
+  { pattern: '*rerank*', capability: 'rerank', alias: 'Reranker' }, // cohere rerank-* / voyage-rerank-* / mxbai-rerank-*
+  // Embedding models (KB indexing, VS1). Closure is CJK-heavy so CN families
+  // (bge-*, m3e-*, gte-*) are kept.
+  { pattern: 'text-embedding-*', capability: 'embedding', alias: 'Text Embedding' },
+  { pattern: '*embed*', capability: 'embedding', alias: 'Embedding' }, // nomic-embed / jina-embed / cohere embed-* / gte-Qwen2-embed*
+  { pattern: 'multilingual-e5*', capability: 'embedding', alias: 'Multilingual E5' },
+  { pattern: 'e5-*', capability: 'embedding', alias: 'E5' },
+  { pattern: 'bge-*', capability: 'embedding', alias: 'BGE' }, // bge-m3 / bge-large-zh (CN); bge-reranker-* matched by the rerank pattern above
+  { pattern: 'gte-*', capability: 'embedding', alias: 'GTE' },
+  { pattern: 'm3e-*', capability: 'embedding', alias: 'M3E' }, // CN
+  { pattern: 'voyage-*', capability: 'embedding', alias: 'Voyage' },
+  // Text models
+  { pattern: 'gpt-5*', capability: 'text', alias: 'GPT', thinking: 'gpt5', limits: { contextWindow: 400_000, maxOutputTokens: 128_000 } },
+  { pattern: 'gpt-4o*', capability: 'text', alias: 'GPT-4o' },
+  { pattern: 'gpt-4.1*', capability: 'text', alias: 'GPT-4.1' },
+  { pattern: 'gpt-4*', capability: 'text', alias: 'GPT-4' },
+  { pattern: 'gpt-3.5*', capability: 'text', alias: 'GPT-3.5' },
+  // o-series (thinking adapters task): always-on reasoning, no off switch; Chat
+  // Completions returns no reasoning content. o1's output ceiling is not
+  // verified (research C theme 2 lists only o3/o4-mini) — limits stay absent.
+  { pattern: 'o1*', capability: 'text', alias: 'o1', thinking: 'openai-o' },
+  { pattern: 'o3*', capability: 'text', alias: 'o3', thinking: 'openai-o', limits: { contextWindow: 200_000, maxOutputTokens: 100_000 } },
+  { pattern: 'o4*', capability: 'text', alias: 'o4', thinking: 'openai-o', limits: { contextWindow: 200_000, maxOutputTokens: 100_000 } },
+  // Claude (thinking adapters task): generation split — specific version
+  // patterns FIRST, generic `claude-*` fallback last. Design §1.3:
+  // fable/mythos → claude-forced; opus-5/sonnet-5 → claude-5;
+  // opus-4-5/sonnet-4-5/haiku-4-5/3-7 → claude-budget; everything else
+  // (4.6/4.7/4.8 + older) → claude-4x. Limits (1M/128K) only on the
+  // generations research C verified (5 代 + 4.7/4.8); 4.6 output ceiling is
+  // unverified → no limits on the fallback.
+  { pattern: 'claude-fable*', capability: 'text', alias: 'Claude Fable', thinking: 'claude-forced', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-mythos*', capability: 'text', alias: 'Claude Mythos', thinking: 'claude-forced', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-opus-5*', capability: 'text', alias: 'Claude Opus 5', thinking: 'claude-5', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-sonnet-5*', capability: 'text', alias: 'Claude Sonnet 5', thinking: 'claude-5', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-opus-4-8*', capability: 'text', alias: 'Claude Opus 4.8', thinking: 'claude-4x', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-opus-4-7*', capability: 'text', alias: 'Claude Opus 4.7', thinking: 'claude-4x', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'claude-opus-4-5*', capability: 'text', alias: 'Claude Opus 4.5', thinking: 'claude-budget' },
+  { pattern: 'claude-sonnet-4-5*', capability: 'text', alias: 'Claude Sonnet 4.5', thinking: 'claude-budget' },
+  { pattern: 'claude-haiku-4-5*', capability: 'text', alias: 'Claude Haiku 4.5', thinking: 'claude-budget' },
+  { pattern: 'claude-3-7*', capability: 'text', alias: 'Claude 3.7', thinking: 'claude-budget' },
+  { pattern: 'claude-*', capability: 'text', alias: 'Claude', thinking: 'claude-4x' },
+  // Gemini (thinking adapters task): compat-endpoint passthrough unverified —
+  // the kind exists for expectation management; v1 injects nothing.
+  { pattern: 'gemini-*', capability: 'text', alias: 'Gemini', thinking: 'gemini', limits: { contextWindow: 1_048_576, maxOutputTokens: 65_536 } },
+  { pattern: 'deepseek-*', capability: 'text', alias: 'DeepSeek', thinking: 'deepseek-v4', limits: { contextWindow: 1_048_576, maxOutputTokens: 393_216 } },
+  // Kimi (thinking adapters task): k2.x max_tokens ceiling unverified — using
+  // the documented DEFAULT (32,768) per design §1.3.
+  { pattern: 'kimi-k3*', capability: 'text', alias: 'Kimi K3', thinking: 'kimi-k3', limits: { contextWindow: 1_048_576, maxOutputTokens: 1_048_576 } },
+  // CR-009: k2.7 (incl. -code / -code-highspeed) split from kimi-k2 — its
+  // thinking.type rejects 'disabled' (400), so riding the offLegal=true
+  // kimi-k2 profile offered an illegal「关」that degraded silently after the
+  // 400. Listed BEFORE `kimi-k2*` (specific first, fallback behind).
+  { pattern: 'kimi-k2.7*', capability: 'text', alias: 'Kimi K2.7', thinking: 'kimi-k27-forced', limits: { contextWindow: 262_144, maxOutputTokens: 32_768 } },
+  { pattern: 'kimi-k2*', capability: 'text', alias: 'Kimi K2', thinking: 'kimi-k2', limits: { contextWindow: 262_144, maxOutputTokens: 32_768 } },
+  { pattern: 'qwen-*', capability: 'text', alias: 'Qwen' },
+  // GLM (thinking adapters task): version split per design §1.3 — specific
+  // patterns FIRST, generic `glm-*` fallback last (older 4.x ids land on the
+  // fallback; their thinking-parameter behavior is unverified, covered by the
+  // protocol layer's param-strip retry).
+  { pattern: 'glm-5.3*', capability: 'text', alias: 'GLM 5.3', thinking: 'glm-forced-effort', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'glm-5.2*', capability: 'text', alias: 'GLM 5.2', thinking: 'glm-dynamic-effort', limits: { contextWindow: 1_048_576, maxOutputTokens: 131_072 } },
+  { pattern: 'glm-5.1*', capability: 'text', alias: 'GLM 5.1', thinking: 'glm-dynamic-basic', limits: { contextWindow: 204_800, maxOutputTokens: 131_072 } },
+  { pattern: 'glm-5-turbo*', capability: 'text', alias: 'GLM 5 Turbo', thinking: 'glm-dynamic-basic' },
+  { pattern: 'glm-4.7*', capability: 'text', alias: 'GLM 4.7', thinking: 'glm-forced-basic', limits: { contextWindow: 204_800, maxOutputTokens: 131_072 } },
+  { pattern: 'glm-4.6*', capability: 'text', alias: 'GLM 4.6', thinking: 'glm-dynamic-basic', limits: { contextWindow: 204_800, maxOutputTokens: 131_072 } },
+  { pattern: 'glm-4.5v*', capability: 'text', alias: 'GLM 4.5V', thinking: 'glm-forced-basic' },
+  { pattern: 'glm-*', capability: 'text', alias: 'GLM', thinking: 'glm-dynamic-basic' },
+  { pattern: 'yi-*', capability: 'text', alias: 'Yi' },
+  { pattern: 'mistral-*', capability: 'text', alias: 'Mistral' },
+  { pattern: 'llama-*', capability: 'text', alias: 'Llama' },
+  { pattern: 'command-*', capability: 'text', alias: 'Command' },
+];
+
+function globMatch(pattern: string, value: string): boolean {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*/g, '.*').replace(/\?/g, '.');
+  return new RegExp(`^${escaped}$`, 'i').test(value);
+}
+
+function matchRegistryEntry(modelId: string): ModelRegistryEntry | undefined {
+  for (const entry of REGISTRY_ENTRIES) {
+    if (globMatch(entry.pattern, modelId)) return entry;
+  }
+  return undefined;
+}
+
+function infoFromEntry(
+  entry: ModelRegistryEntry,
+  alias: string,
+): { capability: ModelCapability; alias: string; thinking?: ThinkingKind; limits?: ModelLimits } {
+  // Conditional spreads keep the optional keys ABSENT (not `undefined`) so
+  // exact-shape consumers (`toEqual`) stay stable for entries without them.
+  return {
+    capability: entry.capability,
+    alias,
+    ...(entry.thinking ? { thinking: entry.thinking } : {}),
+    ...(entry.limits ? { limits: entry.limits } : {}),
+  };
+}
+
+export function resolveModelInfo(modelId: string): {
+  capability: ModelCapability;
+  alias: string;
+  thinking?: ThinkingKind;
+  limits?: ModelLimits;
+} {
+  const entry = matchRegistryEntry(modelId);
+  if (entry) {
+    return infoFromEntry(entry, buildAlias(entry, modelId));
+  }
+  // dogfood 2026-08-21（#41）：聚合供应商（siliconflow 等）的 id 带 org/档位前缀
+  // （Pro/BAAI/bge-m3）。前缀锚定的 glob（bge-*）对整串不命中 → 落 text 兜底，
+  // embedding/rerank 全被误标。整串不命中时取 basename 再试一轮修 capability；
+  // alias 直接用 basename（org 段对用户是噪音，见 buildAlias）。
+  // Thinking adapters task：basename 二轮匹配同样携带 kind/limits。
+  const slashIdx = modelId.lastIndexOf('/');
+  if (slashIdx >= 0) {
+    const base = modelId.slice(slashIdx + 1);
+    const baseEntry = matchRegistryEntry(base);
+    if (baseEntry) return infoFromEntry(baseEntry, base);
+    return { capability: 'text', alias: base };
+  }
+  return { capability: 'text', alias: modelId };
+}
+
+/**
+ * Build a version-aware alias by appending the portion matched by the glob wildcard.
+ * e.g. pattern "gpt-image-*" + modelId "gpt-image-1" → "GPT Image 1"
+ */
+function buildAlias(entry: ModelRegistryEntry, modelId: string): string {
+  // dogfood 2026-08-21（#41）：org/档位限定 id（Qwen/Qwen3-Embedding-8B、
+  // Pro/BAAI/bge-reranker-v2-m3）——basename 已自带家族名（Qwen3-Embedding-8B），
+  // 家族前缀 + 带前缀尾巴是复读噪音；直接用 basename 做 alias。
+  const slashIdx = modelId.lastIndexOf('/');
+  if (slashIdx >= 0) return modelId.slice(slashIdx + 1);
+
+  const starIdx = entry.pattern.indexOf('*');
+  if (starIdx < 0) return entry.alias;
+  const prefix = entry.pattern.slice(0, starIdx);
+  const suffix = entry.pattern.slice(starIdx + 1);
+  let tail = modelId.slice(prefix.length);
+  // dogfood 2026-08-21（#41）修：suffix 只在 id 真以它结尾时才剥。中间星模式
+  // （*embed*）的 suffix 不锚定在尾部——旧逻辑盲剥尾部长度，把
+  // Qwen/Qwen3-Embedding-8B 硬切成 Qwen/Qwen3-Embedd（盘上 alias 实录的截断）。
+  if (suffix && tail.toLowerCase().endsWith(suffix.toLowerCase())) {
+    tail = tail.slice(0, tail.length - suffix.length);
+  }
+  tail = tail.replace(/^[-_]+/, '');
+  if (!tail) return entry.alias;
+  return `${entry.alias} ${tail}`;
+}
+
+export function getModelRegistry(): ModelRegistry {
+  return { entries: REGISTRY_ENTRIES };
+}

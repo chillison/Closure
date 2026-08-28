@@ -1,0 +1,46 @@
+[
+  {
+    "id": "emphasis-crutch",
+    "namespace": "emphasis-crutch",
+    "title": "强调拐杖",
+    "level": "medium",
+    "review": "human",
+    "note": "默认交人工：强调词可能是论证标记或角色语气；当前 eval support 很低，只在它替代证据或具体内容时修。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "毫无疑问|显而易见|毋庸置疑|请记住|重点是|关键在于|说到底|归根结底"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "story-deslop.quote-emphasis",
+    "namespace": "emphasis-crutch",
+    "title": "叙述层短词引号强调",
+    "level": "low",
+    "review": "human",
+    "fixability": "manual",
+    "note": "handler 移植自 story-deslop quote-emphasis-tic：叙述层 1-4 字短词引号强调全文 ≥3 处才提示；demo 前 20 章 0 章过阈值，《万疆》20 章 2 章过阈值，因此只做人工 advisory。",
+    "source": {
+      "canonicalKey": "quote-emphasis handler",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "quoted"
+    },
+    "handler": {
+      "type": "builtin",
+      "name": "quote-emphasis"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "只保留真正反讽、转述或术语化必要的一两处；其余去掉引号直接写，或换成具体动作让读者自己判断。"
+    }
+  }
+]

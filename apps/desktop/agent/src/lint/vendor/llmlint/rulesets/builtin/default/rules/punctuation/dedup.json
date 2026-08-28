@@ -1,0 +1,53 @@
+[
+  {
+    "id": "cn.punctuation.dedup.ellipsis-dash-tail",
+    "namespace": "punctuation.dedup",
+    "title": "省略号和破折号去尾巴",
+    "level": "medium",
+    "enabled": true,
+    "note": "省略号和破折号去尾巴",
+    "source": {
+      "canonicalKey": "punctuation.dedup\t\t(?<=……)[….]+|(?<=——)—+",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=……)[….]+|(?<=——)—+"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dedup.repeated-symbols",
+    "namespace": "punctuation.dedup",
+    "title": "连续符号去重",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "fixability": "manual",
+    "note": "默认关闭：重复感叹号/问号在小说对白和拟声中常承担语气，当前 reference 命中率高于 render；保留资产给项目显式开启。",
+    "source": {
+      "canonicalKey": "punctuation.dedup\t\t([,，。~～!！?？])\\1+",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v30"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([,，。~～!！?？])\\1+"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1"
+      ]
+    }
+  }
+]

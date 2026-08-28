@@ -1,0 +1,100 @@
+[
+  {
+    "id": "cn.sound.once.generic-one-sound",
+    "namespace": "sound.once",
+    "title": "删发声词后“一声”",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "sound.once\tg\t([^他她它我你人男女的了着过，。、：；！？“”‘’\\n\\s])(笑|哼|吼|喘|叹|呼|叫|咽|泣|咳|骂|喊)了?一声",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "([^他她它我你人男女的了着过，。、：；！？“”‘’\\n\\s])(笑|哼|吼|喘|叹|呼|叫|咽|泣|咳|骂|喊)了?一声"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "$1$2"
+      ]
+    }
+  },
+  {
+    "id": "cn.sound.once.hum-one-sound",
+    "namespace": "sound.once",
+    "title": "哼了一声→轻哼",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "sound.once\tg\t哼了?一声",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "哼了?一声"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "轻哼",
+        "冷哼"
+      ]
+    }
+  },
+  {
+    "id": "cn.sound.once.laugh-one-sound",
+    "namespace": "sound.once",
+    "title": "笑了一声→笑了笑",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "sound.once\tg\t笑了?一声",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "笑了?一声"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "笑了笑",
+        "笑出声"
+      ]
+    }
+  },
+  {
+    "id": "cn.sound.once.sigh-one-sound",
+    "namespace": "sound.once",
+    "title": "叹了一声→叹口气",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "sound.once\tg\t叹了?一声",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "叹了?一声"
+      ],
+      "flags": "g"
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "叹了口气"
+      ]
+    }
+  }
+]

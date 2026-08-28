@@ -1,0 +1,240 @@
+structure:
+  emptyTitle: "No narrative structure yet"
+  emptyDesc: "The multi-line timeline is derived from the scene graph. Open the Agent panel and talk through your story ideas — the AI will plan the first scene graph. Once scenes exist, you can add, remove, and rearrange them right on the timeline."
+  emptyCta: "Open Agent panel"
+  noLines: "Scene graph has scenes but no lines defined"
+  skeleton:
+    causal: "Causal skeleton"
+  overlay:
+    title: "Timeline overlays"
+    validation: "Validation"
+    displacement: "Displacement"
+    visibility: "Visibility"
+    # dogfood R2 batch B (SP-4): second curve-overlay group + reserved foreshadow
+    # placeholder (disabled toggle — ships with the promise-panel story).
+    emotion: "Emotion"
+    pacing: "Pacing"
+    foreshadow: "Foreshadow (reserved)"
+    foreshadowHint: "The foreshadow overlay ships with the promise-panel story"
+    # Batch 8 (8.4): disabled-toggle hints while the underlying curve data is absent.
+    emotionMissing: "No emotion annotation data in this project yet"
+    pacingMissing: "No pacing annotation data in this project yet"
+  # dogfood R2 batch B (SP-5): volume bands (second header row + unassigned grey).
+  volumeBand:
+    label: "Volume"
+    unassigned: "Unassigned"
+  # dogfood R2 batch B (SP-5): whole-book minimap (causal-side compressed strip).
+  minimap:
+    label: "Whole-book minimap"
+    # structure rebuild R4/AC6: discoverability — hover tooltip advertising click-to-seek.
+    seekHint: "Click or drag to seek this position"
+    # round-9 T20: container title — the what-is-this-card answer for the visible-chrome form.
+    title: "Minimap"
+  # 08-26 structure rebuild batch 1 (R4): canvas zoom group (−/%/＋/fit; % resets).
+  zoom:
+    group: "Canvas zoom"
+    in: "Zoom in"
+    out: "Zoom out"
+    reset: "Reset zoom (100%)"
+    fit: "Fit width"
+    fitTitle: "Zoom until all columns are visible"
+  # 08-26 structure rebuild batch 2 (R2): structure legend (completeness is an
+  # acceptance line — every visual mark must be listed here).
+  # Batch 5 (#43): collapsed to a one-line summary by default — expand/collapse
+  # drive the toggle; summary is the collapsed quick view.
+  legend:
+    label: "Structure legend"
+    expand: "Legend"
+    collapse: "Collapse legend"
+    summary: "Line colour · role glyph · selection ring · ✦ AI-added · validation badge · emotion bar · dashed displacement · steel-blue reorder · visibility · pacing strip — expand for all"
+    lineHue: "Colour = story line"
+    selectedRing: "Ring = selected"
+    aiNew: "✦ = AI-added (brief pulse)"
+    validation: "Corner badge = validation count"
+    emotionBar: "Bottom bar = emotion (green + · amber ~ · red −)"
+    displacement: "Dashed border = time displacement (line-level)"
+    reorderOrdinal: "Steel-blue ordinal = reading-order jump (chapter workbench)"
+    # Batch B (CR group 3b, R2 six-dimension matrix completion): visibility and
+    # pacing-heat notation families join the legend.
+    visibilityDim: "Transparency = hidden (line visibility toggle)"
+    pacingHeat: "Top-edge strip = pacing heat (off by default)"
+    spanWideCaption: "Wide card"
+    spanWide: "= the scene spans chapters (arc-based writing units). Drag its card edge sideways; the +/- buttons are gone."
+    stackOrderCaption: "Stacked chips"
+    stackOrder: "= several scenes land in one chapter, ordered by reading sequence."
+    emptySlotCaption: "Empty slot"
+    emptySlot: "= the chapter exists but has no scenes yet; hover it to create one."
+    paletteNote: "12-hue line palette cycles · beyond 12, lane position is primary"
+    # Batch 8 (8.5, user-ratified): "two families of lines" guide — vertical arcs
+    # (cross-view anchors) / in-zone edges (causal · suspense) / cross-line links.
+    # T17 (08-27 user re-baseline): arcs render zero by default — hover or selection
+    # is the only visibility gate.
+    linkAnchorCaption: "Vertical arc"
+    linkAnchor: "= cross-view anchor for the SAME scene (causal card ↔ workbench chip). Hidden by default — shown only while hovering either card of the scene, or when the scene is selected (misaligned scenes such as reorders get a steel-blue arc). A pending (unscheduled) endpoint draws none — not even on hover or selection."
+    linkCausalCaption: "In-zone line"
+    linkCausal: "= an edge between scenes — solid = CAUSAL · dashed = SUSPENSE (setup → payoff). Edges touching an unscheduled scene draw none."
+    linkCrossLineCaption: "Line-to-line link"
+    linkCrossLine: "= a cross-line reference — an event in one story line steering another."
+  # 08-26 batch 2 (implement 2.4): lane scene count.
+  lane:
+    scenes: "{n} scenes"
+    pendingCount: "{n} unscheduled scene(s)"
+  # 08-26 structure rebuild batch 3 (prd R1): chapter planning workbench (merged
+  # grid — rows=lines / cols=chapters / chips=scene slices in reading order;
+  # supersedes the 1.10 "chapter weaving" panel, edit gestures fully migrated).
+  workbench:
+    title: "Chapter planning workbench"
+    emptyNote: "No scenes yet"
+    chapterColumn: "Chapter {n}"
+    pendingColumn: "Unscheduled"
+    pendingHint: "Scenes with no chapter assignment — attach a chapter (presentationSpans / episode / presentation-order chapter) to move them into chapter columns"
+    # 08-27 findings batch 5 (T10/T11): the "continues into chapter N" marker retired
+    # with T10 (the wide-card form itself carries the semantics — no verbal restatement);
+    # three hover titles for always-rendered handles in their unusable states.
+    handleRightAtEnd: "Right edge is already the last built chapter"
+    handleLeftSingle: "A single-chapter card's left edge doesn't participate (first-chapter stability)"
+    handleLeftAtFirst: "Left edge is already the first chapter"
+  # Phase E3-interact (design §1.1 SceneDetailDrawer): author's drill-down + edit
+  # form. Section headers + action labels only — data values render verbatim.
+  # 08-27 structure-fixes round 3 (R12 / #73): one-line preamble per section
+  # (*SectionHint) + beginner tooltips on the three zone badges + edge-type display
+  # localization + human-readable episode membership; beat terminology rewritten for
+  # authors (key names kept, values reworded — sole consumer is SceneEditPopover).
+  drawer:
+    title: "Scene detail"
+    close: "Close"
+    # R12 / #73: beginner tooltips for the three zone badges (what the zones are,
+    # and when it is safe to write).
+    mechBadgeTip: "Mechanical zone = hard structural coordinates (role / lines / time). Writes land immediately; the undo stack can roll them back."
+    authorBadgeTip: "Author-sovereignty zone = your words here are the final fact. AI drafts only when you press the button."
+    aiBadgeTip: "Each press sends ONE summary request to the agent (disabled while a run is active); AI never silently rewrites scene data."
+    # R12 / #73: one-line preamble per section.
+    stateSectionHint: "Role and story time are the scene's hard coordinates — changes write immediately and stay undoable."
+    linesSectionHint: "Which story lines the scene belongs to — multi-line scenes appear in every line's row."
+    enumsSectionHint: "The dropdown offers curated vocabulary as a prior — pick Custom… to enter any value."
+    edgesSectionHint: "Incoming = causes pointing into this scene; outgoing = downstream effects it drives. Removing an edge never deletes the scene."
+    semanticSectionHint: "The summary carries what the scene means — write it yourself, or draft via AI and finalize on your own terms."
+    issuesSectionHint: "A read-only validation checklist (follows the toolbar Validation toggle)."
+    actSectionHint: "Resolved from the phase references of the lines this scene joins — shown for context."
+    beatSectionHint: "The owning chapter's emotion curve and pacing plan (authored by outline planning — read-only here)."
+    retentionSectionHint: "A faithful snapshot of coordinates and foreign keys — retarget chapters via workbench drags or edge-resize, not here."
+    # R12 / #73: edge-type display localization (stored values CAUSAL/SUSPENSE unchanged).
+    edgeTypeCausal: "Causal"
+    edgeTypeSuspense: "Suspense"
+    # R12 / #73: human-readable episode membership (N = index + 1 human chapter
+    # number, same convention as the workbench column headers; missing lookup falls
+    # back to the raw id; numbered-but-untitled episodes use the untitled key).
+    episodeValue: "Ch. {n} · {title}"
+    episodeValueNoTitle: "Chapter {n} (untitled)"
+    # dogfood R2 batch A (SP-2 drawer redo): two-zone form (mechanical·direct
+    # write / semantic·author-sovereignty + AI suggestion).
+    titleField: "Scene title"
+    locate: "Locate on timeline"
+    stateSection: "State"
+    mechBadge: "Mechanical · direct write"
+    authorBadge: "Author sovereignty"
+    aiBadge: "AI suggestion"
+    linesSection: "Story lines"
+    noLines: "None (add a line in the lane list first)"
+    addLineTag: "+ Add line"
+    removeLineTag: "Remove line membership"
+    enumsSection: "Narrative enums"
+    outcomeType: "Outcome type"
+    pacingRole: "Pacing role"
+    customValue: "Custom…"
+    unset: "(unset)"
+    vocabPrior: "Vocabulary is a prior suggestion — custom values are allowed"
+    edgeTo: "Connect to"
+    edgeToPlaceholder: "Pick a scene…"
+    edgeType: "Edge type"
+    addEdge: "Connect"
+    removeEdge: "Remove this edge"
+    semanticSection: "Semantics"
+    summaryPlaceholder: "Scene summary (write directly, or ask AI to complete)"
+    summaryField: "Scene summary"
+    aiSummary: "Ask AI to complete summary"
+    aiBusy: "Agent is running — try again later"
+    aiSummaryMessage: "Please complete the summary of scene \"{scene}\" and persist it via the scene_graph_update tool."
+    retentionSection: "Coordinates & membership"
+    poDragHint: "(reorder within a chapter via the workbench drag)"
+    deleteScene: "Delete scene"
+    deleteDescEdges: "This will break {n} causal edge(s). The scene graph can be restored via the field undo stack. Delete?"
+    deleteDescPlain: "The scene can be restored via the field undo stack. Delete this scene?"
+    deleteConfirm: "Delete"
+    deleteCancel: "Cancel"
+    # 08-26 structure rebuild batch 4 (R3): popover-era addition (content keys
+    # carried over from 1.5 / dogfood R2).
+    dragHint: "Drag by the title bar (clamped inside the structure page)"
+    # Carried over from 1.5.
+    role: "Role"
+    storyTime: "Story time"
+    storyTimeLabel: "Story time label"
+    presentationOrder: "Presentation order"
+    episode: "Episode"
+    actRef: "Act ref"
+    edgesSection: "Causal edges"
+    edgeIncoming: "Incoming"
+    edgeOutgoing: "Outgoing"
+    noEdges: "None"
+    issuesSection: "Validation issues"
+    noIssues: "No issues on this scene"
+    actSection: "Act (phase)"
+    beatSection: "Chapter beats"
+    emotionalBeats: "Emotional arc"
+    pacingBeats: "Pacing rhythm"
+    noBeats: "No beats recorded"
+  # dogfood R2 batch A: the four roles (shared by the context menu + drawer select).
+  role:
+    normal: "● Normal"
+    coreAnchor: "★ Core anchor"
+    secondaryAnchor: "◇ Secondary anchor"
+    forkPoint: "◆ Fork point"
+  # dogfood R2 batch A (SP-3): line management.
+  line:
+    add: "Add line"
+    defaultName: "New line"
+    menuHint: "Right-click a lane: rename / topology / displacement / visibility / delete"
+  lineTopology:
+    converging: "Converging"
+    parallel-worldview: "Parallel worldview (mesh)"
+    offline: "Offline"
+    if-branch: "IF branch"
+    side: "Side story"
+  lineDisplacement:
+    none: "No displacement"
+    prologue: "Prologue"
+    epilogue: "Epilogue"
+    flashback: "Flashback"
+    distant: "Distant"
+  # dogfood R2 batch A (SP-1/SP-3): context menu + delete confirmations.
+  ctx:
+    addSceneBlocked: "Can't create here yet (chapter not built)"
+    menuLabel: "Timeline menu"
+    rename: "Rename"
+    setRole: "Set as {role}"
+    copyId: "Copy id"
+    deleteScene: "Delete scene"
+    deleteSceneHint: "breaks {n} causal edge(s)"
+    addSceneAt: "New scene in chapter {col}"
+    # 08-27 round-3 CR decision conversion (R11 batch-3 insert-chapter entry, both zone column headers).
+    # insertChapterTitle is a data value frozen at creation time (episode.title).
+    insertChapterTitle: "New chapter"
+    insertChapterLeft: "Insert new chapter before chapter {n}"
+    insertChapterBlocked: "Can't insert a chapter here"
+    renameLine: "Rename"
+    setTopology: "Topology: {role}"
+    setDisplacement: "Displacement: {d}"
+    setVisibilityOpen: "Visible (open)"
+    setVisibilityHidden: "Hidden until…"
+    visibilityTargetLabel: "Hidden until (target id):"
+    visibilityTargetPlaceholder: "scene id / event"
+    deleteLine: "Delete line"
+    deleteLineHint: "{m} scene(s) lose this line (scenes kept)"
+    deleteSceneTitle: "Delete scene"
+    deleteLineTitle: "Delete story line"
+    deleteSceneConfirm: "This breaks {n} causal edge(s) and deletes the scene. Continue?"
+    deleteSceneConfirmPlain: "Delete this scene?"
+    deleteLineConfirm: "{m} scene(s) will lose this line's membership (scenes kept). Delete the line?"
+    deleteLineConfirmPlain: "Delete this story line?"
+    deleteConfirm: "Delete"
+    deleteCancel: "Cancel"

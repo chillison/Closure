@@ -1,0 +1,806 @@
+[
+  {
+    "id": "cn.vocabulary.body.back-head",
+    "namespace": "vocabulary.body",
+    "title": "后脑勺→头/脑袋",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t后脑勺",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "后脑勺"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "头",
+        "脑袋"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.back-ridge",
+    "namespace": "vocabulary.body",
+    "title": "背脊→背/后背",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t背脊",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "背脊"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "背",
+        "后背"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.back-spine",
+    "namespace": "vocabulary.body",
+    "title": "脊背→背/后背",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t脊背",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "脊背"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "背",
+        "后背"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.body-formal",
+    "namespace": "vocabulary.body",
+    "title": "身躯→身体",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t身躯",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "身躯"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "身体"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.butt-cheek",
+    "namespace": "vocabulary.body",
+    "title": "人体词换通俗说法",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：被 cn.vocabulary.body.butt-cheek-suffix 完全覆盖，避免同一词进入多条候选。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t屁股蛋",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "屁股蛋"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "屁股"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.butt-cheek-plain",
+    "namespace": "vocabulary.body",
+    "title": "人体词换通俗说法",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：被 cn.vocabulary.body.butt-cheek-suffix 完全覆盖，避免同一词进入多条候选。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t屁股蛋子",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "屁股蛋子"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "屁股"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.butt-cheek-suffix",
+    "namespace": "vocabulary.body",
+    "title": "屁股蛋子→屁股",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t屁股蛋子?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "屁股蛋子?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "屁股"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.cheekbone",
+    "namespace": "vocabulary.body",
+    "title": "颧骨→脸颊",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t颧骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "颧骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "脸颊"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.chest-cavity",
+    "namespace": "vocabulary.body",
+    "title": "胸腔→胸口/胸脯",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t胸腔",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "胸腔"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "胸部",
+        "胸口",
+        "胸脯"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.collagen",
+    "namespace": "vocabulary.body",
+    "title": "胶原蛋白→婴儿肥",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t胶原蛋白",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "胶原蛋白"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "婴儿肥"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.eye-corner-lid",
+    "namespace": "vocabulary.body",
+    "title": "眼角/眼皮→眼睛",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t眼(?:角|皮|皮子)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "眼(?:角|皮|皮子)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "眼睛"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.finger-bone",
+    "namespace": "vocabulary.body",
+    "title": "指骨→手指",
+    "level": "medium",
+    "enabled": true,
+    "note": "排除“指骨关节/指骨的关节”，避免与 cn.vocabulary.body.finger-joint-phrase 重叠。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t指骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "指骨(?!的?关节)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "手指"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.finger-joint-phrase",
+    "namespace": "vocabulary.body",
+    "title": "指骨关节→手指",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t(?:指骨|手指)的?关节",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:指骨|手指)的?关节"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "手指"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.finger-segment",
+    "namespace": "vocabulary.body",
+    "title": "指节→手指",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t指节",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "指节"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "手指"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.flesh-skin",
+    "namespace": "vocabulary.body",
+    "title": "皮肉→皮肤/肌肤",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t皮肉",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "皮肉"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "皮肤",
+        "肌肤"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.hip-bone",
+    "namespace": "vocabulary.body",
+    "title": "胯骨→胯部/腰胯",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t胯骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "胯骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "胯部",
+        "腰胯"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.knuckle",
+    "namespace": "vocabulary.body",
+    "title": "骨节→手指",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t骨节",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "骨节"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "手指"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.lift-eyelids",
+    "namespace": "vocabulary.body",
+    "title": "抬起眼皮→抬眼",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t抬起眼皮",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "抬起眼皮"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "抬眼"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.mouth-corner",
+    "namespace": "vocabulary.body",
+    "title": "嘴角→嘴唇",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t嘴角",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "嘴角"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "嘴唇"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.muscle-texture",
+    "namespace": "vocabulary.body",
+    "title": "医用词换通俗说法",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：裸“肌理”不是医用赘词，也不能无损替换为“肌肉”；当前 dataset 真人与 AI 各 1 次，保留资产给项目显式开启。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t肌理",
+      "importedFrom": "curated-cn-rule-samples",
+      "version": "rule-curation-v31"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肌理"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肌肉"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.oral-cavity",
+    "namespace": "vocabulary.body",
+    "title": "口腔→小嘴/嘴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t口腔",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "口腔"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小嘴",
+        "嘴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.pelvis-bone",
+    "namespace": "vocabulary.body",
+    "title": "髋骨→臀部",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t髋骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "髋骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "臀部"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.physiological-tear-label",
+    "namespace": "vocabulary.body",
+    "title": "生理泪→泪",
+    "level": "medium",
+    "enabled": true,
+    "note": "「生理泪」是医学标签，叙述里直接写「泪」；确实在讲生理机制时保留。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t生理泪",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "生理泪"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "泪"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.physiological-tear-label-full",
+    "namespace": "vocabulary.body",
+    "title": "生理性泪→泪",
+    "level": "medium",
+    "enabled": true,
+    "note": "「生理性泪」是医学标签，叙述里直接写「泪」；确实在讲生理机制时保留。",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t生理性泪",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "生理性泪"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "泪"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.physiological-tear-water",
+    "namespace": "vocabulary.body",
+    "title": "生理性泪水→泪水",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t生理性?泪水?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "生理性?泪水?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "泪",
+        "泪水"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.pubic-bone",
+    "namespace": "vocabulary.body",
+    "title": "医用部位换通俗说法",
+    "level": "medium",
+    "enabled": true,
+    "note": "医用部位换通俗说法",
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t耻骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "耻骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小腹"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.rib",
+    "namespace": "vocabulary.body",
+    "title": "肋骨→胸口",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t肋骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肋骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "胸口"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.shoulder-blade",
+    "namespace": "vocabulary.body",
+    "title": "肩胛骨→后肩/肩膀",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t肩胛骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肩胛骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "后肩",
+        "肩膀"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.skull-head",
+    "namespace": "vocabulary.body",
+    "title": "头颅→头/脑袋",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t头颅",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "头颅"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "头",
+        "脑袋"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.spine-column",
+    "namespace": "vocabulary.body",
+    "title": "脊椎/脊柱→脊梁",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t脊[椎柱][骨沟]?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "脊[椎柱][骨沟]?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "脊梁"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.tailbone",
+    "namespace": "vocabulary.body",
+    "title": "尾椎骨→腰眼",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t尾椎骨",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "尾椎骨"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "腰眼"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.throat-inside",
+    "namespace": "vocabulary.body",
+    "title": "喉咙里→喉间",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t喉咙里",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "喉咙里"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "喉间",
+        "唇齿间"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.torso-formal",
+    "namespace": "vocabulary.body",
+    "title": "躯体→身体",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t躯体",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "躯体"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "身体"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.body.whole-limbs-body",
+    "namespace": "vocabulary.body",
+    "title": "四肢百骸→全身",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.body\t\t四肢百骸",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "四肢百骸"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "全身",
+        "整副身体"
+      ]
+    }
+  }
+]

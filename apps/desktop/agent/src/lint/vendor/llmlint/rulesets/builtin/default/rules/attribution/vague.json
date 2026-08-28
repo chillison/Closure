@@ -1,0 +1,36 @@
+[
+  {
+    "id": "attribution-vague",
+    "namespace": "attribution.vague",
+    "title": "无源引用",
+    "level": "medium",
+    "note": "「研究表明 / 数据显示 / 有专家指出」不给具体出处，是公开写作里典型的 AI 痕迹。给出具体来源或直接给数据。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "研究表明|研究显示|数据表明|数据显示|有专家(?:指出|认为|表示)|业内人士(?:认为|指出)|据(?:报道|悉|了解)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "给出具体研究名称、数据来源、专家姓名或媒体与时间；查无来源则删掉。"
+    }
+  },
+  {
+    "id": "attribution-general-belief",
+    "namespace": "attribution.vague",
+    "title": "泛化共识引用",
+    "level": "low",
+    "note": "「普遍认为 / 人们普遍认为 / 一般来说」把一个观点说成共识却不给依据。给出依据或改成具体的「谁认为」。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:人们)?普遍认为|一般认为|通常认为|长期以来(?:人们)?(?:都)?认为"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "给出依据，或改成具体的「谁、在什么场合认为」。"
+    }
+  }
+]

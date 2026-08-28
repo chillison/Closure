@@ -1,0 +1,36 @@
+[
+  {
+    "id": "story-deslop.abstract-summary-density",
+    "namespace": "abstraction.hollow",
+    "title": "抽象总结复读",
+    "level": "medium",
+    "review": "agent",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 abstract-summary-tic；叙述层抽象收束模板 ≥3 处且 ≥4/千字时提示。",
+    "source": {
+      "canonicalKey": "ABSTRACT_SUMMARY_PATTERNS",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "这一刻[，,]?[^\\n。！？!?]{0,24}(?:终于|才)(?:明白|意识到)", "bucket": "realization"},
+        {"target": "从这一刻开始", "bucket": "beginning"},
+        {"target": "(?:命运|宿命)[^\\n。！？!?]{0,28}(?:齿轮|棋局|獠牙|改写|推向|安排)", "bucket": "fate"},
+        {"target": "早已[^\\n。！？!?]{0,8}(?:布好|安排好)[^\\n。！？!?]{0,8}(?:棋局|局)", "bucket": "fate"},
+        {"target": "前所未有的(?:决意|清醒|勇气|力量|恐惧|平静|信念)", "bucket": "inflation"},
+        {"target": "(?:反击|复仇|战争|较量|故事|命运)[^\\n。！？!?]{0,12}才刚刚开始", "bucket": "trailer"},
+        {"target": "(?:新的开始|全新的开始)", "bucket": "beginning"}
+      ],
+      "minHits": 3,
+      "perKilo": 4
+    },
+    "action": {
+      "type": "suggest",
+      "message": "回到角色当下可见的文件、动作、对话或物理后果，不用命运大词替读者盖章。"
+    }
+  }
+]

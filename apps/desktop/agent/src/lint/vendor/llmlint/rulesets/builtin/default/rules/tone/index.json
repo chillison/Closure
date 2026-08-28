@@ -1,0 +1,27 @@
+[
+  {
+    "id": "cn.tone.tone-placeholder",
+    "namespace": "tone",
+    "title": "语气",
+    "level": "medium",
+    "enabled": false,
+    "note": "默认关闭：素材里的 * 通配符被转换为字面量星号，当前规则只会命中“语气*”这类异常文本；保留资产等待重新建模。",
+    "source": {
+      "version": "rule-curation-v6",
+      "canonicalKey": "tone\t\t(?:，|。)语气\\*(?:，|。)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:，|。)语气\\*(?:，|。)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

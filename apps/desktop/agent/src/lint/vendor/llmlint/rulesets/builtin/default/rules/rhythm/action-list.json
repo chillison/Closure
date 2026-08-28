@@ -1,0 +1,33 @@
+[
+  {
+    "id": "story-deslop.action-list",
+    "namespace": "rhythm.action-list",
+    "title": "监控摄像头式动作清单",
+    "level": "medium",
+    "review": "human",
+    "fixability": "manual",
+    "note": "移植自 story-deslop 的 action-list-tic；按段评估，同段至少 5 个通用动作动词且有分隔符桶时提示。打斗/追逐/调查等功能性编排需要结合上下文复核，默认交人工。",
+    "source": {
+      "canonicalKey": "ACTION_LIST_VERB_PATTERN",
+      "importedFrom": "oh-story-claudecode/story-deslop"
+    },
+    "scope": {
+      "layer": "narrative"
+    },
+    "detector": {
+      "type": "density",
+      "patterns": [
+        {"target": "伸手|抬手|探手|拿起|拿过|取出|取过|掏出|摸出|抓起|攥住|握住|捏住|按住|推开|拉开|打开|关上|放下|递给|挑开|掀开|扯开|拧开|倒出|端起|转身|回头|抬头|低头|弯腰|俯身|走到|走向|坐下|站起|看向|看着|盯着|扫过", "bucket": "verb", "core": true},
+        {"target": "[，、；;]", "bucket": "separator"}
+      ],
+      "minHits": 9,
+      "coreMinHits": 5,
+      "minBuckets": 2,
+      "granularity": "paragraph"
+    },
+    "action": {
+      "type": "suggest",
+      "message": "合并琐碎步骤，只保留有情绪或情节功能的动作，用角色犹豫、误判或环境反馈做缓冲。"
+    }
+  }
+]

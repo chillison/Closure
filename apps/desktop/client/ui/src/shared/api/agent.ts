@@ -1,0 +1,271 @@
+import type { AgentMode, AgentBehaviorMode } from '../store/types';
+import type {
+  BalancedAskCategory,
+  BatchKind,
+  CompileRevisionIntentInput,
+  CompileRevisionIntentResult,
+  ParticipationGear,
+  ResumeChapterChainInput,
+  RunChapterChainSummary,
+  StreamAgentMessageResult,
+} from '@orison/shared-contracts';
+import type { Attachment } from '../types/attachment';
+
+const api = window.orisonDesktop;
+
+export type AgentMessage = {
+  id: string;
+  role: 'user' | 'assistant' | 'tool';
+  content: string;
+  toolCalls?: Array<{ id: string; name: string; input: unknown }>;
+  toolResults?: Array<{ toolCallId?: string; toolId?: string; toolName?: string; output: string; metadata?: unknown }>;
+  references?: Attachment[];
+  /**
+   * dogfood T1 Stage 2/4：'aborted_partial' = abort/流中断时已流出部分文本的落盘标记
+   * （design §3.3）——UI 直出跳过打字机动画。
+   *
+   * dogfood R2 #16：'intent_restate'（Story 3.3 线 D 意图复述标记）已删——快捷按钮移除后
+   * 零消费者，agent 侧停止盖章。字面量保留仅为读旧会话 jsonl 兼容。
+   */
+  kind?: 'intent_restate' | 'aborted_partial';
+  /**
+   * dogfood T1 #27②（design §6.3）：深度思考终帧聚合值（delta reasoning 流的终态）。
+   * additive optional——旧消息无字段零迁移。只展示 + 持久化，不回传模型。
+   */
+  reasoning?: string;
+  /**
+   * dogfood T1 Stage 4（design §6.2 / r4 方案 a）：真流式占位标记——delta 驱动的消息
+   * content 增长期间为 true，渲染走 250ms MD 快照轨（绕过 typewriter）；终帧
+   * assistant 事件同 id 整条替换后为 false（renderedHtml 收敛）。不持久化（内存态）。
+   */
+  streaming?: boolean;
+  /**
+   * dogfood T1 CR-T1-038a：流停滞标记——60s（agentStreamBuffer.STREAM_STALL_MS）无新 delta
+   * 时 flush 置位（UI 停滞提示，破「caret 永闪」假活）；新 delta 到达后自动摘标。
+   * 仅在 streaming=true 期间有意义；不持久化（内存态）。
+   */
+  stalled?: boolean;
+  /**
+   * dogfood R2 #30：工具参数流指示——模型正文输出完毕、tool-call 参数仍在流式期间，
+   * 该消息标「正在准备工具调用：X」（agentStreamBuffer markStreamingTool 写入；终帧
+   * assistant 替换整条消息即消失）。不持久化（内存态）。
+   */
+  streamingToolName?: string;
+  /**
+   * dogfood R2 #50（2026-08-26）：「已落定历史自动接续」标记——重开项目/刷新 UI 的
+   * autoResume hydration 落进视图的消息盖章（switchAgentSession 映射处，手动切会话
+   * 不盖）。末条 assistant 不走打字机历史回放：重开项目是回到现场而非主动浏览历史，
+   * 每次重播末条=噪音，且空泡首帧打断跳底量高（#50 根因半）。不持久化（内存态）。
+   */
+  settledHistory?: true;
+  /**
+   * Story 3.5 渐进披露（additive optional，旧消息无字段 → 不分组，向后兼容）：
+   * 运行时纯代码盖章（活跃批量存在时 agent 侧 stampBatchOnMessage）。`<BatchGroup>` 按契约字段
+   * 分组（非文本正则）；batchKind='report' 的消息渲染 `<BatchReportCard>`（L0 全景）。
+   */
+  batchId?: string;
+  batchKind?: BatchKind;
+  createdAt: number;
+};
+
+export type AgentSessionMeta = {
+  id: string;
+  title: string;
+  projectPath: string;
+  createdAt: number;
+  updatedAt: number;
+  messageCount: number;
+  permissionMode?: AgentMode;
+  /** Story 3.1: persisted leader behavior mode (normal/discuss/plan). */
+  behaviorMode?: AgentBehaviorMode;
+};
+
+export type AgentChildStreamEvent = {
+  source: 'subagent' | 'skill';
+  role: string;
+  sessionId: string;
+  depth: number;
+  event:
+    | { type: 'assistant'; data: { id: string; content: string; toolCalls?: unknown[]; reasoning?: string } }
+    | { type: 'tool'; data: { id: string; results: unknown[] } }
+    /**
+     * dogfood T1 Stage 5（design §3.1/§6.4，D5）：子 agent 增量 delta——S2 落在 agent 侧
+     * （makeChildOnDelta，messageId = child loop 预分配 assistantId），UI 此处消费（child
+     * 占位消息进 ChildExecutionGroup 组内流式）。
+     */
+    | { type: 'delta'; data: { messageId: string; channel: 'text' | 'reasoning' | 'tool'; delta: string; toolName?: string } }
+    /**
+     * dogfood 第二轮 findings #3（子 agent 派发起点零信号）：child runLoop 启动前的起点信号
+     * （无载荷，agent 侧 emitChildStarted）——UI 据此建 started live 占位（agentEvents 活跃
+     * 分支 → agentStreamBuffer.ensureChildStartedPlaceholder）。additive：旧消费者忽略。
+     */
+    | { type: 'started'; data: Record<string, never> };
+};
+
+export type AgentStreamEvent =
+  | { type: 'assistant'; data: { id: string; content: string; toolCalls?: unknown[]; kind?: 'intent_restate' | 'aborted_partial'; reasoning?: string; batchId?: string; batchKind?: BatchKind } }
+  | { type: 'tool'; data: { id: string; results: unknown[]; batchId?: string; batchKind?: BatchKind } }
+  | { type: 'confirm_required'; data: { sessionId?: string; callId: string; name: string; input: unknown; createdAt?: number } }
+  | { type: 'done'; data: { status: string } }
+  | { type: 'error'; data: { message: string } }
+  | { type: 'child'; data: AgentChildStreamEvent }
+  | { type: 'compaction'; data: { compactedCount: number } }
+  /**
+   * dogfood T1 Stage 2/3：delta / 链事件变体（RuntimeEventPayload additive 扩展，S2 落
+   * agent 侧；UI 侧 Stage 3 只消费到「run 态计数」，正文流式渲染 S4（agentEvents 分发器）。
+   */
+  | { type: 'delta'; data: { messageId: string; channel: 'text' | 'reasoning' | 'tool'; delta: string; toolName?: string } }
+  | { type: 'chain-delta'; data: { nodeId: string; role: string; phase?: string; messageId: string; delta: string; seq: number } }
+  | { type: 'chain-node-done'; data: { nodeId: string; status: string } };
+
+export type AgentSkillInfo = {
+  name: string;
+  description?: string;
+  location: string;
+  format: string;
+  source?: 'project' | 'external';
+};
+
+export async function createAgentSession(
+  projectPath: string,
+  mode?: AgentMode,
+  behaviorMode?: AgentBehaviorMode,
+  participationGear?: ParticipationGear,
+) {
+  return api.createAgentSession({
+    agentName: 'writer',
+    projectPath,
+    mode: mode ?? 'suggest',
+    behaviorMode: behaviorMode ?? 'normal',
+    participationGear: participationGear ?? undefined,
+  }) as Promise<{ id: string; agentName: string; projectPath: string; status: string; messages: AgentMessage[] }>;
+}
+
+export async function fetchAgentSession(sessionId: string, projectPath?: string) {
+  return api.getAgentSession(sessionId, projectPath) as Promise<{
+    id: string;
+    status: string;
+    messages: AgentMessage[];
+    permissionMode?: AgentMode;
+    behaviorMode?: AgentBehaviorMode;
+    /** Story 3.5: session-persisted participation gear + balanced/hands_off options. */
+    participationGear?: ParticipationGear;
+    balancedAskCategories?: BalancedAskCategory[];
+    trustAdjudication?: boolean;
+  } | null>;
+}
+
+export async function setAgentSessionMode(sessionId: string, projectPath: string | undefined, mode: AgentMode) {
+  return api.setAgentSessionMode(sessionId, projectPath, mode);
+}
+
+/**
+ * Story 3.1: persist the leader runLoop's behavior mode (normal/discuss/plan).
+ * Like the permission mode, it is a session-level setting the runtime applies
+ * to the next turn; refused while a run is in flight (ok === false).
+ */
+export async function setAgentSessionBehaviorMode(sessionId: string, projectPath: string | undefined, behaviorMode: AgentBehaviorMode) {
+  return api.setAgentSessionBehaviorMode(sessionId, projectPath, behaviorMode);
+}
+
+/**
+ * Story 3.5: set the leader's participation gear (smart/steer/balanced/hands_off)
+ * plus the balanced 档 ask-categories / hands_off trustAdjudication options.
+ * Session-level persistence; refused while a run is in flight (ok === false —
+ * the next turn applies a retried change; mid-run switching goes through the
+ * leader's set_participation_gear tool via chat).
+ */
+export async function setAgentSessionParticipationGear(
+  sessionId: string,
+  projectPath: string | undefined,
+  gear: ParticipationGear,
+  options?: { balancedAskCategories?: BalancedAskCategory[]; trustAdjudication?: boolean },
+) {
+  return api.setAgentSessionParticipationGear(sessionId, projectPath, gear, options);
+}
+
+export async function deleteAgentSession(sessionId: string, projectPath?: string) {
+  return api.deleteAgentSession(sessionId, projectPath);
+}
+
+/**
+ * 手动上下文压缩（thinking adapters task D 块触发 ①，design §3.2）：对指定会话立即
+ * 跑一次摘要压缩。返回 false = 无可压缩内容 / 会话不存在 / 运行时未接线——按
+ * 「不可用」呈现，不抛错。成功路径的提示由 compaction 流事件统一弹出（agentEvents）。
+ */
+export function compactAgentSession(sessionId: string): Promise<boolean> {
+  return api.compactAgentSession(sessionId);
+}
+
+export type TruncateSessionResult =
+  | { ok: true; removed: number }
+  | { ok: false; reason: 'not-found' | 'running' | 'tool-activity' };
+
+/** 从此截断（dogfood 2026-08-21）：纯对话尾巴专用，含工具痕迹由 runtime 拒绝。 */
+export function truncateAgentSession(sessionId: string, messageId: string) {
+  return api.truncateAgentSession(sessionId, messageId) as Promise<TruncateSessionResult>;
+}
+
+export async function listAgentSessions(projectPath: string) {
+  const result = await api.listAgentSessions(projectPath) as { sessions: AgentSessionMeta[] };
+  return result.sessions;
+}
+
+export async function listAgentSkills(projectPath: string) {
+  const result = await api.listAgentSkills(projectPath);
+  if (Array.isArray(result)) return result as AgentSkillInfo[];
+  return ((result as any)?.skills ?? []) as AgentSkillInfo[];
+}
+
+export async function resolveAgentConfirmation(sessionId: string, callId: string, approved: boolean) {
+  return api.resolveAgentConfirmation(sessionId, callId, approved);
+}
+
+/**
+ * Story 4.3 Step 4：resume / redo / abort a paused chapter chain via structured IPC
+ * （mirror 4.6 PatchReview accept/reject——UI 直接调结构化入口，非经 leader LLM 解释，design §3.5 D7）。
+ * 前置：write_chapter paused → chapter_review metadata → chapterReviewSlice.setPausedReview。
+ * 三动作 continue/redo/abort 调此 fn → `closure:resume-chapter-chain` IPC → runChapterChain 续跑/重跑/弃链段。
+ * 返 RunChapterChainSummary：caller（chapterReviewSlice）据 status 和解 pausedReview。
+ */
+export async function resumeChapterChain(input: ResumeChapterChainInput): Promise<RunChapterChainSummary> {
+  return api.resumeChapterChain(input);
+}
+
+/**
+ * Story 7.1 Route 1：B trigger 选区指挥精修——编译改稿意图（design §1[2] / §4.2）。
+ *
+ * draft checkpoint pause 后，用户在 TipTap 选段 + 写粗指令 → 调本 fn → `closure:compile-revision-intent`
+ * IPC → revision-optimizer 子 agent 编译 → 返 RevisionIntent（用户确认关用）OR null（编译失败 graceful）。
+ * 确认后 UI 调 resumeChapterChain({ action: 'redo', revisionIntent: 确认后的 intent, ... }) 触发段落级改稿。
+ */
+export async function compileRevisionIntent(
+  input: CompileRevisionIntentInput,
+): Promise<CompileRevisionIntentResult> {
+  return api.compileRevisionIntent(input);
+}
+
+/**
+ * dogfood T1 Stage 3（r7 全局监听重构）：流事件消费统一走 store 级全局监听
+ * （agentEvents.initAgentEvents——一次注册永不清退，按 sessionId+projectPath 分发活跃/
+ * 后台）。本函数只负责 **invoke**——不再自带 per-invocation 订阅（旧 activeAbort 8 处
+ * 清理点随之退役），返回 promise 供发送方做「invoke reject 且无 error 事件」的兜底
+ * （防 spinner 永卡）+ D4 结构化拒绝（status:'rejected'）的分发。
+ *
+ * `attachments` are structured (selection / chapter / file) references the runtime
+ * renders into the prompt — NOT flattened into the content string.
+ * To abort, call window.orisonDesktop.abortAgentRun(sessionId).
+ */
+// dogfood T1 CR-T1-031：拒绝形态契约同步——shared-contracts OrisonDesktopApi 已扩
+// StreamAgentMessageResult（status:'rejected' + code/heldBySessionId/projectPath，含
+// CR-T1-013 的 session_run_active）。本包自立类型退役，re-export 契约单源（既有 import
+// 消费点零改动）。
+export type { StreamAgentMessageResult };
+
+export function streamAgentMessage(
+  sessionId: string,
+  content: string,
+  attachments?: Attachment[],
+): Promise<StreamAgentMessageResult> {
+  return api.streamAgentMessage({ sessionId, content, attachments });
+}

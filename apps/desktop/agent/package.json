@@ -1,0 +1,33 @@
+{
+  "name": "@orison/desktop-agent",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts --env-file=.env.agent",
+    "test": "vitest --run",
+    "lint": "echo agent lint placeholder",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@node-rs/jieba": "2.0.1",
+    "@orison/shared-contracts": "workspace:*",
+    "@orison/story-sync": "workspace:*",
+    "js-yaml": "^4.1.1",
+    "pino": "^9.7.0",
+    "zod": "^3.24.3",
+    "zod-to-json-schema": "^3.25.2"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "12.9.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/js-yaml": "^4.0.9",
+    "tsx": "^4.19.3",
+    "vitest": "^3.1.4"
+  }
+}

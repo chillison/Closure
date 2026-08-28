@@ -1,0 +1,56 @@
+# ── Dependencies ──
+node_modules/
+.pnpm-store/
+package-lock.json
+apps/**/package-lock.json
+
+# ── Build output / artifacts ──
+dist/
+out/
+.vite/
+.turbo/
+temp/
+release/
+portable/
+*.tsbuildinfo
+
+# ── Test / coverage ──
+coverage/
+playwright-report/
+test-results/
+
+# ── e2e harness artifacts (screenshots / yaml / chapter snapshots per run) ──
+# Each e2e run writes to docs/tests/<YYYY-MM-DD>-<story>/ - never commit.
+docs/tests/
+
+# ── Secrets / env ──
+.env
+.env.local
+.env.agent.local
+*.pem
+
+# ── Local app/runtime data ──
+.orison/
+logs/
+
+# ── Tooling / editor ──
+.DS_Store
+.worktrees/
+.omc/
+.claude/
+
+# ── Local working drafts (plans / reviews / specs) — not version-controlled ──
+.scratch/
+docs/internal/archive/
+docs/internal/*-plan.md
+
+# ── 外部下载的第三方插件项目（非本仓库内容）──
+oh-story-claudecode-main/
+
+# ── 外部参考资料（明确不版本控制）──
+docs/参考资料（不要git）/
+
+# CodeGraph index (tool artifact)
+.codegraph/
+# playwright MCP 目检遗留（截图/DOM 快照/控制台日志——临时产物不入库）
+.playwright-mcp/

@@ -1,0 +1,88 @@
+import type { ModelConfig } from '@orison/shared-contracts';
+import { ProfileList } from './ProfileList';
+import { ProfileEditor } from './ProfileEditor';
+import { ProfileEmptyState } from './ProfileEmptyState';
+import { DeleteConfirmDialog } from './DeleteConfirmDialog';
+import { useModelLibrary } from './useModelLibrary';
+
+type Props = {
+  t: (key: string) => string;
+  modelConfig: ModelConfig;
+  setModelConfig: (config: ModelConfig) => Promise<void>;
+};
+
+// dogfood 2026-08-21（#43 拍板）：任务模型/向量模型/重排模型三段迁往 Agent 页
+// （ModelAssignmentSections）——本页回归纯「供应商管理」：连接（协议/密钥/baseUrl）
+// 与模型启用面；「哪个环节用哪个模型」是 Agent 行为配置，不属供应商管理。
+
+export function ModelSettingsPage({ t, modelConfig, setModelConfig }: Props) {
+  const lib = useModelLibrary({ modelConfig, setModelConfig, t });
+  const keys = modelConfig.keys;
+  const showEmptyState = keys.length === 0 && lib.editorMode === 'idle';
+  const showEditor = lib.editorMode === 'creating' || lib.editorMode === 'editing';
+
+  return (
+    <div className="settings-page model-library-page">
+      <header className="settings-page-header model-page-header">
+        <div>
+          <h3 className="settings-page-title">{t('settings.modelConfig')}</h3>
+          <p className="settings-page-subtitle">{t('settings.modelSubtitle')}</p>
+        </div>
+        <button type="button" className="settings-save-button" onClick={lib.startNewKey}>
+          <span className="material-symbols-outlined" aria-hidden="true">add</span>
+          {t('settings.addModel')}
+        </button>
+      </header>
+
+      <div className="model-library-layout">
+        {showEmptyState ? (
+          <ProfileEmptyState variant="no-profiles" t={t} onAdd={lib.startNewKey} />
+        ) : (
+          <>
+            <ProfileList
+              keys={keys}
+              activeKeyId={lib.draft.id}
+              onSelectKey={lib.selectKey}
+              onAddKey={lib.startNewKey}
+              t={t}
+            />
+            {showEditor ? (
+              <ProfileEditor
+                draft={lib.draft}
+                isDirty={lib.dirty}
+                onChange={lib.updateDraft}
+                onUpdateModelEntry={lib.updateModelEntry}
+                onRemoveModelEntry={lib.removeModelEntry}
+                onApply={() => void lib.applyDraft()}
+                onDelete={lib.draft.id ? () => lib.requestDelete(lib.draft.id!) : null}
+                refreshing={lib.refreshing}
+                refreshError={lib.refreshError}
+                remoteModels={lib.remoteModels}
+                onRefreshModels={lib.refreshModels}
+                notice={lib.notice}
+                onDismissNotice={lib.dismissNotice}
+                t={t}
+              />
+            ) : (
+              <ProfileEmptyState variant="no-selection" t={t} />
+            )}
+          </>
+        )}
+      </div>
+
+      <DeleteConfirmDialog
+        open={lib.pendingDeleteId !== null}
+        title={t('settings.deleteConfirmTitle')}
+        description={
+          lib.pendingDeleteKey
+            ? t('settings.deleteConfirmDesc').replace('{name}', lib.pendingDeleteKey.name)
+            : ''
+        }
+        confirmLabel={t('settings.deleteConfirmAction')}
+        cancelLabel={t('projects.cancel')}
+        onConfirm={() => void lib.confirmDelete()}
+        onCancel={lib.cancelDelete}
+      />
+    </div>
+  );
+}

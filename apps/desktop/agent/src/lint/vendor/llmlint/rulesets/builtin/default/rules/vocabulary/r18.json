@@ -1,0 +1,511 @@
+[
+  {
+    "id": "cn.vocabulary.r18.breast-formal",
+    "namespace": "vocabulary.r18",
+    "title": "乳房→奶子/酥胸",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t乳房",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "乳房"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "奶子",
+        "酥胸"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.coarse-male-organ",
+    "namespace": "vocabulary.r18",
+    "title": "粗屌/大屌→肉棒",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t(?:粗|大)屌",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:粗|大)屌"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.erotic-wall",
+    "namespace": "vocabulary.r18",
+    "title": "肉壁/穴壁→嫩肉",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t(?:肉|穴|肠|阴道)壁",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:肉|穴|肠|阴道)壁"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "嫩肉",
+        "媚肉",
+        "软肉"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.euphemism-that-thing",
+    "namespace": "vocabulary.r18",
+    "title": "那话儿→肉棒",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t那话儿",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "那话儿"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴",
+        "阴茎",
+        "屌"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.euphemism-that-work",
+    "namespace": "vocabulary.r18",
+    "title": "那活儿→肉棒",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t那活儿",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "那活儿"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.euphemistic-opening",
+    "namespace": "vocabulary.r18",
+    "title": "花户/阴户→小穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t(?:花|阴)户",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:花|阴)户"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "嫩穴",
+        "嫩屄",
+        "穴",
+        "屄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.flesh-blade",
+    "namespace": "vocabulary.r18",
+    "title": "肉刃→肉棒/阴茎",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肉刃",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肉刃"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴",
+        "阴茎",
+        "屌"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.flesh-hole",
+    "namespace": "vocabulary.r18",
+    "title": "肉洞→小穴/嫩穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肉洞",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肉洞"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "嫩穴",
+        "嫩屄",
+        "穴",
+        "屄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.flesh-opening",
+    "namespace": "vocabulary.r18",
+    "title": "肉穴→小穴/蜜穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肉穴",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肉穴"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "蜜穴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.floral-opening",
+    "namespace": "vocabulary.r18",
+    "title": "花穴/粉穴→小穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t(?:花|粉)穴",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:花|粉)穴"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "嫩穴",
+        "嫩屄",
+        "穴",
+        "屄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.formal-vaginal-area",
+    "namespace": "vocabulary.r18",
+    "title": "阴道/阴部→小穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t阴(?:道|部)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "阴(?:道|部)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "嫩穴",
+        "嫩屄",
+        "穴",
+        "屄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.intestinal-fluid",
+    "namespace": "vocabulary.r18",
+    "title": "肠液→爱液/淫水",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肠液",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肠液"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "爱液",
+        "淫液",
+        "淫水"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.labia-formal",
+    "namespace": "vocabulary.r18",
+    "title": "阴唇→嫩肉/媚肉",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t阴唇",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "阴唇"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "嫩肉",
+        "媚肉",
+        "软肉"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.male-organ-compound",
+    "namespace": "vocabulary.r18",
+    "title": "肉刃或肉茎→肉棒",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肉(?:刃|茎)",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肉(?:刃|茎)"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.male-organ-euphemism",
+    "namespace": "vocabulary.r18",
+    "title": "阳物→肉棒/阴茎",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t阳物",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "阳物"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴",
+        "阴茎",
+        "屌"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.male-stalk",
+    "namespace": "vocabulary.r18",
+    "title": "肉茎→肉棒/阴茎",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t肉茎",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "肉茎"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴",
+        "阴茎",
+        "屌"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.passage-euphemism",
+    "namespace": "vocabulary.r18",
+    "title": "甬道→小穴/蜜穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t甬道",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "甬道"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "蜜穴",
+        "逼"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.passage-term",
+    "namespace": "vocabulary.r18",
+    "title": "甬道或肉道→小穴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t(?:甬|肉)道",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?:甬|肉)道"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "小穴",
+        "嫩穴",
+        "嫩屄",
+        "穴",
+        "屄"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.penis-formal",
+    "namespace": "vocabulary.r18",
+    "title": "阴茎→肉棒/鸡巴",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t阴茎",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "阴茎"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴"
+      ]
+    }
+  },
+  {
+    "id": "cn.vocabulary.r18.shaft-formal",
+    "namespace": "vocabulary.r18",
+    "title": "柱身→肉棒/阴茎",
+    "level": "medium",
+    "enabled": true,
+    "source": {
+      "canonicalKey": "vocabulary.r18\t\t柱身",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "柱身"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "肉棒",
+        "鸡巴",
+        "阴茎",
+        "屌"
+      ]
+    }
+  }
+]

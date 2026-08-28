@@ -1,0 +1,164 @@
+[
+  {
+    "id": "inflation-hollow-adjective",
+    "namespace": "inflation.significance",
+    "title": "空洞拔高形容",
+    "level": "medium",
+    "note": "「深刻的影响 / 深远的意义 / 不可磨灭的贡献」只给评价不给内容。说清楚具体影响了什么。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "深刻的[^，。！？\\n]{0,6}(?:影响|意义|变革|启示)|深远的[^，。！？\\n]{0,6}(?:影响|意义|意涵)|不可磨灭的[^，。！？\\n]{0,6}(?:贡献|印记|影响)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉空洞形容，说清楚具体影响、改变或贡献了什么。"
+    }
+  },
+  {
+    "id": "inflation-superlative",
+    "namespace": "inflation.significance",
+    "title": "重要性通胀",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：「至关重要 / 举足轻重 / 意义非凡」在任务规则、角色判断和说明性对白中可能合理，当前 dataset 真人侧不低于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "至关重要|举足轻重|意义非凡|意义重大|有着重要意义"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "说清楚为什么重要、对谁重要、带来什么具体结果。"
+    }
+  },
+  {
+    "id": "inflation-novelty",
+    "namespace": "inflation.significance",
+    "title": "新颖性通胀",
+    "level": "medium",
+    "review": "human",
+    "note": "默认交人工：「前所未有 / 史无前例 / 颠覆性 / 范式转移」在小说视角和评论中都可能合法；旧报告仅 weak，当前 dataset 只剩 1 个 AI 命中。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "前所未有|史无前例|颠覆性的?|范式转移|划时代的?"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "给出对比数据，或说清楚相对什么而言是新的、具体改变了什么。"
+    }
+  },
+  {
+    "id": "inflation-marvel",
+    "namespace": "inflation.significance",
+    "title": "惊叹式渲染",
+    "level": "medium",
+    "enabled": false,
+    "review": "human",
+    "note": "默认关闭：「令人瞩目 / 令人惊叹」在新闻、评论和角色视角中可能合法，当前 dataset 真人侧高于 AI 侧；保留资产给项目显式开启。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "令人瞩目|令人惊叹|令人叹为观止|叹为观止"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉惊叹姿态，给出具体数据或可观察的事实。"
+    }
+  },
+  {
+    "id": "inflation-thought-provoking",
+    "namespace": "inflation.significance",
+    "title": "引人深思套话",
+    "level": "medium",
+    "note": "「值得深思 / 发人深省 / 不禁让人」是让内容替读者表态的拔高姿态，删掉让内容自己说话。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "值得深思|令人深思|引发(?:我们的?)?思考|发人深省|不禁让人(?:想到|感叹|深思)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "inflation-no-exaggeration",
+    "namespace": "inflation.significance",
+    "title": "毫不夸张地说",
+    "level": "low",
+    "note": "「毫不夸张地说」往往正是在夸张。删掉，让事实自己站住。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "毫不夸张地说|可以毫不夸张地"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "inflation-not-only-but",
+    "namespace": "inflation.significance",
+    "title": "不仅是…更是…拔高",
+    "level": "medium",
+    "note": "「这不仅仅是 X，更是 Y」是 AI 偏爱的价值拔高骨架，多数删掉拔高层、保留事实判断即可。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "这不仅仅?是[^，。！？\\n]{0,24}(?:更是|更是一种|而是一种)"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉「更是…」的拔高层，直接说成立的那个事实判断。"
+    }
+  },
+  {
+    "id": "inflation-final-contest",
+    "namespace": "inflation.significance",
+    "title": "最后比拼的是…",
+    "level": "low",
+    "note": "「最后比拼的是 / 归根到底拼的是」是金句式拔高收束，直接说真正的决定因素是什么。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "最后(?:比)?拼的(?:其实)?是|归根到底拼的是|说到底拼的还是"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉「比拼」框架，直接说真正起决定作用的是什么。"
+    }
+  },
+  {
+    "id": "inflation-grand-narrative",
+    "namespace": "inflation.significance",
+    "title": "宏大叙事套词",
+    "level": "medium",
+    "note": "「在历史的长河中 / 时代的浪潮 / 历史的车轮」是空洞的宏大叙事套词，在小说里也常是注水抒情。改成具体时间、场景或事件。",
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "在历史的长河(?:中|里)|时代的(?:浪潮|洪流|车轮)|历史的车轮|岁月的长河"
+      ]
+    },
+    "action": {
+      "type": "suggest",
+      "message": "删掉宏大套词，落到具体时间、场景、人物或事件。"
+    }
+  }
+]

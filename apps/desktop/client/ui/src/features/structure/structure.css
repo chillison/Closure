@@ -1,0 +1,2733 @@
+/* ── Narrative Timeline (Story 1.5 Phase D) ──
+ * Scene-graph-derived multi-line timeline: rows = SceneLine (lane) ×
+ * cols = column value (storyTime under causal axis, readIndex under reading).
+ * Cells are placed by CSS Grid; edges are an absolutely positioned SVG overlay.
+ * Tokens only (no hardcoded hex) per theme-tokens spec.
+ */
+
+/* ── dogfood R2 findings #40 补丁：viz 三族 token 定义缺失 ──
+ * 批次 B（SP-4/SP-5）落地时引用了 --viz-line / --viz-volume / --viz-pacing-heat
+ * 三族变量但从未在任何文件定义（注释误称「tokens.css --viz-line-*」——tokens.css
+ * 是生成物 DO NOT EDIT，值从未落盘）→ var() 解析失败回退 unset=透明。
+ *
+ * 08-26-structure-rebuild 批 1（implement 1.1 / design §4）：线色板由 3 色扩为
+ * 12 hue 等响度（同 S 只转 H：亮主题 L58/S45、暗主题 L66/S45；hue = (218+30i)°
+ * 等距循环）。色板下标单源在 features/structure/linePalette.ts（hash(线 id)%12），
+ * 本段 --viz-line-0..11 与 LINE_PALETTE_SIZE=12 互为镜像（改一处同步另一处）。
+ * 色值为 mockup/design 拍板的 HSL 等响度字面色——本文件「几何常量字面 px」同款
+ * 例外声明，仅 viz 族适用；tokens.css 生成物不动（DO NOT EDIT）。卷带/节奏沿用
+ * #40 补丁原值（低透明度底色亮暗两主题通吃，暂不分主题分支）。 */
+:root {
+  --viz-line-0: hsl(218 45% 58%);
+  --viz-line-1: hsl(248 45% 58%);
+  --viz-line-2: hsl(278 45% 58%);
+  --viz-line-3: hsl(308 45% 58%);
+  --viz-line-4: hsl(338 45% 58%);
+  --viz-line-5: hsl(8 45% 58%);
+  --viz-line-6: hsl(38 45% 58%);
+  --viz-line-7: hsl(68 45% 58%);
+  --viz-line-8: hsl(98 45% 58%);
+  --viz-line-9: hsl(128 45% 58%);
+  --viz-line-10: hsl(158 45% 58%);
+  --viz-line-11: hsl(188 45% 58%);
+  --viz-volume-0: rgba(124, 156, 255, 0.06);
+  --viz-volume-1: rgba(76, 195, 138, 0.06);
+  --viz-volume-2: rgba(200, 139, 212, 0.06);
+  --viz-volume-unassigned: rgba(128, 128, 128, 0.05);
+  --viz-pacing-heat: #e88c3c;
+}
+
+/* 暗主题线色分支（design §4：同 S 只上调 L 58→66）。 */
+[data-theme='dark'] {
+  --viz-line-0: hsl(218 45% 66%);
+  --viz-line-1: hsl(248 45% 66%);
+  --viz-line-2: hsl(278 45% 66%);
+  --viz-line-3: hsl(308 45% 66%);
+  --viz-line-4: hsl(338 45% 66%);
+  --viz-line-5: hsl(8 45% 66%);
+  --viz-line-6: hsl(38 45% 66%);
+  --viz-line-7: hsl(68 45% 66%);
+  --viz-line-8: hsl(98 45% 66%);
+  --viz-line-9: hsl(128 45% 66%);
+  --viz-line-10: hsl(158 45% 66%);
+  --viz-line-11: hsl(188 45% 66%);
+}
+
+/* ── 08-26 批 5（implement 5.1 / prd R5「网格线退隐」）：内部网格线 token ──
+ * 列分隔/表头分隔 = 5% 中性（mockup --grid-line rgba(30,34,30,.045) / 暗 5% 白）；
+ * 行分隔退役（卡间隙呼吸——去 Excel 感：格边框套网格边框套面板边框）。字面色
+ * 与 viz 族同款例外声明（tokens.css 生成物不动）；仅网格内部线适用，chrome 分隔
+ * （工具栏/minimap/缩放组/图例的 border-bottom）仍走 --outline-variant。 */
+:root {
+  --structure-grid-line: rgba(30, 34, 30, 0.05);
+}
+[data-theme='dark'] {
+  --structure-grid-line: rgba(235, 240, 235, 0.05);
+}
+
+/* ── 08-26 结构页重构 批 2（implement 2.1/2.2/2.4 / design §4 §5）：线色消费挂载 ──
+ * 单一挂法：元素带 .lane-hue--c{n}（n = linePalette.lineHueIndex(线 id)）→ 局部
+ * 变量 --structure-line-color 指向 --viz-line-n。所有线色消费位统一读该变量，
+ * 不直引 --viz-line-*：场景卡左条+淡底+glyph / 泳道左条+线名 / 因果边线 / 图例
+ * 色块。色板下标单源 linePalette.ts（与 --viz-line-0..11 互为镜像）。 */
+.lane-hue--c0 { --structure-line-color: var(--viz-line-0); }
+.lane-hue--c1 { --structure-line-color: var(--viz-line-1); }
+.lane-hue--c2 { --structure-line-color: var(--viz-line-2); }
+.lane-hue--c3 { --structure-line-color: var(--viz-line-3); }
+.lane-hue--c4 { --structure-line-color: var(--viz-line-4); }
+.lane-hue--c5 { --structure-line-color: var(--viz-line-5); }
+.lane-hue--c6 { --structure-line-color: var(--viz-line-6); }
+.lane-hue--c7 { --structure-line-color: var(--viz-line-7); }
+.lane-hue--c8 { --structure-line-color: var(--viz-line-8); }
+.lane-hue--c9 { --structure-line-color: var(--viz-line-9); }
+.lane-hue--c10 { --structure-line-color: var(--viz-line-10); }
+.lane-hue--c11 { --structure-line-color: var(--viz-line-11); }
+
+/* ── Structure page (Story 1.5 Phase E1.3 → 08-26 结构页重构 批 3/7) ──
+ * 单列纵向堆叠：因果骨架（章轴，格卡化——批 7 storyTime 等距桶退役）在上 +
+ * 46px 保留带 + 章节规划工作台在下，均在 .structure-canvas 内；批 7 起 canvas 兼任
+ * **共享轨道宿主**（display:grid，见其规则块）。Token-only colours（viz 族字面
+ * px/hex 例外声明见文件头）。
+ *
+ * AC9 字号地板适用域（CR 组 3b 回写）：结构页最小字号 ≥12px 按 **zoom=100% 档**
+ * 衡量——zoom<1 时画布内容随画布同比缩小属缩放语义、不判破地板；chrome 区
+ * （工具栏/缩放组/minimap/图例/浮层）在 canvas 外恒不受 zoom 影响、恒守地板。
+ */
+.structure-page {
+  flex: 1;
+  min-height: 0;
+  /* 08-27 C1 遍历 T2（发现批 2 / AC5+AC4 连带）：height 收紧使本盒成为**真**滚动口。
+   * 宿主 .workspace-panel-content（workspace.css）是块级滚动口（无 display:flex）
+   * ——上方 flex:1/min-height:0 在块级父下惰性，无 height 约束时本盒高度 auto 随
+   * 内容增长 → 真实纵滚全落外层、自身 scrollTop 恒 0 = **死纵向滚动口**：
+   * zoombar/minimap 的 sticky top 钉在永不滚动的 scrollport 上，深滚随内容滚走
+   * （#69 第二层根因——zoombar 补 top:0 只修了声明轴，真机遍历才暴露滚动口死活）；
+   * SceneEditPopover topChromeFloor 同源出深负值 → 浮层顶出视口。height:100% 对
+   * definite 父高（workspace 布局 flex 收紧）解析成立（.assets-panel 同款先例），
+   * 纵滚回收本层，sticky 前提族「scroll container 直接子元素」特权路径真正成立。
+   * overflow:auto 整条保留——#54 单一横向滚动容器架构不动（shift+wheel/minimap/
+   * AssocLayer/pin-right 的 scrollLeft 契约全在此层）。⚠️ 禁改 overflow-x/y 两轴
+   * 分离——规范把另一轴的 visible 算成 auto，死纵滚口复发（cssLock T2 锁同款禁令）。 */
+  height: 100%;
+  overflow: auto;
+  background: var(--background);
+}
+
+/* ═══ 08-26 批 7（design §11「同构锁步」）：共享轨道架构 ═══
+ *
+ * 定案 2：`.structure-canvas` 升 display:grid 宿主，inline gridTemplateColumns 由
+ * 单源纯函数 sharedColumnTracks() 注入一次；因果/工作台两个内网格各声明
+ * `grid-template-columns: subgrid; grid-column: 1/-1`——逐列宽度由浏览器在**同一
+ * 组轨道**上解一次（⚠️「同 template 字符串喂两个独立 grid」不成立：max-content 按
+ * 各自内容解析，必须 subgrid）。纵向参考线因此在两区连续对齐，AssocLayer 关联线
+ * 趋竖直。
+ *
+ * subgrid 传递链（链上每级都向宿主借列、并把直接子元素全宽铺成一行一格的隐式行）：
+ *   宿主 → .structure-skeleton / .workbench（骨架盒）→ .narrative-timeline--causal
+ *   （面板根）→ 各自的 scroll 包裹层 → 内网格。zoom 与 #49 的 position:relative 施加
+ * 在宿主不变；#55 的钉驻空间前提（盒宽 ≥ 内容宽 + min-width:100%）随宿主盒上移。
+ */
+
+/* zoom 作用容器 + 共享轨道宿主。inline 覆盖项：zoom、display(grid 冗余声明同值)、
+ * grid-template-columns（单源模板字符串）。 */
+.structure-canvas {
+  display: grid;
+  position: relative; /* anchor for AssocLayer（#49 批 5） */
+  /* #55 钉驻空间前提从 .structure-skeleton 上移到宿主：内容窄于视口时白底不中途
+   * 收边；横向呼吸 12px 从两处 scroll 包裹层收拢到这里（subgrid 链成员的横向
+   * padding 会挤占借来的轨道宽度造成跨区错位——只允许宿主吃这个 padding）。 */
+  min-width: 100%;
+  padding: 12px;
+}
+
+/* 传递链成员：各自 display:grid + 向宿主 subgrid 借列 + 占满整条轨道带。 */
+.structure-skeleton,
+.narrative-timeline--causal,
+.workbench,
+.narrative-timeline-scroll,
+.workbench-scroll {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+}
+
+/* 链上各级的直接子元素全宽铺一行一格（默认 auto-flow 会把兄弟塞进并列的多列）。 */
+.structure-canvas > *,
+.structure-skeleton > *,
+.narrative-timeline--causal > *,
+.workbench > *,
+.narrative-timeline-scroll > *,
+.workbench-scroll > * {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* 固定 28px 标题行高（因果骨架 + 工作台共用排版约定；height 权威、内容居中——
+ * 原镜像常量 skeletonTitleHeight 随批 4 双骨架常量族退役，CSS 字面自此单源）。 */
+.structure-skeleton-title {
+  height: 28px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  margin: 0;
+  padding: 0 var(--space-lg);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  /* #55：标题钉左——横滚后区块名/minimap 不随内容滚丢；背景遮住 AssocLayer
+   * 画布级 SVG 与滑过的卡面（线会穿过标题条带）。width:fit-content 必需——
+   * 行盒若被块级 stretch 拉成与包含块同宽则零滑动余量，sticky 同样失灵。 */
+  position: sticky;
+  left: 0;
+  z-index: var(--z-sticky);
+  width: fit-content;
+  background: var(--background);
+}
+
+/* Fixed height mirrors TIMELINE_GEOMETRY.skeletonGapHeight（批 3 改 46——design
+ * §1.1 因果↔工作台保留带；批 4 AssocLayer 的短竖/短斜线居住区）。 */
+.structure-skeleton-gap {
+  height: 46px;
+}
+
+/* 传递链成员（因果面板根；工具栏/minimap/滚动区 = 隐式行顺次堆叠）。 */
+.narrative-timeline {
+  min-height: 0;
+  background: var(--background);
+}
+
+/* ── Overlay toggle toolbar (Phase D-overlay D5) ──
+ * Pinned above the scroll area: three independent checkboxes (validation /
+ * displacement / visibility) wired to structureSlice.toggleOverlay. Compact —
+ * Epic 3 polishes into proper toggle chips.
+ */
+
+/* Fixed height（CSS 字面单源——原镜像常量 timelineToolbarHeight 随批 4 双骨架
+ * 常量族退役）。Vertical padding removed (height authoritative; toggles center). */
+.narrative-timeline-toolbar {
+  height: 32px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0 var(--space-lg);
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--outline-variant);
+  /* #55：叠层开关行钉左——横滚后校验/位移/可见性开关恒可点（空间前提见
+   * .structure-skeleton 注；width:fit-content 防块级 stretch 吃掉滑动余量）。 */
+  position: sticky;
+  left: 0;
+  z-index: var(--z-sticky);
+  width: fit-content;
+}
+
+.narrative-timeline-toolbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 批 5（R5 checkbox 对齐 polish）：去原生 input 基线残距 + 文本行高对齐——
+ * 字号升 text-sm 后勾选框与标签的视觉中线不漂。 */
+.narrative-timeline-toolbar-toggle input[type='checkbox'] {
+  flex: 0 0 auto;
+  margin: 0;
+  cursor: pointer;
+}
+
+.narrative-timeline-toolbar-toggle span {
+  line-height: 1.5;
+}
+
+.narrative-timeline-scroll {
+  /* 批 6（#54）：overflow auto → visible——旧并排布局遗产；页级（.structure-page）
+     才是唯一横向滚动容器。批 7：本层是 subgrid 传递链成员——横向 padding 不允许
+     （挤占借来的轨道宽度 → 跨区错位），12px 横向呼吸收拢到宿主 .structure-canvas；
+     纵向 12px 保留（CR-011 literal 锁步纪律同前）。 */
+  overflow: visible;
+  padding: 12px 0;
+}
+
+.narrative-timeline-grid {
+  position: relative; /* anchor for the absolute SVG edge overlay */
+  display: grid;
+  /* 08-26 批 7（design §11 定案 2）：subgrid 接轨宿主——列宽与工作台在同一组轨道
+   * 上解一次（宿主 inline 模板 = sharedColumnTracks 单源）；本组件不自算模板。 */
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  background: var(--surface-container-lowest);
+  /* 08-26 批 5（R5 视觉减法）：外框同步退隐（--structure-grid-line 5% 中性）——
+   * 去「面板边框套网格边框套格边框」三层框感。 */
+  border: 1px solid var(--structure-grid-line);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Header row ── */
+
+.narrative-timeline-corner {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: var(--z-sticky);
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+  border-bottom: 1px solid var(--structure-grid-line);
+  border-top-left-radius: var(--radius-lg);
+}
+
+.narrative-timeline-col-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: var(--space-2xs) var(--space-xs);
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+  border-bottom: 1px solid var(--structure-grid-line);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Lane rows ──
+ * 08-26 批 2（implement 2.4）：泳道标签重排——线色左条 + 两行文本（线名着线色 +
+ * 场景数小字）。lane-hue--c{n} 挂标签本体（左条/线名同源 --structure-line-color）。
+ * data-grid-row 元素兼作行高实测锚（grid item 默认 stretch 到行高）。
+ * 08-26 批 5（R5 视觉减法）：行分隔线退役——只留列分隔（--structure-grid-line），
+ * 行与行靠卡片间隙呼吸（去 Excel 感）。 */
+.narrative-timeline-lane-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-sm) var(--space-3xs) 0;
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--on-surface);
+}
+
+/* 线色左条（线身份色的泳道侧消费位——与卡左条/边线同源）。 */
+.narrative-timeline-lane-bar {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 4px;
+  margin: var(--space-2xs) 0 var(--space-2xs) var(--space-3xs);
+  border-radius: var(--radius-pill);
+  background: var(--structure-line-color);
+}
+
+.narrative-timeline-lane-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* Name span wraps naturally within its column (#56 卷名家族 mirror——批 8 / 8.6 撤
+ * nowrap+ellipsis：长线名自然换行完整可读，不再只靠 hover tooltip；行高随
+ * auto 轨道生长。badges 落尾端行。线名着线色（design §4 线身份色相消费位）。 */
+.narrative-timeline-lane-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--structure-line-color);
+  font-weight: 600;
+}
+
+.narrative-timeline-lane-count {
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+/* 08-26 批 2：碰撞堆纵向平铺（卡填充列宽，横向并排放不下）——同列同线多场景
+ * 竖排、行高随之增长（auto 轨道）。padding 镜像 TIMELINE_GEOMETRY.cellStackPadding。
+ * position:relative + z-index:1 = 连线沉底的格侧提升（见 EdgeLayer 注）。
+ * 批 5（R5）：行分隔退役（border-bottom 删），仅留列分隔退隐线。 */
+.narrative-timeline-cell-stack {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px; /* mirrors TIMELINE_GEOMETRY.cellStackPadding */
+  min-width: 0;
+  /* #61 热修：纵向平铺格**封顶**——待编排堆积（真机实测 11 张 ×50px=598px）曾把
+   * 整条泳道行撑成巨型空白。诚实语义（CR 组 3b 注释更正）：底缘**渐隐提示只挂
+   * .pending-overflow 变体**（见文件尾批 8 段渐隐伪元素）；普通章格触顶即静默裁切、
+   * 无渐隐——hover/focus-within 揭示组对本类同样生效，滚轮仍可浏览全堆。 */
+  max-height: 280px;
+  /* 出卡角标放行（CR 组 3b「等价方案」）：校验 -7px / ✦ -6px 悬出卡缘，卡到格壁
+   * 只有 padding 4px——直接把 stack padding 加到 ≥8 会与 cellStackPadding 名义
+   * 镜像分叉（overlayCardBox/边端点查表偏移漂移）。改 x 轴 clip + 8px 外溢量：
+   * clip 不产生滚动容器，纵向揭示（overflow-y:auto 直设/hover 揭示组）合法并存，
+   * 名义几何零漂移。 */
+  overflow-x: clip;
+  overflow-clip-margin: 8px;
+  overflow-y: hidden;
+  padding: 4px; /* mirrors TIMELINE_GEOMETRY.cellStackPadding */
+  border-right: 1px solid var(--structure-grid-line);
+}
+
+/* 批 7（design §11 定案 1）：因果待编排镜像列——dangling 场景灰态收纳（与工作台
+ * slot/chip 灰同源语义；纯渲染镜像，非 episode 写入信号）。
+ * 批 8（8.2）：挂 structure-pin-right 后成为钉右成员——底色改**不透明**（同视觉
+ * 的 4% 灰叠网格基面，但以 surface-container-lowest 兜底），钉驻覆盖滑过的格/线
+ * 时不透视。 */
+.narrative-timeline-cell-stack--pending {
+  background: color-mix(in srgb, var(--on-surface-variant) 4%, var(--surface-container-lowest));
+}
+
+.narrative-timeline-col-header--pending {
+  font-style: italic;
+}
+
+/* ── Scene Card（08-26 批 2 / implement 2.1 / design §3.2 §5 / prd R2）──
+ * SceneCell 卡化重做：填充列宽的自适应卡（min-height 50、标题 3 行 clamp）。
+ * 状态语法一轴一维：
+ *   线身份=色相（左条+淡底，lane-hue 局部变量）/ 角色=形状 glyph（色随线）/
+ *   位移=边框样式 / 可见性=透明度 / 选中=外环 / AI 新增=✦ 角标 / 校验=角标 /
+ *   悬停=底色加深（只属悬停，永不占选中）。 */
+.scene-card {
+  position: relative; /* anchor for the corner badges + emotion bar */
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 50px;
+  padding: var(--space-2xs) var(--space-2xs) var(--space-xs) calc(var(--space-xs) + 2px);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  /* 线色淡底（mockup .cell line-bg：hsl(... / .09) 的 token 等价——color-mix
+   * 于透明底叠网格面色；非语义色，走 --structure-line-color 单源）。 */
+  background: color-mix(in srgb, var(--structure-line-color) 8%, transparent);
+  color: var(--on-surface);
+  cursor: default;
+  user-select: none;
+  /* 08-26 批 5（#47）：opacity 分量并入卡自身 transition——线聚焦渐变挂**基础
+   * 选择器**（加/撤 .structure-hover-dim 双向对称 ≥1s），背景悬停仍快速响应。 */
+  transition: background var(--duration-fast), opacity 1s var(--ease-standard);
+}
+
+/* 左缘线色条（::before 免占 flex 位）。 */
+.scene-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: var(--space-2xs);
+  bottom: var(--space-2xs);
+  width: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--structure-line-color);
+}
+
+/* T26 ②：多线拷贝静态标记（卡侧）——线色条旁 1px **回声条**（::after，镜像
+ * ::before 几何）。卡无圆号徽记，与 chip 圆号双环同语义的最小对齐形态：主标记
+ * 旁一条半透明线色细线 =「这份是同一场景在他线的拷贝之一」。数据 = cell.
+ * multiline（workbenchLayout 单源，两区同数据）。 */
+.scene-card--multiline::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: var(--space-2xs);
+  bottom: var(--space-2xs);
+  width: 1px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in oklab, var(--structure-line-color) 55%, transparent);
+}
+
+/* T26 ②：兄弟柔光（卡侧）——同 nodeId 悬停任一实例全实例点亮；:not(:hover)/
+ * :not(--selected) 双守卫与 chip 侧同纪律（T19 hover 外环/选中外环不被侵）。 */
+.scene-card--sibling-lit:not(:hover):not(.scene-card--selected) {
+  outline: 1px solid color-mix(in oklab, var(--structure-line-color) 55%, transparent);
+  outline-offset: 1px;
+}
+
+/* 角色 = 形状轴：glyph 色随线不随角色（角色去色相——语义色只留语义，design §4）。
+ * role 类保留在 DOM（测试/定位面），不携带任何色彩。 */
+.scene-card-glyph {
+  flex: 0 0 auto;
+  font-size: var(--text-md);
+  line-height: 1.2;
+  color: var(--structure-line-color);
+}
+
+/* 标题：12px 级（--text-sm）、最多 3 行 clamp 后省略 + 卡级 title 悬停快显
+ * （#31「静置不可读」的解——不再两三字截断静置态）。 */
+.scene-card-title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  color: var(--on-surface);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* 悬停 = 底色加深（只属悬停语义，永不占选中——mockup 四轮拍板）。 */
+.scene-card--clickable:hover {
+  background: color-mix(in srgb, var(--structure-line-color) 15%, transparent);
+}
+
+/* T19（发现批9·悬停归属可读）：hover 高亮外环——判读「弧出现了但悬停的卡本身无
+ * 高亮，弧与卡的对应读不出」。与 selected 外环同公式（outline 线色）但视觉退一档
+ * 可区分：1px 半透明 vs 2px oklab 暗化实色、offset 1 vs 2。`:not(--selected)` 守
+ * 卫——本规则特异性 (0,3,0) 本会盖过 selected (0,1,0) 的同位 outline（选中语义
+ * 不侵，mockup 拍板纪律）。零 JS（纯 CSS 面，与既有 hover 显形规则〔底色加深/
+ * 把手/加号钮〕共存）。 */
+.scene-card--clickable:not(.scene-card--selected):hover {
+  outline: 2px solid color-mix(in oklab, var(--structure-line-color) 85%, transparent);
+  outline-offset: 1px;
+}
+
+/* 选中 = 外环（线色加深 12%、2px、offset 2px——mockup 同公式；HSL 变体的
+ * token 等价走 color-mix oklab 暗化，outline 不占边框色轴）。 */
+.scene-card--selected {
+  outline: 2px solid color-mix(in oklab, var(--structure-line-color) 84%, black);
+  outline-offset: 2px;
+}
+
+/* Displacement = 边框样式轴（线级，overlayToggles.displacement 类级门控——既有
+ * 语义迁移；色走线色/中性 outline，不再占 accent/warning）。 */
+.scene-card--disp-prologue {
+  border-style: solid;
+  border-color: var(--structure-line-color);
+}
+
+.scene-card--disp-epilogue {
+  border-style: solid;
+  border-color: var(--outline);
+}
+
+.scene-card--disp-flashback {
+  border-style: dashed;
+  border-color: var(--structure-line-color);
+}
+
+.scene-card--disp-distant {
+  border-style: dotted;
+  border-color: var(--outline);
+  opacity: 0.85;
+}
+
+/* Visibility: hidden-until lanes dim (overlayToggles.visibility gates it). */
+.scene-card--hidden {
+  opacity: 0.45;
+}
+
+/* 批 7（design §11 定案 1）：待编排镜像卡——dangling 场景灰态（与工作台 chip
+ * 灰同源语义：缺章归属的真实状态，非异常）。 */
+.scene-card--pending {
+  background: color-mix(in srgb, var(--on-surface-variant) 6%, transparent);
+}
+
+/* ── Phase E3-drag: draggable cards + drop targets ──
+ * 光标级联（CR 组 3b）：pointer 先声明、grab/grabbing 后声明。[draggable] 属性
+ * 选择器特异性本就高于单类 --clickable，落在后面再赢一次声明序双保险——防未来
+ * 同特异性的改动把 grab 压回 pointer。两态并存（可点+可拖）显 grab/grabbing：
+ * 拖是主手势；按下不动仍触发 click 开浮层。（旧注称「.scene-cell 时代」——类名
+ * 已是 scene-card，本段重写后失效注释一并清除。） */
+.scene-card--clickable {
+  cursor: pointer;
+}
+
+.scene-card[draggable='true'] {
+  cursor: grab;
+}
+
+.scene-card[draggable='true']:active {
+  cursor: grabbing;
+}
+
+/* ── D2 AI 新增 = 左上 ✦ 角标 + 脉冲（形状载体，非边框色——批 2 从绿框迁移；
+ * mockup .newbadge）。描环用网格底色 token，外移出卡后与相邻卡角标不撞。 ── */
+.scene-card-new {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
+  animation: scene-card-new-pulse 1.6s var(--ease-standard) 3;
+  pointer-events: none;
+}
+
+@keyframes scene-card-new-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.35); }
+}
+
+/* CR-12 动效降级：reduced-motion 下角标静态常显（高亮语义不丢、不闪）。 */
+@media (prefers-reduced-motion: reduce) {
+  .scene-card-new {
+    animation: none;
+  }
+}
+
+/* ── 情绪底条（批 2 迁入卡内，mockup .cell .emo）：卡底 3px 色条，tier 三档 +
+ * arousal 不透明度（inline）。色条自带 title（原始情绪词）；点击冒泡到卡。 ── */
+.scene-card .emotion-bar {
+  position: absolute;
+  left: var(--space-xs);
+  right: var(--space-2xs);
+  bottom: 2px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+}
+
+/* ── Edge overlay（08-26 批 2 沉底 + 线色）──
+ * 连线沉底：格/泳道/列头 z 提升至 1（下方选择器组），本层保持 z-base(0) 且 DOM
+ * 序在格前——弧线不再穿文字，线视觉止于卡缘（#32「断连观感」随沉底消失）。
+ * 线色 = 线身份色（path 带 lane-hue--c{n}，from 端线）；边类型载体 = 虚线
+ * （SUSPENSE dasharray / CAUSAL 实线）——accent/warning 语义色退役（design §4）。
+ * pointer-events:none so cards stay interactive. */
+
+.narrative-edge-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: var(--z-base);
+}
+
+/* 格侧提升（沉底的另一半）：网格内的实体元素盖住沉底的连线层。sticky 角标
+ * （--z-sticky）天然更高，不受影响。 */
+.narrative-timeline-grid > .narrative-timeline-lane-label,
+.narrative-timeline-grid > .narrative-timeline-col-header,
+.narrative-timeline-grid > .narrative-timeline-add-line,
+.narrative-timeline-grid > .narrative-timeline-empty-body {
+  position: relative;
+  z-index: 1;
+}
+
+.narrative-edge {
+  fill: none;
+  stroke: var(--structure-line-color, var(--outline-variant));
+  stroke-width: 1.25;
+  opacity: 0.75;
+}
+
+.narrative-edge--suspense {
+  stroke-dasharray: 4 3;
+}
+
+/* T19（发现批9·因果方向可读）：因果边（CAUSAL 实线族）终点箭头的填充面——
+ * 「谁导致谁」诉求的真正归属处（判读者裁定：对照锚弧是配对语义，箭头归因果边，
+ * 见 AssocLayer 端点圆点段）。fill 走线色 token（元素挂 lane-hue--c{n} 供局部
+ * 变量解析）；悬念边（SUSPENSE 虚线族）不加箭头——悬念未揭示，方向语义弱。
+ * 异线渐变边由 EdgeLayer 内联 fill=url(#id)（userSpaceOnUse 渐变在箭头坐标处
+ * 即取终端色）。 */
+.narrative-edge-arrowhead {
+  fill: var(--structure-line-color);
+}
+
+/* ── Defensive empty body (nodes but no lines) ── */
+
+.narrative-timeline-empty-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2xl);
+  grid-row: 2;
+  font-size: var(--text-sm);
+  font-style: italic;
+  color: var(--on-surface-variant);
+}
+
+/* ── Validation overlay badges (Phase D-overlay D4) ──
+ * Severity badges anchored to flagged cells / lane labels / edges. Colours
+ * match PatchReviewPanel convention (token-bound — error/warning pill, info
+ * grey). The Issue.message (叙事语言) goes verbatim into the native `title`
+ * tooltip; the count inside the pill is the per-severity issue tally.
+ */
+
+.validation-badges {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.validation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1rem;
+  height: 1rem;
+  padding: 0 var(--space-3xs);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  border-radius: var(--radius-pill);
+  /* 08-26 批 2：surface 描环——角标外移出卡（top/right -7px）后与相邻卡/角标
+   * 不撞（mockup .vbadge box-shadow 同款，#32 角标碰撞的解）。 */
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
+  /* CR-003: pointer-events:none so the pill (top:-7px/right:-7px, overlapping the
+   * card corner ~9px) never swallows the card click — the pointer passes through
+   * to the parent `.validation-badges` span, whose `title` still fires the hover
+   * tooltip (verbatim issue messages) and whose DOM position inside `.scene-card`
+   * lets the click bubble to the card's onClick (drawer opens). The pill itself
+   * carries no title (tooltip lives on the parent cluster), so it needs no pointer
+   * capture. */
+  pointer-events: none;
+}
+
+/* 卡上角标外移出卡（top/right -7px）压卡角上缘；泳道标签上仍内联在尾端。 */
+.scene-card .validation-badges {
+  position: absolute;
+  top: -7px;
+  right: -7px;
+  z-index: var(--z-base);
+}
+
+.validation-badge--error {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.validation-badge--warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.validation-badge--info {
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+/* SVG edge badge (EdgeLayer): small circle at path midpoint. Solid severity
+ * fill so it reads on top of the edge line; text contrasts in --on-surface.
+ * `<title>` child drives the native hover tooltip (same verbatim messages). */
+
+.narrative-edge-badge circle {
+  stroke-width: 0;
+}
+
+.narrative-edge-badge--error circle {
+  fill: var(--error);
+}
+
+.narrative-edge-badge--warning circle {
+  fill: var(--warning);
+}
+
+.narrative-edge-badge--info circle {
+  fill: var(--on-surface-variant);
+}
+
+.narrative-edge-badge text {
+  fill: var(--on-surface);
+  font-size: var(--text-sm); /* 08-26 批 5（R6 字号地板）：9px → 12px 级 */
+  font-weight: 600;
+  text-anchor: middle;
+  dominant-baseline: central;
+  pointer-events: none;
+}
+
+/* ── AssocLayer（08-26 结构页重构 批 4 / implement 4.2 / design §6.1 / prd R1）──
+ * 因果卡 ↔ 工作 chip 的短关联线（旧 AssociationLayer 重建：DOM 实测端点）。
+ * pointer-events:none；canvas 内（zoom 同比）。
+ * T17（08-27 用户拍板 re-baseline）：**默认零渲染**——弧仅当「悬停该场景任一端 ∨
+ * 选中」时由 AssocLayer 渲染滤集产出（JSX 面），CSS 不承载藏/显开关（原 minor
+ * 隐匿族与揭示组合类已退役）。类只管 paint：倒叙 = 钢蓝强调（--accent，与工作台
+ * chip 倒叙圆号同轴）；selected = 描边增粗；其余走线身份色（lane-hue 局部变量）。 */
+.assoc-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: visible;
+  pointer-events: none;
+  z-index: var(--z-base);
+}
+
+.assoc-link {
+  fill: none;
+  stroke: var(--structure-line-color, var(--outline-variant));
+  stroke-width: 1.1;
+  opacity: 0.5;
+}
+
+.assoc-link--selected {
+  stroke-width: 1.25;
+  opacity: 0.65;
+}
+
+.assoc-link--reorder {
+  stroke: var(--accent);
+  stroke-width: 1.4;
+  opacity: 0.8;
+}
+
+/* T19（发现批9·悬停归属可读）：对照弧两端的锚点圆点（r=3，JSX 产出）——配对
+ * 语义的可读化：哪两枚卡是同一场景。**刻意不加箭头**——对照弧是配对不是因果，
+ * 加箭头会误导方向（用户拍板裁决；「谁导致谁」的箭头归 EdgeLayer 因果边）。
+ * fill 走线色 token（圆点自带 lane-hue--c{n} 类——自定义属性不跨兄弟遗传）；
+ * 倒叙钢蓝族随弧线换 accent（信号一致性）。 */
+.assoc-endpoint {
+  fill: var(--structure-line-color);
+}
+
+.assoc-endpoint--reorder {
+  fill: var(--accent);
+}
+
+/* ── 08-27 结构页修复第三轮 ──
+ * #75 异色渐变的 stop 色源（SVG defs 内 <stop> 元素挂 `.lane-hue--c{n} .assoc-stop`
+ * ——复用「元素带 lane-hue → 局部变量」的单一挂法，亮暗主题随 token 自动切换；
+ * 渐变本体由 AssocLayer 按 resolveAssocPaint 按需产出 userSpaceOnUse defs，本类
+ * 只声明 token-only 的色源，无字面色）。 */
+.assoc-stop {
+  stop-color: var(--structure-line-color);
+}
+
+/* ── 线级悬停聚焦（批 4 / implement 4.4 / design §6.4）：悬停线元素 → 其余线
+ * 元素降透明 25%（含因果边/关联线/两侧泳道标签），移开回落。类由
+ * lineHover.applyLineHover 切换（canvas 级 mouseover 委托，零重渲染）。
+ * 08-26 批 5（#47 用户拍板「起码持续 1 秒」）：渐变 transition 挂**基础选择器**
+ * 而非 dim 类——元素常驻 transition，类只切 opacity 目标值 → 加类/撤类双向对称
+ * 渐变，悬停相邻不同线不再瞬跳闪烁。参与面 = applyLineHover 的全部目标
+ * （卡/chip/因果边 path/关联线 path/两侧泳道标签）；.scene-card 因自带 background
+ * transition 在其规则内并入（见上），不进本组（transition 是整属性，组规则会盖掉）。 ── */
+.workbench-chip,
+.narrative-edge,
+.assoc-link,
+.narrative-timeline-lane-label,
+.workbench-lane-label {
+  transition: opacity 1s var(--ease-standard);
+}
+
+.structure-hover-dim {
+  opacity: 0.25;
+}
+
+/* ── Phase E3-interact: line focus dim (design E3.4) ──
+ * Clicking a lane label sets `focusedLineId`; every OTHER lane dims so the
+ * author's eye locks on the focused one. Visual only — no data change. The dim
+ * applies per-element (lane label + each cell-stack wrapper in the row) because
+ * the grid places row cells as siblings, not as one row container.
+ */
+.narrative-timeline-grid--has-focus .narrative-timeline-lane-label--dimmed,
+.narrative-timeline-grid--has-focus .narrative-timeline-cell-stack--dimmed {
+  opacity: 0.35;
+  transition: opacity var(--duration-fast);
+}
+
+/* Focused lane label gets a subtle accent left-border so the focus target reads
+ * even before scanning the dimmed rows. */
+.narrative-timeline-lane-label--focused {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+/* The lane label is clickable when focus is wired — pointer cursor signals it. */
+.narrative-timeline-grid--has-focus .narrative-timeline-lane-label {
+  cursor: pointer;
+}
+
+/* ── Phase E3-interact → 08-26 批 4（implement 4.1 / design §6.2 / prd R3）：场景
+ * 编辑浮层（SceneEditPopover——SceneDetailDrawer 指针旁改造）──
+ * fixed 定位（left/top 由 placePopover 纯函数算——点击点 +14px + 视口钳位/右下缘
+ * 翻转）；标题栏 = 拖动把手（钳位结构页内）；渲染于 .structure-canvas（zoom 容器）
+ * 外——zoom 不缩放浮层（design §3.4）。旧 sticky 锚（.scene-detail-drawer-anchor）
+ * 机制退役删除。Token-only colours；--z-panel-overlay 压网格 + 边 SVG 上、下拉/
+ * 通知之下。内容区类（.scene-detail-*）沿用抽屉时代排版。 */
+.scene-edit-popover {
+  position: fixed;
+  width: 320px;
+  max-height: calc(100vh - 2 * var(--space-md));
+  display: flex;
+  flex-direction: column;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-elevated);
+  z-index: var(--z-panel-overlay);
+  overflow: hidden;
+  /* 08-26 批 5（R6 字号地板/行高）：浮层正文行高 ≥1.5（继承到两区全部文本；
+   * 角标/序号等非正文元素自带 line-height 不受影响）。 */
+  line-height: 1.5;
+}
+
+.scene-edit-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2xs);
+  padding: var(--space-md) var(--space-lg); /* 批 5（R6）：内边距加大 */
+  border-bottom: 1px solid var(--outline-variant);
+  background: var(--surface-container);
+  cursor: grab;
+  user-select: none;
+}
+
+.scene-edit-popover-header:active {
+  cursor: grabbing;
+}
+
+/* 输入/按钮是编辑面不是把手（拖动守卫在组件 closest 判定，这里只还原指针语义）。 */
+.scene-edit-popover-header input,
+.scene-edit-popover-header button {
+  cursor: auto;
+}
+
+.scene-edit-popover-header button {
+  cursor: pointer;
+}
+
+.scene-edit-popover-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-lg) var(--space-xl); /* 批 5（R6）：14-16px 级内边距 */
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.scene-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2xs);
+}
+
+.scene-detail-section-title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--on-surface-variant);
+}
+
+/* ── metadata <dl> ── */
+.scene-detail-meta {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.scene-detail-meta-row {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
+.scene-detail-meta-row dt {
+  flex: 0 0 7rem;
+  color: var(--on-surface-variant);
+}
+
+.scene-detail-meta-row dd {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+  color: var(--on-surface);
+  word-break: break-word;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── edges ── */
+.scene-detail-edge-list,
+.scene-detail-issue-list,
+.scene-detail-act-list,
+.scene-detail-beat-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.scene-detail-edge {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  font-size: var(--text-sm);
+}
+
+.scene-detail-edge-dir {
+  flex: 0 0 auto;
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.scene-detail-edge-endpoint {
+  flex: 1;
+  min-width: 0;
+  color: var(--on-surface);
+  word-break: break-all;
+  font-variant-numeric: tabular-nums;
+}
+
+.scene-detail-edge-type {
+  flex: 0 0 auto;
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+/* ── validation issues (severity coloured — same tokens as ValidationBadges) ── */
+.scene-detail-issue {
+  padding: var(--space-3xs) var(--space-xs);
+  border-left: 3px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  font-size: var(--text-sm);
+}
+
+.scene-detail-issue--error {
+  border-left-color: var(--error);
+  background: var(--error-bg);
+}
+
+.scene-detail-issue--warning {
+  border-left-color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.scene-detail-issue--info {
+  border-left-color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+.scene-detail-issue-message {
+  margin: 0;
+  color: var(--on-surface);
+}
+
+.scene-detail-issue-suggestion {
+  margin: var(--space-3xs) 0 0;
+  color: var(--on-surface-variant);
+  font-style: italic;
+}
+
+/* ── opportunistic act (phase) + beats ── */
+.scene-detail-act {
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.scene-detail-beat-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+}
+
+.scene-detail-beat-block + .scene-detail-beat-block {
+  margin-top: var(--space-xs);
+}
+
+.scene-detail-beat-kind {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.scene-detail-beat {
+  padding: var(--space-3xs) var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+/* Empty inline note (no edges / no issues / no beats). */
+.scene-detail-empty {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 08-26 结构页重构 批 3（implement 3.1-3.3 / design §1.1 §3.1 §5 / prd R1）——
+ * 章节规划工作台（融合网格）：WeavingPanel/WeavingCell/PackingLinkLayer 退役，
+ * 行=线 / 列=章（minmax(108px, max-content) 自适应，上限由 chip max-width 212px
+ * 承担——TS 单源 WORKBENCH_GEOMETRY）/ 格=场景片 chip 按阅读序。Token-only。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 工作台根：传递链成员（display/subgrid 声明在批 7 链组，此处仅留语义注释锚）。 */
+.workbench {
+  min-height: 0;
+}
+
+/* 面板标题行复用 .structure-skeleton-title（28px chrome 恒高族）；无 flex gap：
+ * 与因果骨架标题同款排版。 */
+.workbench-title {
+  padding-left: var(--space-lg);
+}
+
+.workbench-scroll {
+  /* 批 6（#54）：overflow auto → visible——同 .narrative-timeline-scroll。批 7：
+     subgrid 传递链成员——横向 padding 禁止（挤占轨道），纵向 12px 保留（literal
+     锁步纪律同前）。 */
+  overflow: visible;
+  padding: 12px 0;
+}
+
+.workbench-grid {
+  display: grid;
+  /* 08-26 批 7（design §11 定案 2）：subgrid 接轨宿主——章列宽与因果骨架在同一组
+   * 轨道上解一次；width:max-content 随「独立网格自算模板」时代退役（盒宽 = 跨距 =
+   * 轨道和，自动成立）。 */
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--structure-grid-line); /* 批 5（R5）：外框退隐 */
+  border-radius: var(--radius-lg);
+}
+
+/* 卷带行格（in-grid——自适应列宽下必须与章列同容器才对列；体色类复用
+ * .volume-band--v0/1/2/unassigned 单源）。批 5（#42）：22px 改 **最小高**——
+ * 卷名 2 行 wrap 时 band 随内容长高（grid 首轨 minmax(22px, auto) 同步）。 */
+.workbench-band {
+  z-index: 1; /* 批 6（#54-P3）：文字面抬到关联线之上（grid item z-index 直效） */
+  min-height: 22px; /* mirrors TIMELINE_GEOMETRY.volumeBandHeight（min） */
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--structure-grid-line);
+  border-right: 1px solid var(--structure-grid-line);
+}
+
+/* 卷带体色（泳道行区的跨行/列分段；DOM 序在 band 行/列头/泳道之前 → 后续非
+ * 定位 grid item 盖其上；pointer-events:none 放行 chip 交互）。 */
+.workbench-volume-tint {
+  pointer-events: none;
+}
+
+/* 角格 + 章列头。 */
+.workbench-corner {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--space-2xs) 0 var(--space-md);
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+  border-bottom: 1px solid var(--structure-grid-line);
+  border-top-left-radius: var(--radius-lg);
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+}
+
+.workbench-col-header {
+  /* T24：列头「＋」钮（两区共用 .narrative-timeline-col-add，见 SP-1 段）的
+   * absolute 定位锚——同 .narrative-timeline-col-header 先例（无锚则钮落到 canvas
+   * 祖先——pending 计数器三轮 CR 同款教训）。 */
+  position: relative;
+  z-index: 1; /* 批 6（#54-P3）：文字面抬到关联线之上（grid item z-index 直效） */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+  border-bottom: 1px solid var(--structure-grid-line);
+}
+
+.workbench-col-label {
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.workbench-col-title {
+  max-width: 100%;
+  /* 批 6（#52）：nowrap 单行省略 → 2 行 clamp 换行（mirror .volume-band-title）——
+   * 章名副标不再横截；行高随 minmax(headerHeight, auto) 轨道自适应。 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  line-height: 1.3;
+}
+
+/* 待编排虚拟列头（dangling 收纳——灰态；非 episode，纯渲染聚合）。 */
+.workbench-col-header--pending {
+  font-style: italic;
+}
+
+/* 泳道标签：线色左条 + 线名（着线色）+ 场景数——lane-hue--c{n} 单源挂线色
+ * （与 SceneCard/chip 同款局部变量 --structure-line-color）。
+ * 08-26 批 5（#45）：与因果骨架泳道同宽同折行策略——线名/场景数改**两行堆叠**
+ * （.workbench-lane-text 列容器，mirror .narrative-timeline-lane-text）：旧「一行
+ * 横排 + 计数挤占」把线名裁成残字（「线·被包围…」），同名同策略后线名独占整列宽。
+ * 批 5（R5）：行分隔退役（border-bottom 删）。 */
+.workbench-lane-label {
+  z-index: 1; /* 批 6（#54-P3）：文字面抬到关联线之上（grid item z-index 直效） */
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-sm) var(--space-3xs) 0;
+  background: var(--surface-container-low);
+  border-right: 1px solid var(--structure-grid-line);
+}
+
+.workbench-lane-bar {
+  flex: 0 0 auto;
+  align-self: stretch;
+  width: 4px;
+  margin: var(--space-2xs) 0 var(--space-2xs) var(--space-3xs);
+  border-radius: var(--radius-pill);
+  background: var(--structure-line-color);
+}
+
+.workbench-lane-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* #45 两行堆叠后的线名——批 8（8.6）撤 nowrap+ellipsis 改自然换行（#56 卷名家族
+ * 同语义：160px 列内 wrap、行高 auto 生长；title tooltip 保留无副）。 */
+.workbench-lane-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  color: var(--structure-line-color);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.workbench-lane-count {
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 400;
+}
+
+/* （线, 章）格：chip 按阅读序 flex-wrap 平铺；行高随 chip 行数自适应（auto 轨道）。
+ * 批 5（R5）：行分隔退役（border-bottom 删），仅留列分隔退隐线。 */
+.workbench-slot {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 40px;
+  /* #61 热修（8.3 前置，mirror 因果格）：堆积封顶 + 悬停滚轮（wrap 布局本会横向
+   * 摊开，封顶主要防待编排竖排旧态/极端堆积）。 */
+  max-height: 280px;
+  overflow: hidden;
+  padding: var(--space-3xs) var(--space-2xs);
+  border-right: 1px solid var(--structure-grid-line);
+  /* 待编排格的计数器（.lane-pending-counter，absolute 右上钉驻）以本槽为定位锚
+   * ——无此锚则计数器落到 canvas 祖先（pending 计数器三轮 CR 同款教训）；渐隐
+   * 伪元素随滚动栈内迁至 .workbench-pending-stack 自锚（见文件尾 T8 段）。 */
+  position: relative;
+}
+
+/* #61 热修 → 批 8（8.3）：悬停/聚焦浏览堆积格（两区同款；:focus-within 补键盘
+ * 路径——Tab 进 chip 后同样放行滚轮）。 */
+.narrative-timeline-cell-stack:hover,
+.narrative-timeline-cell-stack:focus-within,
+.workbench-slot:hover,
+.workbench-slot:focus-within {
+  overflow-y: auto;
+}
+
+/* 待编排格：灰态收纳（dangling——补挂章节后进章列）。批 8（8.2）：钉右成员同款
+ * 不透明底（mirror .narrative-timeline-cell-stack--pending）。 */
+.workbench-slot--pending {
+  background: color-mix(in srgb, var(--on-surface-variant) 4%, var(--surface-container-lowest));
+}
+
+/* ── 场景片 chip（mockup .chip）：直角矩形卡族 + 圆号 + 标题；状态语法一轴一维 ──
+ *   线身份=色相（边框+淡底/圆号底）/ 阅读序=圆号 / 倒叙=钢蓝圆号 /
+ *   跨章 span=同形（形状轴退役——08-27 R6：「圆角胶囊」整体并入 SceneCard 直角
+ *   卡族，为缘部把手热区提供清晰视觉锚点；跨章语义由宽卡物理形态承载——T10 起
+ *   「续至第 N 章」徽记退役，零文字复述）/ 选中=外环 / 待编排=灰态。 */
+.workbench-chip {
+  position: relative;
+  /* 批 6（#54-P3）：flex item z-index 生效无须定位助跳——抬到关联线（canvas 级
+   * z-base absolute SVG）之上；网格背景保持静态在线下（线走「表格面上、文字面下」，
+   * mirror NTP 卡 z:1/边 z:0 批 2 先例）。08-27：relative 兼作缘部把手热区的定位锚
+   * （.workbench-chip-edge absolute 于卡缘，见文件尾「边缘直拖把手钩」段）。 */
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-height: 26px;
+  /* 批 6（#53）：212px 上界实装——批 5 #46 注释宣称「chip max-width 212px 承担
+   * 列宽上界」但规则从未落地（注释-代码失配），长标题 chip 无界撑列。 */
+  max-width: 212px;
+  /* 08-26 批 5（#44）：标题可折行——补竖向小 padding 防多行文字贴边。
+   * 08-27（R6 全标题）：折行上限 2→3 行。 */
+  padding: 2px var(--space-xs) 2px var(--space-2xs);
+  /* 08-27（R6 形状重铸）：radius-pill（胶囊）退役并入 SceneCard 直角矩形卡族
+   * （同款 --radius-sm——cssLock 「家族一致」锁）。 */
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--structure-line-color) 55%, transparent);
+  background: color-mix(in srgb, var(--structure-line-color) 12%, transparent);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1.35;
+  cursor: default;
+  user-select: none;
+  box-sizing: border-box;
+}
+
+.workbench-chip--clickable {
+  cursor: pointer;
+}
+
+/* 悬停 = 底色加深（只属悬停语义，永不占选中——mockup 四轮拍板同款）。 */
+.workbench-chip--clickable:hover {
+  background: color-mix(in srgb, var(--structure-line-color) 20%, transparent);
+}
+
+/* T19（发现批9·悬停归属可读）：chip hover 高亮外环（.scene-card 同款同公式——
+ * 悬停揭示弧的端点归属可读化；与既有 hover 显形规则〔底色加深/把手/加号钮〕共存）。
+ * :not(--selected) 守卫 + 退一档视觉（1px 半透明 vs 2px 实色）——详见 scene-card
+ * 段同款注。 */
+.workbench-chip--clickable:not(.workbench-chip--selected):hover {
+  outline: 2px solid color-mix(in oklab, var(--structure-line-color) 85%, transparent);
+  outline-offset: 1px;
+}
+
+/* 选中 = 外环（与 .scene-card--selected 同款同公式——selectedNodeId 单源，因果卡
+ * 与工作台 chip 同场景同显，design §5 跨视图同步）。 */
+.workbench-chip--selected {
+  outline: 2px solid color-mix(in oklab, var(--structure-line-color) 84%, black);
+  outline-offset: 2px;
+}
+
+/* 待编排 = 灰态（dangling——线色保留身份，去彩降饱和）。 */
+.workbench-chip--pending {
+  border-color: var(--outline-variant);
+  background: color-mix(in srgb, var(--on-surface-variant) 6%, transparent);
+  opacity: 0.75;
+}
+
+/* 阅读序圆号：线色底白字；倒叙 = 钢蓝（accent——阅读序与故事时序错位，序号跳变
+ * 一眼可辨；图例 reorder-ordinal 项）。 */
+.workbench-chip-ord {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  background: var(--structure-line-color);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.workbench-chip-ord--reorder {
+  background: var(--accent);
+}
+
+/* T26 ②（发现批10·多线拷贝无标记）：多线场景静态标记——圆号**双环**形（外环
+ * 1px 线色半透明，内环即既有实底圆号）。用户诉求「看不出是否同一场景」：标记
+ * = 该场景实际参与 >1 条线（chip.multiline 单源），两区（chip/SceneCard）同
+ * 数据同语义。box-shadow spread 环随圆号 border-radius 走，token-only。 */
+.workbench-chip-ord--multiline {
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--structure-line-color) 55%, transparent);
+}
+
+/* T26 ②：悬停任一同 nodeId 实例 → 全实例柔光（nodeSharedState nodeId 级订阅，
+ * JS 挂类；hover 场景键 = (nodeId, lineId) 对）。视觉退一档于 hover 外环
+ * （T19 的 2px@85%）：1px@55%；:not(:hover) 让悬停者自身保持既有 hover 样式，
+ * :not(--selected) 不侵选中语义（2px 实色外环）——两守卫同 T19 纪律。 */
+.workbench-chip--sibling-lit:not(:hover):not(.workbench-chip--selected) {
+  outline: 1px solid color-mix(in oklab, var(--structure-line-color) 55%, transparent);
+  outline-offset: 1px;
+}
+
+/* chip 标题：**3 行 clamp 换行**（08-27 R6「全标题显示」拍板——± 按钮退役腾出
+ * 空间后，标题不再静置截断；±/－ 腾位前的 2 行 cap 批 5 #44 已被本轮取代）。
+ * chip max-width 212px 承担列宽上界（#46/#53 联动）；超三行仍省略 + 卡级 title
+ * 悬停全名（既有）。 */
+.workbench-chip-title {
+  min-width: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+/* （± 章按钮规则族已随方案 D 退役删除——08-27，删不留档。） */
+
+/* chip 上的校验角标随 ValidationBadges 内联（胶囊内尾端）。 */
+.workbench-chip .validation-badges {
+  flex: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * dogfood R2 批次 B — 叠层与规模化（SP-4/SP-5，research/ui-design-outline-timeline.md）
+ *   SP-4 工具栏两组重组 + 情绪色条 + 节奏热度
+ *   SP-5 卷背景带（第二表头行 + 体色）+ 全书迷你地图
+ * 固定高度恒占（minimap 44 / volumeBandHeight 22 镜像 TIMELINE_GEOMETRY）——
+ * 页面布局与 minimap 轨道换算依赖恒占，勿改高度不同步 JS 常量。
+ * 色板注：情绪三档走语义 token（success/error/warning/accent）；卷带三色与
+ * 迷你地图线色板、节奏暖橙是 mockup 拍板的字面色（详设 SP-4/SP-5 指定，无对
+ * 应 token），按本文件「几何常量字面 px」同款例外处理——仅本节声明，勿扩散。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── SP-4 工具栏：分组分隔线 + 禁用占位（伏笔预留） ── */
+.narrative-timeline-toolbar-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 16px;
+  background: var(--outline-variant);
+  margin: 0 var(--space-2xs);
+}
+
+.narrative-timeline-toolbar-toggle--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.narrative-timeline-toolbar-toggle--disabled input[type='checkbox'] {
+  cursor: not-allowed;
+}
+
+/* ── SP-5 迷你地图 → 08-26 批 8（implement 8.7）：页级恒驻 chrome 带 ──
+ * 挂 .structure-page 直子（zoombar 之后、legend 之前——带位理由见 StructurePage
+ * 落地注）；sticky 改 **top+left 双轴**：top 32px 与 .structure-zoombar 高度锁步
+ * （钉驻后紧贴其下沿），left 0 沿袭页级横滚钉缘；纵向容器=整页 → 任意纵滚位置
+ * 都可 seek/拖动。在 zoom 容器外（chrome 不随画布缩放，design §3.4）。
+ * T13（发现批6）：z 与 zoombar 同抬 --z-page-chrome（层叠链根因与修法全文见
+ * .structure-zoombar 段注——同带成员必须同档，只抬一枚会在带内自相覆盖）。
+ *
+ * ── T20（发现批9·双段判读一致定罪）：可见 chrome 小卡形态 ──
+ * 旧形态（仅 border-bottom + 无圆角）被判读为「来历不明的无框浅色条」「压住行
+ * 标签的错位元素」——行标签纵向滚动时从其下方穿过，无边界提示的浅色块读作 UI
+ * 事故而非导航件。修：**四边完整描边 + 圆角小卡 + 不透明实底**（杜绝下层文字
+ * 透叠）+ 钉左 inset 呼吸（钉驻后卡片离视口左缘 12px，与 zoombar 的内边距列对齐
+ * ——实测 sticky inset 作用于 border box，margin 不参与，故 inset 本身用 token）。
+ * 高度 44 恒占 + box-sizing:border-box 保持（边框内收不加高）；cssLock 锁实底+
+ * 四边框在场（防回退成透明浮块）。 */
+.timeline-minimap {
+  position: sticky;
+  top: 32px;
+  /* T20：钉左 inset 直接用 token（实测 Chromium 的 sticky inset 作用于 border box
+   * ——margin-left 不影响钉驻位，卡片仍贴视口左缘）。12px = zoombar padding-left
+   * 同列对齐；到内容尽头自然落位归位（inset 只影响钉驻态）。 */
+  left: var(--space-lg);
+  z-index: var(--z-page-chrome);
+  /* #55：行盒收窄到内容宽——与包含块同宽则 sticky 零余量失灵（同族先例）。 */
+  width: fit-content;
+  height: 44px; /* 固定恒占（原镜像常量 minimapHeight 随批 4 双骨架常量族退役） */
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-md);
+  overflow: hidden;
+  /* 不透明 surface 实底：滚动行标签从卡下穿过时被干净遮断（T20「文字透叠」禁令）。 */
+  background: var(--surface-container-low);
+  /* T20：四边完整描边（chrome 级分隔——旧 border-bottom 单边是无框浅条的根）。 */
+  border: 1px solid var(--outline-variant);
+  /* T20：圆角小卡形态（控件级 radius，非面板级）。 */
+  border-radius: var(--radius-sm);
+}
+
+/* 批 8（8.1）：轨道悬停视觉反馈（纯 CSS）——底色轻提 + 全体场景块轻微提亮，
+ * 把「这是一条可交互的 seek 轨道」提示出来；不改任何 pointer 语义（seek/拖动
+ * 照旧，块本身 pointer-events:none 原样）。 */
+.timeline-minimap-track:hover {
+  background: var(--hover-overlay);
+  border-radius: var(--radius-2xs);
+}
+
+.timeline-minimap-track:hover .minimap-block {
+  filter: brightness(1.18);
+}
+
+.timeline-minimap-track {
+  position: relative;
+  height: 26px;
+  cursor: pointer;
+  /* 拖动 seek 是自定义 pointer 交互——禁掉触摸设备的原生平移手势。 */
+  touch-action: none;
+}
+
+/* 每场景一枚 3px 色块。top/height 由 TimelineMinimap 的 minimapLaneRow 纯函数
+ * inline 施加（08-26 批 5 #41 分线行——6 线叠罗汉的解；CSS 不留默认值防双源）。 */
+.minimap-block {
+  position: absolute;
+  width: 3px;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* 线稳定色板（08-26 批 1 扩容）：hash(线 id) % 12 → hue 索引类
+ * （linePalette.ts 单源；类名 --c{n} 映射 --viz-line-n，CSS 镜像 0..11）。
+ * 非语义色——区别于 accent/error 等语义 token，线身份靠泳道位置为主、色为辅。 */
+.minimap-block--c0 { background: var(--viz-line-0); }
+.minimap-block--c1 { background: var(--viz-line-1); }
+.minimap-block--c2 { background: var(--viz-line-2); }
+.minimap-block--c3 { background: var(--viz-line-3); }
+.minimap-block--c4 { background: var(--viz-line-4); }
+.minimap-block--c5 { background: var(--viz-line-5); }
+.minimap-block--c6 { background: var(--viz-line-6); }
+.minimap-block--c7 { background: var(--viz-line-7); }
+.minimap-block--c8 { background: var(--viz-line-8); }
+.minimap-block--c9 { background: var(--viz-line-9); }
+.minimap-block--c10 { background: var(--viz-line-10); }
+.minimap-block--c11 { background: var(--viz-line-11); }
+
+/* 卷分段刻度线（刻度 x = band 起始列×4，常量换算）。#51（08-26 目检）：卷名小字
+ * 退役——轨道宽 ≈ 列数×4px（百来 px），多枚 12px 标签必糊叠（「未分卷第1卷未分卷」
+ * 拼接串实录）；卷名由主网格卷带行/体色承载，此处只留 1px 卷界刻度。 */
+.minimap-volume-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-left: 1px solid var(--outline-variant);
+  pointer-events: none;
+}
+
+/* 当前视口框（半透明 accent；left/width 由 page.scrollLeft/clientWidth 换算，
+ * jsdom clientWidth=0 → width 0 自然隐匿）。 */
+.minimap-viewport {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  box-sizing: border-box;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius-2xs);
+  background: var(--accent-soft);
+  pointer-events: none;
+}
+
+/* ── SP-5 卷背景带：第二表头行（causal 侧，scroll 区内 grid 正上方） ──
+ * 08-26 批 7：本行也是 subgrid 接轨件（同宿主借列）——章列自适应宽度下与两区
+ * 内网格锁定同宽（旧「NTP 传同一模板字符串」在自适应轨道下会各自为政，subgrid
+ * 根治）。margin-bottom:-1px 与 grid 顶边框并缝成一体。批 5 #42：22px 恒高改
+ * **最小高**。 */
+.volume-band-strip {
+  display: grid;
+  grid-template-columns: subgrid;
+  grid-column: 1 / -1;
+  box-sizing: border-box;
+  margin-bottom: -1px;
+  border: 1px solid var(--structure-grid-line);
+  border-bottom: none;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  background: var(--surface-container-lowest);
+}
+
+.volume-band-corner {
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-2xs) 0 var(--space-md);
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+}
+
+.volume-band {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 var(--space-2xs);
+  /* T21b（发现批9·判读双报）：卷段边界从 5% 网格线升 chrome 级 outline-variant——
+   * 卷带体色 6% + 隐线让「跨列范围」不可读，卷名只剩左缘一枚裸文本浮在任意章列头
+   * 上方，被判读为「贴在单列的浮签」。可见边界线让 band 的起止列可读。
+   * （cssLock 的 border-right grid-line 锁只及 cell-stack/slot/lane-label 族，此处
+   * 不在其列。） */
+  border-right: 1px solid var(--outline-variant);
+  /* T21b：卷段起点锚（2px 左缘竖条）——「这一卷从本列开始」的空间标记，与卷名
+   * 徽标互为读法两半。两区（causal strip / workbench band 行）共用本类 = 单源。 */
+  border-left: 2px solid var(--outline-variant);
+}
+
+/* 卷名 2 行 clamp 换行（08-26 批 5 #42：窄卷 1-2 章标题不再 ellipsis 一行——
+ * band 有整行空间可两行；band 高随内容自适应）。 */
+/* #56（用户目检）：卷名不限行数自然换行——原 2 行 clamp 封顶，band 跨窄列时
+ * 长卷名尾部省略。行模板两区均 minmax(auto) 可生长，撤钳零风险；
+ * overflow-wrap:anywhere 保留兜 CJK 长串。 */
+/* T21b（发现批9）：裸文本浮签 → 有界徽标——底色 + 描边 + 圆角 + 内衬让卷名读作
+ * 「贴在卷带上的标签」而非「浮在某个章列头上的孤立文字」（判读者原话「看起来贴
+ * 在单列而非跨列」）。换行语义保持（长卷名 wrap，#56 撤钳不回退）。 */
+.volume-band-title {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+  /* dogfood R2 #95（用户实测）：横滚看后段章节时，卷名徽标随卷带起点滚出视口，
+   * 只剩体色没名字。徽标自身 sticky left——在跨列 band 的 containing block 内
+   * 钉在滚口左缘（mirror 待编排 .structure-pin-right 的右缘钉驻哲学；两区共用
+   * .volume-band-title = 单源，改一处两区同形）；卷与卷交接随各自 band 起止
+   * 自然换名，末卷滚到头徽标随 band 右缘自然离场。 */
+  position: sticky;
+  left: var(--space-2xs);
+  z-index: var(--z-sticky);
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container-low);
+  overflow-wrap: anywhere;
+  font-size: var(--text-sm);
+  line-height: 1.3;
+  color: var(--on-surface-variant);
+}
+
+/* 卷三色轮换（mockup .vol-a/b/c 半透明底 → tokens.css --viz-volume-*；v 序号 =
+ * outline.phases 序 % 3——同卷被别卷打断成多 band 仍同色）+ 未分卷灰。strip 格
+ * 与体色分段共用。 */
+.volume-band--v0 { background: var(--viz-volume-0); }
+.volume-band--v1 { background: var(--viz-volume-1); }
+.volume-band--v2 { background: var(--viz-volume-2); }
+.volume-band--unassigned { background: var(--viz-volume-unassigned); }
+
+/* ── SP-5 卷带体色：grid 内绝对定位 overlay（照 EdgeLayer 先例） ──
+ * 分段 top/bottom 双锚拉满表头行以下的网格体；罩在 cell 上只余卷色薄纱
+ * （alpha 0.06-0.07）。pointer-events:none 放行格交互。 */
+.volume-band-tint {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.volume-band-tint-segment {
+  position: absolute;
+}
+
+/* ── SP-4 情绪叠层 → 08-26 批 2 迁入卡内 ──
+ * 原绝对定位叠层（.emotion-overlay）退役删除（自适应行高下常量坐标对不上卡）；
+ * 色条本体（.emotion-bar，定位见 Scene Card 节）保留：pointer-events 默认放行
+ * （卡内嵌套，点击冒泡到卡 = 开抽屉），title 换 native tooltip（原始情绪词）。 */
+.emotion-bar {
+  pointer-events: auto;
+  cursor: help;
+}
+
+/* 色相三档 = valence（正绿/负红/中琥珀，语义 token）+ 语义词-only 档（accent
+ * 中性——纯代码不做语义词→VAD 投影）。不透明度随 arousal（inline，0.4..1）。 */
+.emotion-bar--pos { background: var(--success); }
+.emotion-bar--neg { background: var(--error); }
+.emotion-bar--mid { background: var(--warning); }
+.emotion-bar--semantic { background: var(--accent); }
+
+/* ── SP-4 节奏叠层 → 08-26 批 5（R5 拍板）载体改**格顶 3px 细条** ──
+ * 整格铺色被判「突兀」（mockup 整格橙底误读为 UI 缺陷）——细条只占卡顶缘，
+ * 强度映射上调（载体面积缩 ~10×：intensity 0..10 → 不透明度 0.4..1.0，
+ * pacingHeatOpacity 单源）。色值 = 拍板暖橙（--viz-pacing-heat）；
+ * top/left/width 由 PacingOverlay 经 overlayCardBox 双查表近似定位（inline），
+ * height 固定本类。pointer-events:none 放行点击/拖拽。 */
+.pacing-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.pacing-heat {
+  position: absolute;
+  height: 3px; /* 格顶细条（R5 载体；top/left/width inline） */
+  border-radius: var(--radius-pill);
+  background: var(--viz-pacing-heat);
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * dogfood R2 批次 A — 场景/线生命周期手势 + 抽屉两区表单 + D2 定位/高亮
+ * （research/ui-design-outline-timeline.md SP-1/2/3 + 第三节 D2）
+ *   SP-1 列头 hover「＋」/ 右键菜单（格上/线/列头/空白）+ 删除确认
+ *   SP-2 抽屉重做（标题行/状态/线 chips/枚举/连边/语义/AI 按钮）
+ *   SP-3 线管理（新增线行 + inline 改名 + 可见度目标输入）
+ *   D2  agent 落盘新增节点绿框脉冲（3s TTL）
+ * 样式照 agent-panel 下拉先例；token-only（本节无新增字面色）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── SP-1 列头 hover「＋」：新建场景入口（opacity 过渡，hover/焦点显形）──
+ * T24（发现批11）起**两区共用单类**：工作台章列头（.workbench-col-header）的 ＋
+ * 从每章格右上迁来（槽位钮被 T23 装填宽卡遮死——宽卡是别的槽的 DOM 子元素，
+ * 被覆盖槽收不到 :hover，显形永不触发；列头行永不被卡盖）。基形态/显隐纪律只长
+ * 在本类一处，勿造平行类。默认 pointer-events:none：opacity 0 不挡命中测试，
+ * 隐形钮会劫持列头面点击与 drop 准入——显形组一并归还。 */
+.narrative-timeline-col-header {
+  position: relative; /* anchor for the hover-revealed ＋ button */
+}
+
+.narrative-timeline-col-add {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--accent);
+  font-size: var(--text-sm); /* 08-26 批 5（R6 字号地板）：10px → 12px 级 */
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--duration-fast);
+}
+
+.narrative-timeline-col-header:hover .narrative-timeline-col-add,
+.workbench-col-header:hover .narrative-timeline-col-add,
+.narrative-timeline-col-add:focus-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.narrative-timeline-col-add:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+/* ── SP-1/SP-3 右键菜单：fixed 定位（鼠标点），backdrop 吃外点（Esc 由组件关）。
+ * z 层用专用 --z-context-menu（1500，scales.css 注释：above modals——抽屉/确认弹窗
+ * 上的右键也要能用；backdrop 同层压住抽屉 = 抽屉上的点击也算「外点关闭」）。 ── */
+.timeline-ctx-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-context-menu);
+  /* 透明——只收点击不遮内容。 */
+  background: transparent;
+}
+
+.timeline-ctx-menu {
+  position: fixed;
+  z-index: calc(var(--z-context-menu) + 1);
+  min-width: 180px;
+  max-width: 280px;
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-3xs) 0;
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-elevated);
+}
+
+.timeline-ctx-sep {
+  height: 1px;
+  margin: var(--space-3xs) 0;
+  background: var(--outline-variant);
+}
+
+.timeline-ctx-item {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm); /* 批 5（R6）：行命中区 ≥28px */
+  border: none;
+  background: transparent;
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  text-align: left;
+  cursor: pointer;
+}
+
+.timeline-ctx-item:hover:not(:disabled),
+.timeline-ctx-item:focus-visible {
+  background: var(--hover-overlay);
+}
+
+.timeline-ctx-item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.timeline-ctx-item-label {
+  flex: 0 0 auto;
+}
+
+.timeline-ctx-item-hint {
+  flex: 1;
+  min-width: 0;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  text-align: right;
+}
+
+.timeline-ctx-item--danger .timeline-ctx-item-label,
+.timeline-ctx-item--danger .timeline-ctx-item-hint {
+  color: var(--error);
+}
+
+.timeline-ctx-item--danger .timeline-ctx-item-hint {
+  opacity: 0.8;
+}
+
+/* 线可见度「隐藏直到」目标输入（SP-3 visibility 第二态）：同菜单容器 + 行内输入。 */
+.timeline-ctx-visibility {
+  flex-direction: row;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-xs);
+}
+
+.timeline-ctx-visibility-label {
+  flex: 0 0 auto;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+}
+
+.timeline-ctx-visibility input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+/* ── SP-3 泳道列表底部「＋ 新增线」行（grid 内整行；高度由本类恒占 28px）──
+ * CR-3：border-box + 28px 固定行高（原镜像常量 timelineAddLineRowHeight 随批 4
+ * 双骨架常量族退役，CSS 字面自此单源；content-box 的 28px+1px border 会让行高
+ * 漂 1px）。该行是 gridTemplateRows 之外的唯一隐式行（gridRow: rows+2），causal
+ * 侧恒渲染。 */
+.narrative-timeline-add-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  box-sizing: border-box;
+  height: 28px; /* 固定行高（双骨架常量族退役后 CSS 字面单源） */
+  padding: 0 var(--space-md);
+  border-right: 1px solid var(--structure-grid-line);
+  border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+}
+
+.narrative-timeline-add-line-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-3xs) var(--space-sm);
+  border: 1px dashed var(--outline-variant);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--accent);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: background var(--duration-fast), border-color var(--duration-fast);
+}
+
+.narrative-timeline-add-line-btn:hover {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.narrative-timeline-add-line-hint {
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* SP-3 线 inline 改名：泳道标签变输入框（Enter/blur 提交、Esc 取消）。 */
+.narrative-timeline-lane-edit {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+/* ── D2 agent 落盘新增节点高亮 ──
+ * 08-26 批 2 载体迁移：绿框边框脉冲 → 左上 ✦ 角标 + 脉冲（.scene-card-new，见
+ * Scene Card 节——形状载体非边框色，design §5）。`.scene-card--highlight` 类仍落
+ * 元素（测试/DOM 锚点），自身无样式——角标由组件按 highlighted 条件渲染。 */
+
+/* ── SP-2 抽屉两区表单 ── */
+
+/* 头行标题输入（机械直写；空时 placeholder 显 id）。 */
+.scene-detail-title-input {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.scene-detail-title-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+}
+
+/* 头行图标钮（定位/关闭）。批 5（R6）：命中区 28px 地板（1.75rem）。 */
+.scene-detail-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background var(--duration-fast), color var(--duration-fast);
+}
+
+.scene-detail-icon-btn:hover {
+  background: var(--surface-container-high);
+  color: var(--on-surface);
+}
+
+.scene-detail-icon-btn .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+/* 两区徽标：机械·直写（中性）/ 作者主权（accent）/ AI 建议（info）。挂 section 标题行。 */
+.scene-detail-zone-badge {
+  margin-left: var(--space-2xs);
+  padding: 0 var(--space-3xs);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+.scene-detail-zone-badge--author {
+  color: var(--accent-strong);
+  background: var(--accent-soft);
+}
+
+.scene-detail-zone-badge--ai {
+  color: var(--info);
+  background: var(--info-bg);
+}
+
+/* 两区左缘细线（范式判据的可见化：机械中性线 / 语义 accent 线）。 */
+.scene-detail-section--mech {
+  border-left: 2px solid var(--outline-variant);
+  padding-left: var(--space-xs);
+}
+
+.scene-detail-section--semantic {
+  border-left: 2px solid var(--accent);
+  padding-left: var(--space-xs);
+}
+
+/* 字段行（label + 控件）。 */
+.scene-detail-field-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--text-sm);
+}
+
+.scene-detail-field-label {
+  flex: 0 0 4.5rem;
+  color: var(--on-surface-variant);
+}
+
+.scene-detail-select {
+  flex: 1;
+  min-width: 0;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+.scene-detail-number {
+  max-width: 5rem;
+  text-align: center;
+}
+
+.scene-detail-textarea {
+  resize: vertical;
+  min-height: 3.2em;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1.5;
+}
+
+/* lineTags chips。 */
+.scene-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3xs);
+}
+
+.scene-detail-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+}
+
+/* 行内 × 微钮（chip 摘除/边删除）——R6 命中区 28px 地板的**行内密控件例外**：
+ * 28px 会撑爆 chip 行高（chip 本体 26px 级），取 20px 上限保密度（拍板注记）。 */
+.scene-detail-chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.scene-detail-chip-remove:hover {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.scene-detail-chip-add {
+  flex: 0 0 auto;
+  max-width: 8rem;
+  color: var(--accent);
+}
+
+/* 连边行 + 小钮。批 5（R6）：mini/AI/删除钮 padding 上调——命中区 ≥28px。 */
+.scene-detail-edge-add {
+  margin-top: var(--space-3xs);
+}
+
+.scene-detail-mini-btn {
+  flex: 0 0 auto;
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container);
+  color: var(--accent);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.scene-detail-mini-btn:hover:not(:disabled) {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.scene-detail-mini-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 语义区 AI 按钮（发 chat 预填指令；运行中禁用防点击假死）。 */
+.scene-detail-ai-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  align-self: flex-start;
+  margin-top: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--info);
+  border-radius: var(--radius-pill);
+  background: var(--info-bg);
+  color: var(--info);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.scene-detail-ai-btn:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+.scene-detail-ai-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.scene-detail-ai-btn .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+/* 保留区 presentationOrder 旁的拖拽提示小字。 */
+.scene-detail-meta-hint {
+  margin-left: var(--space-2xs);
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+}
+
+/* 删除场景钮（危险态红字——确认弹窗兜底）。批 5（R6）：命中区 ≥28px。 */
+.scene-detail-delete-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  align-self: flex-start;
+  margin-top: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--error);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.scene-detail-delete-btn:hover {
+  background: var(--error-bg);
+}
+
+.scene-detail-delete-btn .material-symbols-outlined {
+  font-size: var(--text-lg);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 08-26 结构页重构 批 1（implement 1.3 / design §3.4 / prd R4）——画布缩放 +
+ * 横向导航地基。zoom 由 StructurePage 以 inline `zoom` 施加于 .structure-canvas
+ * （双骨架共同容器：格/连线/叠层/minimap 同容器同比，几何不破）；缩放组在 canvas
+ * 外不受缩放（design §3.4）。Token-only colours。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* zoom 作用容器（批 3 起直承因果骨架 + 46px 保留带 + 章节工作台）。批 7：宿主
+ * 规则（display:grid / min-width / padding / subgrid 链）已在文件头「共享轨道
+ * 架构」段定义——此处保留历史注释锚，规则体并入该段（单块声明防级联分叉）。
+ * #49 position:relative（AssocLayer absolute 宿主锚）同在彼处。 */
+
+/* 缩放组（−/％/＋/适宽）：页级 sticky left——横向滚动时钉在视口左缘恒可点
+ * （.timeline-minimap 同款先例）。高度 32px 与 narrative-timeline-toolbar 一致。
+ *
+ * ── 08-27 结构页修复第三轮（R3/#69 深滚失效根修）──
+ * 本行原声明只钉了 left 轴，**top 轴缺省（auto）= 纵向从不粘住**：浅滚时处于视口
+ * 内看不出差异、深纵滚后随内容滚出视口顶（E1c/E3 取证同录 minimap top:32px 有值
+ * 才粘住的对照）。「缩放控件恒驻顶部」由此一行补齐；与下方 .timeline-minimap 的
+ * top:32px 同族锁步（高度变更两处必同步——cssLock 已双轴锁定）。
+ *
+ * ── 08-27 T13（发现批6·真机红）：滚动穿带期间被后序同层内容盖住（层叠链根修）──
+ * 真机取证：scrollTop ∈ [80,240] 时 structure-legend-summary / structure-skeleton-
+ * title / narrative-timeline-toolbar / narrative-timeline-corner 依次盖在 zoombar
+ * 之上（elementsFromPoint 序），z:20 压不过「滚上来的内容」。根因 = **同层后序胜**
+ * 的 CSS 层叠规则：canvas 在 zoom=1（computed 1 不建 stacking context）时其后代
+ * sticky 成员（z 同为 --z-sticky=20、DOM 序在后）与 zoombar 同处一个 stacking
+ * context，平级 z 按 DOM 序绘制 → 滚动穿带的成员盖住钉驻带，不透明白底连按钮
+ * 一起盖死（zoom≠1 时 canvas 自成 stacking context 反而隔离了这批成员——故 100%
+ * 档独中招）。修法 = 钉驻带抬到专属档 --z-page-chrome（50：全页内容之上、popover/
+ * menu 真浮层之下；.workspace-shell isolation:isolate 圈定同 context 边界），
+ * cssLock 锁「带在内容之上」性质与 token 阶梯位。 */
+.structure-zoombar {
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: var(--z-page-chrome);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  height: 32px;
+  box-sizing: border-box;
+  padding: 0 var(--space-lg);
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--outline-variant);
+}
+
+.structure-zoombar-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px; /* 批 5（R6）：命中区 ≥28px */
+  padding: 0 var(--space-2xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--duration-fast);
+}
+
+.structure-zoombar-btn:hover {
+  background: var(--hover-overlay);
+}
+
+/* 当前倍率（点击复位 100%）：tabular-nums 防跳动。 */
+.structure-zoombar-pct {
+  min-width: 48px;
+  font-variant-numeric: tabular-nums;
+}
+
+.structure-zoombar-fit {
+  min-width: auto;
+  padding: 0 var(--space-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 08-26 结构页重构 批 2（implement 2.3 / prd R2 / design §5）：结构页图例。
+ * 常驻缩放组（zoombar）之下、canvas 之外（chrome 不随画布缩放）。完备是验收线
+ * ——所有视觉记号必须在此（structureLegend.test 断言锁定）。演示元素全部
+ * aria-hidden（记号本身非内容）；色值全走 token / lane-hue 局部变量。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+.structure-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs) var(--space-md);
+  box-sizing: border-box;
+  padding: var(--space-2xs) var(--space-lg);
+  background: var(--surface-container-low);
+  border-bottom: 1px solid var(--outline-variant);
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+  /* #55：与 .structure-zoombar 同款页级钉左（页面直子元素——sticky 生效的
+   * 同一条已验证路径）。 */
+  position: sticky;
+  left: 0;
+  z-index: var(--z-sticky);
+}
+
+/* ── 08-26 批 5（#43）：默认折叠一行摘要，点开全展开（会话记忆 structureSlice
+ * .legendExpanded——切项目不重置）。折叠态只渲染 toggle + 摘要行（9 记号全展开
+ * 被用户判「异常庞大」）；展开态 = 既有全套记号（完备性验收线不变）。 ── */
+.structure-legend-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  box-sizing: border-box;
+  height: 28px; /* 批 B（CR 组 3b/R6）：命中区 28px 地板（此前 ~23.5px 不在例外清单） */
+  padding: var(--space-3xs) var(--space-xs);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1.5;
+  cursor: pointer;
+}
+
+.structure-legend-toggle:hover {
+  background: var(--hover-overlay);
+}
+
+/* 折态摘要文案（一行——速览「图例里有什么」不占垂直空间）。 */
+.structure-legend-summary {
+  color: var(--on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.structure-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  white-space: nowrap;
+}
+
+.structure-legend-item--note {
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+}
+
+.structure-legend-caption {
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.structure-legend-note {
+  color: var(--on-surface-variant);
+}
+
+/* 线色示例块（数据驱动：lane-hue--c{n} 同款挂法，读 --structure-line-color）。 */
+.structure-legend-swatch {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 8px;
+  border-radius: var(--radius-2xs);
+}
+
+.structure-legend-hue {
+  background: var(--structure-line-color);
+}
+
+/* 角色 = 形状轴文字（labels 自带 ★◆●◇ glyph，无色彩）。 */
+.structure-legend-glyph {
+  color: var(--on-surface);
+}
+
+/* 选中 = 外环演示（中性色演示公式——卡上实色为线色深化 12%）。 */
+.structure-legend-demo-ring {
+  position: relative;
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-2xs);
+  background: var(--surface-container);
+  outline: 2px solid var(--on-surface-variant);
+  outline-offset: 1px;
+}
+
+/* AI 新增 = ✦ 角标演示（success 底 + surface 描环——卡上同款）。 */
+.structure-legend-demo-new {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--success);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
+}
+
+/* 校验三族角标演示（severity 语义色——ValidationBadges 同源 token）。 */
+.structure-legend-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 0 0 2px var(--surface-container-lowest);
+}
+
+.structure-legend-demo-badge--error {
+  color: var(--error);
+  background: var(--error-bg);
+}
+
+.structure-legend-demo-badge--warning {
+  color: var(--warning);
+  background: var(--warning-bg);
+}
+
+.structure-legend-demo-badge--info {
+  color: var(--on-surface-variant);
+  background: var(--surface-container-high);
+}
+
+/* 情绪底条三档演示（正绿/中琥珀/负红——emotion-bar tier 同源 token）。 */
+.structure-legend-demo-emo {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+}
+
+.structure-legend-demo-emo--pos { background: var(--success); }
+.structure-legend-demo-emo--mid { background: var(--warning); }
+.structure-legend-demo-emo--neg { background: var(--error); }
+
+/* 位移 = 虚线边框演示（线级 displacement 载体）。 */
+.structure-legend-demo-disp {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 10px;
+  border: 1.5px dashed var(--on-surface-variant);
+  border-radius: var(--radius-2xs);
+}
+
+/* 可见性 = 透明度演示（R2 六维矩阵补项——.scene-card--hidden 同款弱化系数）。 */
+.structure-legend-demo-hidden {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 10px;
+  border-radius: var(--radius-2xs);
+  background: var(--on-surface-variant);
+  opacity: 0.45;
+}
+
+/* 节奏热度 = 格顶细条演示（pacing-heat 同款暖橙细条；叠层默认关——批 B 图例
+ * 完备性补项，R5「不做 slot 级底色」载体同款）。 */
+.structure-legend-demo-pacing {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--viz-pacing-heat);
+}
+
+/* 钢蓝序号演示（阅读序跳变——accent 钢蓝，工作台 chip 批 3 落地）。 */
+.structure-legend-demo-ord {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: var(--on-surface);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 08-26 结构页重构 批 8（implement 8.2/8.3 细化，08-26 晚用户第二批目检需求）——
+ * 待编排列钉右组 + 待编排折叠家族（渐隐 /「+N」徽标）。Token-only；锚定色 =
+ * 各自的灰态底（8.2 已改不透明，渐隐终点与之一致——两包同底同梯度）。
+ * 置于文件尾：sticky 声明必须晚于既有 position:relative 规则（.narrative-
+ * timeline-col-header 的 ＋ 钮锚等）赢得同特异性级联，防被覆盖回退。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 8.2 待编排列钉右组 ──
+ * 成员（两侧镜像齐备）：因果列头 --pending / 因果各泳道 cell-stack--pending /
+ * 工作台卷带行角格 / 工作台列头 --pending / 工作台各泳道 slot--pending——五面
+ * 全挂 .structure-pin-right 单类。页级横滚（.structure-page overflow:auto，
+ * #54 单一滚动容器）时右缘恒驻；到内容尽头自然落位归轨。z 取 --z-sticky 与
+ * chrome 钉左族同层（corner 等）——钉右列与钉左角格在正常视口宽度下不相邻，
+ * 同层级即可互相覆盖滑过的非钉驻格（z-base 卡片层/关联线 SVG 之上）。
+ *
+ * ── T21a（发现批9·判读双报）：钉驻覆盖需要 chrome 级分离 ──
+ * 根因（Electron 138 实测复现，190px 章轨 ×16 溢出视口态）：sticky right:0 使
+ * 不透明待编排列钉驻在视口右缘时，**直接叠盖最右可见章列头**（实测 pinned
+ * [V-220..V] 全覆末章列头 [1312..1502]）——钉驻列唯一可见边缘是 5% 透明度的
+ * 网格线（不可见），覆盖关系无任何视觉提示 → 判读者读作「第13章/待编排/第14章
+ * 三个列头标挤在一团互相碰」而非「一列钉驻面板浮在内容上」。修：左缘 chrome 级
+ * 描边（outline-variant）+ 左向定向阴影，钉驻列读作有意的浮动面板；静止态
+ * （滚到头自然落位）同一边缘即与末章列的干净分隔。
+ * 阴影为字面色 rgba（本文件 viz 族/--structure-grid-line 同款例外声明）：需要
+ * **左向定向**浅投影，tokens 的 --shadow-soft/elevated 均为下向且量级过重。 */
+.structure-pin-right {
+  position: sticky;
+  right: 0;
+  z-index: var(--z-sticky);
+  border-left: 1px solid var(--outline-variant);
+  box-shadow: -6px 0 12px -6px rgba(0, 0, 0, 0.18);
+}
+
+/* 行 204 真机复核修复（08-27）：`.narrative-timeline-grid >
+ * .narrative-timeline-col-header`（0,2,0 + 后手的 position:relative——＋钮锚等
+ * 用）特异性压过单类 sticky，因果待编排列头中段横滚脱锚（cell-stack 无此提级
+ * 规则故钉住）。配对覆盖同款选择器再抬回 sticky，特异性 0,3,0 稳赢。 */
+.narrative-timeline-grid > .narrative-timeline-col-header.structure-pin-right {
+  position: sticky;
+}
+
+/* ── 8.3 待编排折叠家族（08-27 用户拍板语义修订；T8 滚动栈内化后规则随迁）──
+ * 堆**全量渲染**、高度封顶 ≈3 枚可见、**常驻滚轮可达**（不是 DOM 裁剪——
+ * 「折叠的看不见」正是被否决的原方案）。封顶/滚轮/渐隐规则体随 T8 迁至文件尾
+ * 「R7 计数器 + T8 滚动栈内化」段（选择器改挂内层 .narrative-timeline-pending-
+ * stack / .workbench-pending-stack）；封顶字面按「枚数×卡高+gap+padding」推：
+ * 因果卡 50×3+4×2+8=166；工作台 chip ~26×3+2×2+8≈90 留 2 行标题余量→120。 */
+
+/* （旧 `.narrative-timeline-cell-stack.pending-overflow` / `.workbench-slot.pending-overflow`
+ * 规则组已随 T8 选择器迁移删除——pending-overflow 变体类现挂内层滚动栈，宿主级
+ * 匹配零命中即死规则，删不留档。） */
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * 08-27 结构页修复第三轮（Wave1 V 片）样式钩段——R7 每线未编排计数器 / 空章格淡
+ * 标注 / R6 方案 D 缘部把手热区。**类名 = G 片（手势域）挂载点的协作契约**：
+ * 本文件只出样式，元素由 NarrativeTimelinePanel/ChapterWorkbench/WorkbenchChip
+ * 落点挂载（类名对齐清单见任务报告「协作项」）；Token-only colours；
+ * 置于文件尾防既有 position 规则级联压过（同 .structure-pin-right 先例）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── R7：每线待编排计数器（T8 定稿：两区统一「宿主右上角小徽标」）──
+ * 显示该线未编排场景总数（#65 封顶 3 枚 + 滚轮语义不变——本计数器是行级汇总，
+ * 不是堆内徽标的替代位）。
+ * 形态史：absolute（V 初版）→ sticky top（V-F3：absolute 在滚动容器内随滚漂移）
+ * → sticky + 负 margin 抵消流占位（T6：sticky 仍在流内，因果独占一整行/工作台
+ * 挤压首卡）→ **T8 根修：absolute + 不进滚动层**。T8 滚动栈内化后宿主
+ * （.workbench-slot--pending / .narrative-timeline-cell-stack--pending）是非滚动
+ * 元素，计数器 absolute 钉其右上角＝零布局脚印 + 零滚动漂移（结构性保证，优于
+ * 任何 CSS 抵消术）；T6 负 margin 族与其行高单源变量随之退役（删不留档）。
+ * 两区规则合一——单一声明块，无分区覆盖。
+ * pointer-events:none 放行点击穿透（浮层压卡不挡交互）；title 悬浮提示因
+ * pointer-events:none 不再触发，aria-label 仍供读屏（JSX 侧两属性都保留）。 */
+.lane-pending-counter {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  z-index: 2;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 18px;
+  padding: 0 var(--space-2xs);
+  border-radius: var(--radius-pill);
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* ── T8（发现批4·深夜二轮）：待编排滚动栈内化——两区同构「非滚动宿主 + 内层
+ * 滚动栈」。pending-overflow 的封顶/常驻滚轮/渐隐全部随 chips/cards 搬进内层；
+ * 外层（.workbench-slot--pending / .narrative-timeline-cell-stack--pending）降为
+ * 非滚动宿主：position:relative 锚（计数器 absolute 的定位基准）+ drop 面 +
+ * pin-right + 不透明底。外层基类的 max-height 280 与 hover 揭示组（overflow-y:
+ * auto）不构成实际滚动——内层封顶 120/166 恒低于 280，宿主 scrollTop 恒 0，
+ * 计数器零漂移。布局字面镜像各自宿主基类（gap/对齐），保证 ≤3 枚未溢出态视觉
+ * 与内化前一致（工作台 wrap 行 / 因果居中列）。 */
+.workbench-pending-stack {
+  position: relative; /* 渐隐 ::after 的定位锚（承接旧 pending-overflow 宿主职责） */
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 2px; /* 镜像 .workbench-slot gap 字面 */
+  width: 100%; /* 宿主是 wrap 行——占满整行才能让 chip 折行按列宽解 */
+  min-width: 0;
+}
+
+.narrative-timeline-pending-stack {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center; /* ≤3 枚居中——镜像宿主基类；溢出态翻 flex-start 见下 */
+  gap: 4px; /* 镜像 .narrative-timeline-cell-stack gap 字面 */
+  min-width: 0;
+}
+
+/* 8.3 语义修订的封顶族（T8 随滚动栈内迁到内层元素；推导关系锁见 cssLock）：
+ * 堆全量渲染、高度封顶 ≈3 枚可见、常驻滚轮可达；渐隐只盖视觉不拦交互。 */
+.narrative-timeline-pending-stack.pending-overflow {
+  /* CR 组 5 P1：居中基线在「封顶 + 滚动容器」里让顶端卡永不可滚达——改顶端对齐。 */
+  justify-content: flex-start;
+  max-height: 166px;
+  overflow-y: auto;
+}
+
+.workbench-pending-stack.pending-overflow {
+  max-height: 120px;
+  overflow-y: auto;
+}
+
+.narrative-timeline-pending-stack.pending-overflow::after,
+.workbench-pending-stack.pending-overflow::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 28px;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--on-surface-variant) 4%, var(--surface-container-lowest))
+  );
+  pointer-events: none;
+}
+
+/* 悬停/聚焦浏览时撤渐隐（否则末张卡始终被罩一层假象）。宿主级 :hover/:focus-within
+ * 驱动（覆盖内层与宿主 padding 带之间的悬停盲区；焦点必在内层之内＝也在宿主之内）。 */
+.narrative-timeline-cell-stack--pending:hover .narrative-timeline-pending-stack.pending-overflow::after,
+.narrative-timeline-cell-stack--pending:focus-within .narrative-timeline-pending-stack.pending-overflow::after,
+.workbench-slot--pending:hover .workbench-pending-stack.pending-overflow::after,
+.workbench-slot--pending:focus-within .workbench-pending-stack.pending-overflow::after {
+  content: none;
+}
+
+/* ── R12/追加批3：空章格淡标注 + hover 提亮 ──
+ * 「章消失了吗」的可疑观感消解——空章格内一行淡字（文案 i18n key 见报告清单，
+ * G 片渲染），hover/聚焦浏览时提亮到可读并让位于顺手新建入口的视觉锚。 */
+.workbench-slot-empty-note {
+  flex: none;
+  width: 100%;
+  padding: var(--space-3xs) var(--space-2xs);
+  color: var(--on-surface-variant);
+  opacity: 0.5;
+  font-size: var(--text-sm);
+  line-height: 1.5;
+  transition: opacity var(--duration-fast);
+}
+
+.workbench-slot:hover .workbench-slot-empty-note,
+.workbench-slot:focus-within .workbench-slot-empty-note {
+  opacity: 0.9;
+}
+
+/* ── R6 方案 D：缘部直拖把手热区（hover 显形过渡）──
+ * 左右缘各一枚 ~6px 热区条（pointer events 手势面归 G 片，本处只给视觉）。常态
+ * 隐匿（opacity 0 不劫持点击——整条热区在卡缘内侧），悬停卡本体显形至半透线色；
+ * focus-visible 补键盘路径。ew-resize 光标即语义提示（不可用态换 not-allowed，
+ * 见下方 T11 段）。（类名以 G 片 DOM 契约为准：--start/--end 已更名为
+ * --left/--right。） */
+.workbench-chip-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  background: var(--structure-line-color);
+  opacity: 0;
+  transition: opacity var(--duration-fast);
+}
+
+.workbench-chip-handle--left {
+  left: 0;
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+}
+
+.workbench-chip-handle--right {
+  right: 0;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.workbench-chip:hover .workbench-chip-handle,
+.workbench-chip-handle:focus-visible {
+  opacity: 0.55;
+}
+
+/* ── T11（发现批5）：把手不可用态——恒渲染 + 置灰，不再吞把手 ──
+ * 「有的只能左拉」的困惑根因是贴边界卡把手消失（单章左缘不参与 / 末章单章右缘
+ * 无处可扩）。恒渲染后不可用走显形亮度减半（0.55 的一半）+ not-allowed 光标，
+ * 说明文案由 chip 侧 title 承载（i18n 三键）。token-only：零字面色。
+ * 显隐节奏不变——仍 hover 才现（专用显形组须在通用组之后：特异性 (0,4,0) 已压
+ * 过通用 (0,3,0)，级联位置双保险）。 */
+.workbench-chip-handle--disabled {
+  cursor: not-allowed;
+}
+
+.workbench-chip:hover .workbench-chip-handle--disabled,
+.workbench-chip-handle--disabled:focus-visible {
+  opacity: 0.28; /* 显形亮度减半（0.55 / 2）——可辨但明确退格一档 */
+}
+
+/* ── R6：边缘直拖预览态（G 片 pointer 手势挂 class，pointerup 即撤）──
+ * T12（发现批5）：resize 态 z 抬升——拖动生长的预览此前与 chip 族同层（z:1），
+ * 被 DOM 序靠后的邻格 chip 同层覆盖（用户目击「长方形一半被覆盖」→ 体感「拖动
+ * 没效果」）。抬至 3：chip 族 z:1 之上、slot 级 chrome（加号钮/计数器 z:2）之上
+ * （拖动中指针掠过邻格会触发其 hover 揭示 z:2 元素，预览不得被其半字形遮挡），
+ * 远低于 sticky(20)/overlay(100)/菜单(1500) 族——预览永不盖住真浮层。
+ * T15（发现批7·实时变宽）：手势期卡体**脱流抬升**（absolute）——盒宽由 chip 侧
+ * 实测列盒 inline 驱动（width=跨列盒宽 + margin-left=起始列平移差），left/top
+ * 不设值 = 装填坐标锚（T23：静止态本就绝对定位，本类的 absolute 对装填卡是
+ * 冗余但无害的强化）。虚线轮廓保留为变宽卡体上的提示叠加。
+ * T18 v2（发现批9）：实时宽盒降**半透明**——手势期跨列盒与邻卡文字软碰（判读
+ * 定罪 v1 实心盖压形态的连带收口）；抬手随类名撤除回装填盒（T23：静止态 =
+ * 装填坐标 inline，见下方 `--packed` 段）。 */
+.workbench-chip--resizing {
+  position: absolute;
+  outline: 1px dashed var(--accent-strong);
+  outline-offset: 1px;
+  z-index: 3;
+  opacity: 0.6;
+}
+
+/* T15 + T23：宿主槽解裁剪——变宽卡体（手势期）与装填宽卡（静止常驻）都跨列界
+ * 伸出槽外，槽基线 overflow（#61 族 / 下方 T23 章槽规则）会把右伸段剪回单列宽
+ * （「拖了没反应」死观感回归）。选择器「resizing ∥ --span」常驻豁免（Chromium
+ * 105+；Electron 37 无虞）。hover/:focus-within 变体须一并镜像：
+ * overflow-y:auto（悬停滚动）会把另一轴的 visible 按组合规则降级回 auto 再裁剪
+ *  ——三态同置 visible 才真解（本组特异性 (0,2,0)/(0,3,0) 且级联位置在后，压过
+ * 基线 (0,1,0) 与悬停滚动组 (0,2,0)）。 */
+.workbench-slot:has(> .workbench-chip--resizing),
+.workbench-slot:has(> .workbench-chip--resizing):hover,
+.workbench-slot:has(> .workbench-chip--resizing):focus-within,
+.workbench-slot:has(> .workbench-chip--span),
+.workbench-slot:has(> .workbench-chip--span):hover,
+.workbench-slot:has(> .workbench-chip--span):focus-within {
+  overflow: visible;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ * T23（发现批10·宽卡天际线装填）：装填卡绝对定位 + 章槽无界生长。用户三段
+ * 拍板终案：跨 N 章的卡 = 一张真正的横长方形横跨覆盖列（v2 延伸带退役删净
+ * ——cssLock 负断言防回魂）；同线永不重叠（阅读序 first-fit 天际线，纯函数
+ * workbenchPacking——坐标/行高单源）；文字完全显示=硬约束；行高随轨道自动
+ * 增长。置于文件尾（级联优先：压过基线 .workbench-chip 的 position:relative
+ * 与 #61 悬停滚动组的同特异性规则）。
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* 定位归属：**模式归 CSS（本类 position:absolute），坐标值归 chip inline**
+ * （left/top/width/height 由装填纯函数产出注入）——单一权威面，样式与数值不
+ * 混源。装填卡仍在归属槽 DOM 子节点内（closest('.workbench-slot') 测试/探针
+ * 契约不变）；abspos 以槽 padding box 为包含块（left:0 = 槽左缘——跨列卡与列
+ * 盒无缝对齐，相邻列卡相接成连续横带）。overflow 默认 visible：估算帧高度
+ * （jsdom/首帧）低于文字所需时文字外溢可见、不截断——「完全显示」托底；实测
+ * 帧由父层带 inline height 收敛到内容高。 */
+.workbench-chip--packed {
+  position: absolute;
+}
+
+/* 装填卡标题：3 行 clamp 退役——文字完全显示=硬约束（T23 拍板），行数随卡宽
+ * 自然解（宽了折行少自然矮），高度由装填估算 + 实测两遍法承担（非 clamp 截断）。
+ * display 换 block：脱离 -webkit-box clamp 载体（clamp 家族随装填形态整体退役）；
+ * 兼使标题盒高=纯文本高度——settle 实测面（scrollHeight）读的就是它，纯块盒
+ * 的测量不混 clamp 机制（不动点纪律的 CSS 半边，见 ChapterWorkbench settle 注）。 */
+.workbench-chip--packed .workbench-chip-title {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* 章槽（非待编排）#61 封顶/裁剪退役：装填卡绝对定位后章槽不再自持滚动/裁剪面
+ * ——行高随轨道自动增长（天际线 laneHeight 经槽 inline minHeight 驱动 auto 行
+ * 轨，深堆叠是真实内容高度不是待封顶的溢出）。待编排槽（--pending）保留基线
+ * 族（其封顶/滚轮/渐隐归内层 .workbench-pending-stack 自持）。特异性 (0,2,0)
+ * 与 #61 悬停滚动组同级、级联位置在后——悬停态同样不复活滚动。 */
+.workbench-slot:not(.workbench-slot--pending) {
+  max-height: none;
+  overflow: visible;
+}

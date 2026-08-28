@@ -1,0 +1,122 @@
+[
+  {
+    "id": "cn.punctuation.dash-proliferation.dash-to-period-before-quote",
+    "namespace": "punctuation.dash-proliferation",
+    "title": "破折号改句号",
+    "level": "medium",
+    "enabled": false,
+    "note": "破折号改句号",
+    "source": {
+      "canonicalKey": "punctuation.dash-proliferation\t\t—+(?=[”」])|(?<=[\\u4e00-\\u9fff])—+(?=\")",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "—+(?=[”」])|(?<=[\\u4e00-\\u9fff])—+(?=\")"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "。"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash-proliferation.inline-dash-to-comma",
+    "namespace": "punctuation.dash-proliferation",
+    "title": "段中破折号改逗号",
+    "level": "medium",
+    "enabled": false,
+    "note": "段中破折号改逗号",
+    "source": {
+      "canonicalKey": "punctuation.dash-proliferation\t\t(?<!—|^)—+(?=[“「\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<!—|^)—+(?=[“「\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "，"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash-proliferation.linebreak-dash-to-comma",
+    "namespace": "punctuation.dash-proliferation",
+    "title": "段尾破折号连到下句",
+    "level": "medium",
+    "enabled": false,
+    "note": "段尾破折号连到下句",
+    "source": {
+      "canonicalKey": "punctuation.dash-proliferation\t\t(?<=[\\u4e00-\\u9fff])—+\\n+(?:—+)?",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=[\\u4e00-\\u9fff])—+\\n+(?:—+)?"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        "，"
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash-proliferation.punctuation-adjacent-dash",
+    "namespace": "punctuation.dash-proliferation",
+    "title": "删与标点相邻的破折号",
+    "level": "medium",
+    "enabled": false,
+    "note": "删与标点相邻的破折号",
+    "source": {
+      "canonicalKey": "punctuation.dash-proliferation\t\t—+(?=[,，。!！?？])|(?<=[,，。!！?？])—+",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "—+(?=[,，。!！?？])|(?<=[,，。!！?？])—+"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  },
+  {
+    "id": "cn.punctuation.dash-proliferation.quote-edge-extra-dash",
+    "namespace": "punctuation.dash-proliferation",
+    "title": "删引号边多余破折号",
+    "level": "medium",
+    "enabled": false,
+    "note": "删引号边多余破折号",
+    "source": {
+      "canonicalKey": "punctuation.dash-proliferation\t\t(?<=[“”「」])—+|(?<=\")—+(?=[\\u4e00-\\u9fff])",
+      "importedFrom": "curated-cn-rule-samples"
+    },
+    "detector": {
+      "type": "regex",
+      "targets": [
+        "(?<=[“”「」])—+|(?<=\")—+(?=[\\u4e00-\\u9fff])"
+      ]
+    },
+    "action": {
+      "type": "replace",
+      "replacements": [
+        ""
+      ]
+    }
+  }
+]

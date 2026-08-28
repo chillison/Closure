@@ -1,0 +1,22 @@
+{
+  "name": "@orison/desktop-local-bff",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  },
+  "scripts": {
+    "test": "vitest --run",
+    "lint": "echo local-bff lint placeholder",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@orison/shared-contracts": "workspace:*",
+    "zod": "^3.24.3",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "vitest": "^3.1.4"
+  }
+}
