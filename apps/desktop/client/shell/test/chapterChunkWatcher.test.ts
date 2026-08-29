@@ -70,12 +70,13 @@ describe('chapterChunkWatcher（Story 8.3 S3）', () => {
     stopChapterChunkWatcher();
   });
   afterEach(async () => {
+    // libuv Windows fs-event 断言规避（公仓 windows CI threads 池三连实录）：断言
+    // `!_wcsnicmp (fs-event.c:72)` 在「事件处理中 close 句柄」时触发——慢 runner 上
+    // 事件密集，stop 直接撞上 fs-event 线程在途回调 → C 层 abort 进程（JS 无从捕获；
+    // 不删目录后仍复现，故真触发器是 close 竞态非删除）。先等 debounce 窗（500ms）
+    // + flush + 余量排空在途事件再关。TMP 每测唯一 mkdtemp（残留 tmpdir 交系统清理）。
+    await tick(700);
     stopChapterChunkWatcher();
-    // 有意不删 TMP：libuv Windows fs-event 在「递归 watch 的目录树被 rm」时 C 层
-    // `!_wcsnicmp` 断言直接 abort 进程（nodejs/node#12841 族，JS 无从捕获；公仓
-    // windows CI 两轮实录——stop 后 drain 拍也不敌 fs-event 线程竞态）。TMP 是每测
-    // 唯一 mkdtemp（os.tmpdir() 下），残留无害，交由系统清理。绝不在 watcher 生命
-    // 周期内删除其监听目录——测试与生产（项目关闭先 unwatch 再动盘）皆然。
   });
 
   it('章文件写事件 → debounce 后 reindexChapter(projectId, projectDir, chapterId)；rebuild 不触发', async () => {
