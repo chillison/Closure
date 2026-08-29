@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import path from 'node:path';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolvedModel } from '@orison/shared-contracts';
 
@@ -48,7 +49,7 @@ function clean() {
   closeDb();
   resetSqliteVecState();
   _setCraftKbUserDirForTest(null);
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 function stubModel(): ResolvedModel {
@@ -579,12 +580,12 @@ describe('listCraftMdFiles scan path (CR-craft-kb-002/003/007)', () => {
 
   beforeEach(() => {
     _setCraftKbUserDirForTest(SCAN_DIR);
-    try { if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(SCAN_DIR);
     mkdirSync(SCAN_DIR, { recursive: true });
   });
   afterEach(() => {
     _setCraftKbUserDirForTest(null);
-    try { if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(SCAN_DIR);
   });
 
   it('CR-craft-kb-003: recursively descends into subdirectories for .md docs', () => {

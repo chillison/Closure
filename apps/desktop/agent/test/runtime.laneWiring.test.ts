@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +44,7 @@ describe('dogfood R2 #7 车道接线 — child / skill / 链 generate 带 lane:"
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 
@@ -154,7 +155,7 @@ describe('dogfood R2 #7 车道接线 — leader 对话车道不带 lane（intera
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

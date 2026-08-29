@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -30,7 +31,7 @@ describe('Story 3.4 Phase 3 — loadStaleFieldsForLeader + segment injection', {
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

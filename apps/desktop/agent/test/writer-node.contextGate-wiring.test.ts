@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -142,7 +143,7 @@ describe('S4c 接线 — writer/核实循环 pre-gate 窗口/红线（makeAgentL
   });
 
   afterEach(() => {
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(dir);
     setTaskSlotResolver(undefined);
     setContextPolicyProvider(undefined);
   });

@@ -11,7 +11,8 @@
  * the configIpc db-imports, and the logger — plain vitest, no real
  * ~/.orison writes (sidecar dir is overridden per test).
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { researchNetConfigSchema } from '@orison/shared-contracts';
@@ -77,12 +78,12 @@ beforeEach(() => {
   setProxy.mockReset().mockResolvedValue(undefined);
   getDb.mockReturnValue({ prepare: () => ({ all: () => [] }) });
   _setModelConfigDirForTest(TEST_MODEL_DIR);
-  try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_MODEL_DIR);
 });
 
 afterEach(() => {
   _setModelConfigDirForTest(null);
-  try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_MODEL_DIR);
 });
 
 // ── Schema boundary (shared-contracts) ──

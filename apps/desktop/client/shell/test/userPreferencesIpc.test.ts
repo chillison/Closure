@@ -1,6 +1,7 @@
 import path from 'node:path';
 import os from 'node:os';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserPreferencesConfig } from '@orison/shared-contracts';
 
@@ -38,12 +39,12 @@ function getHandlers() {
 
 describe('user preferences IPC round-trip', () => {
   beforeEach(() => {
-    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_HOME);
     mkdirSync(TEST_HOME, { recursive: true });
   });
 
   afterEach(() => {
-    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_HOME);
   });
 
   it('persists all fields, including previously-dropped writing/appearance settings', async () => {

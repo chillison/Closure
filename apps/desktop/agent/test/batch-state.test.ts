@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -43,7 +44,7 @@ describe('Story 3.5 — batches.json persistence', () => {
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
   });
 
   it('文件不存在 → []（合法「从未跑过」）；load 后 save round-trip', () => {
@@ -148,7 +149,7 @@ describe('Story 3.5 — 消息盖章 registry', () => {
 
   afterEach(() => {
     clearActiveBatchStamp(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
   });
 
   it('无活跃批量 → 消息不盖章（零回归）', () => {

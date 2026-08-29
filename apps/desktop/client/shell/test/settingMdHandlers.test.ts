@@ -12,7 +12,8 @@
  * Runs on a throwaway project dir; reindexSettingMd is stubbed (its DB
  * integration has its own suite, mirror craftCurationHandlers.test.ts).
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -50,7 +51,7 @@ const ctx = (params: Record<string, unknown>) => ({
 });
 
 function clean() {
-  try { if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_ROOT);
 }
 
 beforeAll(() => {

@@ -13,7 +13,8 @@
  * （无 ABI skip 门——不造新门，mirror 8.2 哲学：只有 native 依赖才需要门）。
  */
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { projectDocumentSchema } from '@orison/shared-contracts';
 
@@ -52,13 +53,13 @@ function makeFixtureDoc() {
 }
 
 beforeAll(() => {
-  try { if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(PROJECT_DIR);
   mkdirSync(PROJECT_DIR, { recursive: true });
   saveProject(PROJECT_DIR, makeFixtureDoc());
 });
 
 afterAll(() => {
-  try { if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(PROJECT_DIR);
 });
 
 const ctx = (params: Record<string, unknown>) => ({

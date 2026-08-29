@@ -10,7 +10,8 @@
  * disk read), modelGatewayIpc (ref resolution), @orison/model-protocols
  * (generation), logger.
  */
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -79,11 +80,11 @@ const TEST_PROJECT_DIR = path.join(process.cwd(), 'test-tmp-vision-media');
 beforeEach(() => {
   vi.clearAllMocks();
   nativeImage.createFromBuffer.mockReset().mockReturnValue(makeImage());
-  try { if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_PROJECT_DIR);
 });
 
 afterEach(() => {
-  try { if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_PROJECT_DIR);
 });
 
 // ── Format sniffing (pure) ──

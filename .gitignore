@@ -54,3 +54,6 @@ docs/参考资料（不要git）/
 .codegraph/
 # playwright MCP 目检遗留（截图/DOM 快照/控制台日志——临时产物不入库）
 .playwright-mcp/
+
+# 测试运行 cwd 残留（rm-residue-registry 登记的已知形态）
+apps/**/test-tmp-*/

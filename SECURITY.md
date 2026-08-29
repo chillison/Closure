@@ -19,10 +19,9 @@ only.
 
 **Please do not report security vulnerabilities through public GitHub issues.**
 
-Instead, report privately via GitHub's private vulnerability reporting
-(Security → Advisories → Report a vulnerability).
-<!-- GitHub 发布占位（08-25 release-prep-naming）：仓库未建，私密通报入口暂不可用；
-     repo 公开后此处回填 https://github.com/<owner>/<repo>/security/advisories/new 链接。 -->
+Instead, report privately via GitHub's private vulnerability reporting:
+**https://github.com/chillison/Closure/security/advisories/new**
+(Repository → Security → Advisories → Report a vulnerability).
 
 Please include:
 

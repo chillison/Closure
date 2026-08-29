@@ -1,6 +1,7 @@
 import path from 'node:path';
 import os from 'node:os';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserPreferencesConfig } from '@orison/shared-contracts';
 
@@ -50,12 +51,12 @@ function writePreferencesFile(lines: string[]): void {
 // preferences.yaml（无该键）零迁移照常加载。
 describe('user preferences contextCompaction.redlinePercent (08-25 S3)', () => {
   beforeEach(() => {
-    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_HOME);
     mkdirSync(TEST_HOME, { recursive: true });
   });
 
   afterEach(() => {
-    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_HOME);
   });
 
   it('defaults to 95 when the file is absent', async () => {

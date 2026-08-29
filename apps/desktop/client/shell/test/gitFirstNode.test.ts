@@ -9,7 +9,8 @@
  * initRepo 的幂等判定（isGitRepo）误判 no-op。wiring 面（save-meta/ensure-document
  * 何时调用）在 projectMetaFirstNode.test.ts。
  */
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import git from 'isomorphic-git';
@@ -43,12 +44,12 @@ function freshDir(name: string): string {
 
 describe('git 首节点语义（CR-28）', () => {
   beforeEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
     mkdirSync(TEST_ROOT, { recursive: true });
   });
 
   afterEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
   });
 
   it('initRepo 空目录：建 repo 但零提交——首节点等初始内容，不再是空「开启版本管理」节点', async () => {

@@ -13,13 +13,13 @@
  * change worth reindexing (unlike projectWatcher, which must skip the app's own
  * saves). Debounced to coalesce rapid editor saves into one scan.
  */
-import { watch, type FSWatcher } from 'node:fs';
 import { existsSync, mkdirSync } from 'node:fs';
+import { watchDir, type DirWatcher } from '../fs/watchFactory';
 import { getCraftKbUserDir } from './craftKbPaths';
 import { scanAndReindexCraftKb } from './closureCraftIndexer';
 import { getLogger } from '../logger';
 
-let activeWatcher: FSWatcher | null = null;
+let activeWatcher: DirWatcher | null = null;
 let debounceTimer: NodeJS.Timeout | null = null;
 
 /** Coalesce rapid editor saves (multi-file paste, find-replace) into one scan. */
@@ -78,7 +78,7 @@ export function startCraftKbWatcher(): void {
     }
   }
   try {
-    activeWatcher = watch(dir, { recursive: true }, (_event, filename) => {
+    activeWatcher = watchDir(dir, (_event, filename) => {
       const name = typeof filename === 'string' ? filename : null;
       if (!shouldReact(name)) return;
       scheduleReindex();

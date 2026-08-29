@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { existsSync, rmSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ModelConfig } from '@orison/shared-contracts';
 
@@ -53,12 +53,12 @@ describe('model provider IPC', () => {
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     globalThis.fetch = ORIGINAL_FETCH;
     vi.restoreAllMocks();
   });

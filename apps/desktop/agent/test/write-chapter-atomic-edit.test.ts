@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
@@ -71,7 +72,7 @@ describe('write_chapter Director atomic-edit apply（Story 7.4 Step 3+4）', () 
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

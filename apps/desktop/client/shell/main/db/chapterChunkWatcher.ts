@@ -31,14 +31,14 @@
  * `project:unwatch` (project close/switch) + `will-quit` (app quit) so no fs
  * watcher / timer outlives the active project / the process.
  */
-import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
+import { watchDir, type DirWatcher } from '../fs/watchFactory';
 import { assertSafePath } from '../ipc/pathGuard';
 import { getProject } from './projectRepository';
 import { reindexChapter, rebuildChapterChunks } from './chapterChunkIndexer';
 import { getLogger } from '../logger';
 
-let activeWatcher: FSWatcher | null = null;
+let activeWatcher: DirWatcher | null = null;
 let activeProjectDir: string | null = null;
 let debounceTimer: NodeJS.Timeout | null = null;
 
@@ -146,7 +146,7 @@ export function startChapterChunkWatcher(projectDir: string): void {
   stopChapterChunkWatcher();
 
   try {
-    activeWatcher = watch(resolved, { recursive: true }, (_event, filename) => {
+    activeWatcher = watchDir(resolved, (_event, filename) => {
       try {
         if (filename === null) {
           // 平台省略 filename（rename 类事件，mirror settingMdWatcher F7/EDGE-3 保守分支）：

@@ -1,5 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { parseAgentPromptYaml, loadAgentPrompt, setPromptsBaseDir } from '../src/prompt/agentPrompt';
@@ -149,7 +150,7 @@ describe('setPromptsBaseDir 注入（dogfood #48）', () => {
       expect(r.system).toBe('stub system\n');
       expect(r.userTemplate).toBe('stub {{brief}}\n');
     } finally {
-      try { rmSync(tmp, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(tmp);
     }
   });
 
@@ -164,8 +165,8 @@ describe('setPromptsBaseDir 注入（dogfood #48）', () => {
       setPromptsBaseDir(tmpB);
       expect((await loadAgentPrompt('swap-agent')).system).toBe('B\n');
     } finally {
-      try { rmSync(tmpA, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
-      try { rmSync(tmpB, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(tmpA);
+      rmBestEffort(tmpB);
     }
   });
 });

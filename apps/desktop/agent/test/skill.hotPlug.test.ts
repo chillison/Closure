@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,9 +30,9 @@ describe('skill hot plugging', () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
     closeDb(otherProjectPath);
-    try { rmSync(homePath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
-    try { rmSync(otherProjectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(homePath);
+    rmBestEffort(projectPath);
+    rmBestEffort(otherProjectPath);
     vi.resetModules();
   });
 
@@ -61,7 +62,7 @@ describe('skill hot plugging', () => {
 
     expect(await runtime.loadSkill(session.id, 'deleted-skill')).toBeDefined();
 
-    try { rmSync(skillDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(skillDir);
 
     await expect(runtime.loadSkillsForSession(session.id)).resolves.not.toContain('deleted-skill');
     await expect(runtime.loadSkill(session.id, 'deleted-skill')).resolves.toBeUndefined();

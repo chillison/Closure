@@ -8,13 +8,13 @@
  * target platforms); on Linux it is not, in which case external-change refresh
  * degrades to the manual refresh button.
  */
-import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
+import { watchDir, type DirWatcher } from './watchFactory';
 import { assertSafePath } from '../ipc/pathGuard';
 import { notifyUI } from '../ipc/toolNotify';
 import { getLogger } from '../logger';
 
-let activeWatcher: FSWatcher | null = null;
+let activeWatcher: DirWatcher | null = null;
 let activeDir: string | null = null;
 let debounceTimer: NodeJS.Timeout | null = null;
 /** Relative paths (POSIX, leading '/') changed since the last flush. */
@@ -90,7 +90,7 @@ export function watchProject(projectDir: string): void {
   unwatchProject();
 
   try {
-    activeWatcher = watch(resolved, { recursive: true }, (_event, filename) => {
+    activeWatcher = watchDir(resolved, (_event, filename) => {
       const name = typeof filename === 'string' ? filename : null;
       if (isNoise(name)) return;
       // Skip changes the app itself just made (editor autosave etc.) so our own

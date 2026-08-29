@@ -5,6 +5,7 @@ import type {
   LintModelProbeResult,
   LintScanFullResult,
 } from '@orison/shared-contracts';
+import { rmBestEffort } from './rmBestEffort';
 
 const {
   handle,
@@ -220,13 +221,13 @@ describe('lintIpc', () => {
     assertSafePath.mockImplementation(() => {});
     resolveTaskModel.mockReturnValue(undefined); // CR-026：缺省未配置档位 → default 哨兵自动选择
     assignmentThinkingControl.mockReturnValue(undefined); // S4c：缺省无思考策略 → 请求不带 thinking 键
-    fs.rmSync(path.join(PROJECT_DIR, '.orison'), { recursive: true, force: true });
+    rmBestEffort(path.join(PROJECT_DIR, '.orison'));
     fs.writeFileSync(path.join(PROJECT_DIR, 'chapters', 'ch_001.md'), '正文MARKER一', 'utf-8');
     fs.writeFileSync(path.join(PROJECT_DIR, 'chapters', 'ch_002.md'), '正文二', 'utf-8');
   });
 
   afterAll(() => {
-    fs.rmSync(path.join(process.cwd(), 'test-tmp-lint-ipc'), { recursive: true, force: true });
+    rmBestEffort(path.join(process.cwd(), 'test-tmp-lint-ipc'));
   });
 
   it('registers all four lint channels', () => {

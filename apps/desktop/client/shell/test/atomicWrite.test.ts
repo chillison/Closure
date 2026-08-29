@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { atomicWriteFileSync } from '@orison/shared-contracts/fs/atomicWrite';
 
@@ -7,12 +8,12 @@ const TEST_DIR = path.join(process.cwd(), 'test-tmp-atomic-write');
 
 describe('atomicWriteFileSync', () => {
   beforeEach(() => {
-    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_DIR);
     mkdirSync(TEST_DIR, { recursive: true });
   });
 
   afterEach(() => {
-    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_DIR);
   });
 
   it('writes through a temp file and leaves no temp files behind', () => {

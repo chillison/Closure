@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { rmSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { PromiseRegistry } from '@orison/shared-contracts';
 
@@ -83,7 +83,7 @@ describe.runIf(sqliteUsable)('foreshadow indexer (Story 6.4 D3)', () => {
   afterAll(() => {
     closeDb();
     try {
-      try { rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(TEST_HOME);
     } catch {
       // ignore
     }

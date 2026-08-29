@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ChapterStateSummary, ResolvedModel } from '@orison/shared-contracts';
 
@@ -59,7 +60,7 @@ try {
 function clean() {
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 function stubModel(): ResolvedModel {
@@ -191,7 +192,7 @@ describe.skipIf(!sqliteUsable)('chapterSummaryIndexer（Story 8.3 S3）', () => 
       for (const { vector_id } of ids) del.run(vector_id);
     }
     const chaptersDir = path.join(PROJECT_DIR, 'chapters');
-    try { if (existsSync(chaptersDir)) rmSync(chaptersDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(chaptersDir);
   });
 
   // ── buildChapterSummaryBodyText（纯函数）──

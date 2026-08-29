@@ -1,10 +1,6 @@
 import path from 'node:path';
-import {
-  existsSync,
-  mkdirSync,
-  rmSync,
-  writeFileSync,
-} from 'node:fs';
+import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createEmptyProjectDocument,
@@ -57,13 +53,13 @@ function projectRecord(overrides: Record<string, unknown> = {}) {
 describe('project lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
     mkdirSync(TEST_ROOT, { recursive: true });
     allowPath(TEST_ROOT);
   });
 
   afterEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
   });
 
   it('duplicates project files, excludes runtime history, and writes a fresh identity', async () => {

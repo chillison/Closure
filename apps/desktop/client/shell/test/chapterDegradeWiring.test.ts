@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -37,11 +38,11 @@ function ctx(projectDir = TMP) {
 describe('章落盘点 → mention 降档 hook 接线（Story 8.7 BMad CR-001）', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    try { if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TMP);
     mkdirSync(path.join(TMP, 'chapters'), { recursive: true });
   });
   afterEach(() => {
-    try { if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TMP);
   });
 
   it('chapter_write 落盘（内容有变）→ degrade hook 收 (projectDir, chapterId)', async () => {

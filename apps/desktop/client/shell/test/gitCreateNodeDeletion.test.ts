@@ -7,7 +7,8 @@
  * 临时目录放 os.tmpdir()（mirror gitFirstNode.test.ts——cwd 在 Closure 仓库内会让
  * findRoot 攀到外层 repo）。
  */
-import { mkdirSync, rmSync, unlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, unlinkSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import git from 'isomorphic-git';
@@ -32,12 +33,12 @@ async function headTreeHas(dir: string, filepath: string): Promise<boolean> {
 
 describe('createNode 删件暂存（R2 #26）', () => {
   beforeEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
     mkdirSync(TEST_ROOT, { recursive: true });
   });
 
   afterEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
   });
 
   it('已删文件（删除对话移走 session jsonl）：快照成功且删除进树', async () => {

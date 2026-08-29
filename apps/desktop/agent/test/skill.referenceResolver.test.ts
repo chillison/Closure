@@ -1,4 +1,5 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -25,7 +26,7 @@ line four
   });
 
   afterEach(() => {
-    try { rmSync(root, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(root);
   });
 
   it('resolves relative reference paths and loads content in full, excerpt, and summary modes', async () => {

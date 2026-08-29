@@ -1,5 +1,6 @@
 import { describe, expect, it, afterEach } from 'vitest';
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync, readdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { lintChapterReportSchema } from '@orison/shared-contracts';
@@ -27,7 +28,7 @@ function makeTmpProject(): string {
 afterEach(() => {
   while (tmpDirs.length > 0) {
     const dir = tmpDirs.pop()!;
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(dir);
   }
 });
 

@@ -10,7 +10,8 @@
  * closureCraftIndexer.test.ts); reindexCraftDoc is stubbed (its DB integration
  * has its own suite).
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
@@ -51,7 +52,7 @@ const ctx = (params: Record<string, unknown>) => ({
 
 function clean() {
   _setCraftKbUserDirForTest(null);
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 beforeAll(() => {

@@ -17,7 +17,8 @@
  *   ELECTRON_RUN_AS_NODE=1 <electron.exe> node_modules/vitest/vitest.mjs run test/arcPipelineCompileChannel.realrun.test.ts
  * （cwd = agent 包）。无 native addon 依赖，plain-Node vitest 同样可跑（不造 ABI 门）。
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import yaml from 'js-yaml';
@@ -103,7 +104,7 @@ const dirs: string[] = [];
 afterEach(() => {
   for (const d of dirs.splice(0)) {
     try {
-      try { rmSync(d, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(d);
     } catch {
       // best-effort cleanup（tmpdir 系统级兜底）
     }

@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -42,7 +43,7 @@ describe('Story 2.6 — 创作决策登记引导段 + open 三态注入', { time
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResolvedModel } from '@orison/shared-contracts';
 import { buildChunkIndexText, chunkChapter } from '@orison/shared-contracts';
@@ -60,7 +61,7 @@ try {
 function clean() {
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 function stubModel(): ResolvedModel {
@@ -250,7 +251,7 @@ describe.skipIf(!sqliteUsable)('chapterChunkIndexer DB integration (Story 8.3 S3
     getDb().prepare('DELETE FROM closure_chapter_summary WHERE project_id=?').run(PID);
     clearVecRows();
     const chaptersDir = path.join(PROJECT_DIR, 'chapters');
-    try { if (existsSync(chaptersDir)) rmSync(chaptersDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(chaptersDir);
   });
 
   it('reindexChapter：行/span/index_text/vec 全链 + 批量 embed 单调用（input=chunk 数）', async () => {

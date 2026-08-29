@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it, vi, afterEach, beforeEach } from 'vitest';
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { allowPath } from '../main/ipc/pathGuard';
 
 // Story 4.0 §4.8 / implement.md 6.3：closure:run-chapter-chain IPC handler 单测。
@@ -1821,8 +1822,8 @@ describe('closure:run-chapter-chain style_context 注入（风格卡 CR-026）',
     );
   });
   afterAll(() => {
-    try { rmSync(WITH_STYLE_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
-    try { rmSync(NO_STYLE_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(WITH_STYLE_DIR);
+    rmBestEffort(NO_STYLE_DIR);
   });
 
   beforeEach(() => {

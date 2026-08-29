@@ -8,7 +8,8 @@
  * local-bff 用真包（纯 fs）；electron 只 mock 本文件触到的面（ipcMain/dialog/
  * BrowserWindow.getAllWindows——notifyUI 走它）。
  */
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEmptyProjectDocument, saveProject } from '@orison/desktop-local-bff';
@@ -49,13 +50,13 @@ describe('project:save-meta / ensure-document → git 首节点 wiring（CR-28�
     handle.mockReset();
     commitProjectCreateNode.mockReset();
     commitProjectCreateNode.mockResolvedValue({ committed: true });
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
     allowPath(TEST_ROOT);
     registerProjectMetaIpc();
   });
 
   afterEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
   });
 
   it('save-meta 全新目录（无 project.yaml）→ 首写落地后挂首节点', async () => {

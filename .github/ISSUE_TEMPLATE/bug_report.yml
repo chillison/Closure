@@ -24,12 +24,14 @@ body:
     id: expected
     attributes:
       label: Expected behavior
+      description: What did you expect to happen instead?
     validations:
       required: true
   - type: input
     id: version
     attributes:
       label: App version
+      description: Find it in Settings → About ("Current version").
       placeholder: "0.1.0"
     validations:
       required: true
@@ -44,7 +46,9 @@ body:
     validations:
       required: true
   - type: textarea
-    id: logs
+    id: diagnostics
     attributes:
-      label: Logs / screenshots
-      description: Paste any relevant logs or attach screenshots. Do not include API keys.
+      label: Diagnostics / logs / screenshots
+      description: >-
+        Anything that helps us reproduce: error messages shown in the app,
+        screenshots, or logs. Do not include API keys.

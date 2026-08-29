@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, readFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -43,7 +44,7 @@ describe('WorkflowRuntime.manualCompactSession（S4a 手动压缩）', () => {
 
   afterEach(() => {
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
   });
 
   function makeRuntime(overrides?: { onRuntimeEvent?: (sessionId: string, event: RuntimeStreamEvent) => void }) {

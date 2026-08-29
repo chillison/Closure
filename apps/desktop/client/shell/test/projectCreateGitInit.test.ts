@@ -7,7 +7,8 @@
  * gitFirstNode.test.ts 用真 isomorphic-git 钉（CR-28）。electron 只 mock ipcMain
  * （registerProjectFileIpc 唯一用到的 electron 面）。
  */
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -38,12 +39,12 @@ describe('project:create-directory → initRepo 接线（新项目自动开版�
     handle.mockReset();
     initRepo.mockReset();
     initRepo.mockResolvedValue({ initialized: true });
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
     initProjectsRoot(path.dirname(TEST_ROOT));
   });
 
   afterEach(() => {
-    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_ROOT);
   });
 
   it('新项目目录创建后对它调 initRepo（版本管理从创建起开启）', async () => {

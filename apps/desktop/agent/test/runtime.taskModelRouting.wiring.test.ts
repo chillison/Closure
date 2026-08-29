@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -165,7 +166,7 @@ describe('S4b 接线 — writer 双档思考策略不杂交（selfcheck assignme
   });
 
   afterEach(() => {
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(dir);
     setTaskSlotResolver(undefined);
   });
 
@@ -488,7 +489,7 @@ describe('S4 接线 — writer 双档分离（生产装配形态，writer-selfch
   });
 
   afterEach(() => {
-    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(dir);
     setTaskSlotResolver(undefined);
   });
 
@@ -655,7 +656,7 @@ describe('S4 接线 — dispatch 档（workflow.ts:491 派发单点按 agentName
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 
@@ -709,7 +710,7 @@ describe('S4 接线 — dialogue 档（leader runLoop，sendMessage 车道）', 
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 
@@ -768,7 +769,7 @@ describe('S4 接线 — extraction 档（runBackfill 旧章 5 轴补提取）', 
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

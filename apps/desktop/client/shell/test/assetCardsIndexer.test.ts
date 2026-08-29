@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ResolvedModel } from '@orison/shared-contracts';
 
@@ -49,7 +50,7 @@ try {
 function clean() {
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 function stubModel(): ResolvedModel {

@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   CHECKPOINT_MIN_PATCH_DELTA,
@@ -400,7 +401,7 @@ describe.skipIf(!sqliteUsable)('worldState 合成规模压测（Story 8.1 Step 7
 
   function clean(): void {
     closeDb();
-    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_HOME);
   }
 
   /** subject ≤ at 的全史 patch 数（「无 checkpoint 世界」对照——mirror listWorldPatches 过滤语义的 COUNT）。 */

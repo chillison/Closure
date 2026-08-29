@@ -9,7 +9,8 @@
  *   assertSafePath 只认 allowedRoots（默认仅项目根），未授权则 <img>/背景加载 403。
  */
 import path from 'node:path';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { handle, safeStorage, showOpenDialog, appGetPath } = vi.hoisted(() => ({
@@ -48,13 +49,13 @@ function getHandlers() {
 }
 
 beforeEach(() => {
-  try { if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_ROOT);
   mkdirSync(TEST_ROOT, { recursive: true });
   appGetPath.mockReturnValue(USER_DATA);
 });
 
 afterEach(() => {
-  try { if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_ROOT);
   showOpenDialog.mockReset();
 });
 

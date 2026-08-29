@@ -1,4 +1,5 @@
-<!-- Thanks for contributing! Please read CONTRIBUTING.md first. -->
+<!-- Thanks for contributing! Please read CONTRIBUTING.md first.
+     CI runs pnpm typecheck / pnpm lint / pnpm test on Linux, Windows, and macOS. -->
 
 ## Summary
 
@@ -13,8 +14,14 @@
 
 <!-- How did you verify this? -->
 - [ ] `pnpm typecheck` passes
+- [ ] `pnpm lint` passes (ESLint + boundary/security gates)
 - [ ] `pnpm test` passes
 - [ ] Manually tested in `pnpm dev`
+
+## Changelog
+
+<!-- User-facing changes should add an entry to CHANGELOG.md. -->
+- [ ] CHANGELOG.md updated (or not needed)
 
 ## Related issues
 

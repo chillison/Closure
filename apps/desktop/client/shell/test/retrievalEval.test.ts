@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { ChapterStateSummary, ResolvedModel } from '@orison/shared-contracts';
 
@@ -246,7 +247,7 @@ let chapter2Length = 0;
 function clean(): void {
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 describe.skipIf(!sqliteUsable)('retrievalEval — fiction eval 框架合成 smoke（Story 8.3 S8）', () => {

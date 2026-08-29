@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import path from 'node:path';
-import { existsSync, rmSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import type { ApiKeyEntry, ModelConfig } from '@orison/shared-contracts';
 
 const { handle, safeStorage } = vi.hoisted(() => ({
@@ -73,12 +73,12 @@ describe('model gateway IPC', () => {
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     globalThis.fetch = ORIGINAL_FETCH;
     vi.restoreAllMocks();
   });
@@ -607,7 +607,7 @@ describe('model gateway streaming (handleGenerateTextStream)', () => {
   beforeEach(async () => {
     handle.mockReset();
     _setModelConfigDirForTest(STREAM_TEST_MODEL_DIR);
-    try { if (existsSync(STREAM_TEST_MODEL_DIR)) rmSync(STREAM_TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(STREAM_TEST_MODEL_DIR);
     registerConfigIpc();
     const saveCall = handle.mock.calls.find(([channel]) => channel === 'config:save-model');
     await saveCall![1]({}, ANTHROPIC_CONFIG);
@@ -615,7 +615,7 @@ describe('model gateway streaming (handleGenerateTextStream)', () => {
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(STREAM_TEST_MODEL_DIR)) rmSync(STREAM_TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(STREAM_TEST_MODEL_DIR);
     globalThis.fetch = ORIGINAL_FETCH;
     vi.restoreAllMocks();
   });

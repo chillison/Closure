@@ -9,7 +9,8 @@
  * 组装进 leader system prompt（runLoop 调 generate 时传 sys 参）。本测试走 runtime.sendMessage
  * 真实路径捕获——不读源文件（抗重构）。
  */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,7 +27,7 @@ describe('leader system prompt — write_chapter 引导（Story 4.1 Step 5）', 
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

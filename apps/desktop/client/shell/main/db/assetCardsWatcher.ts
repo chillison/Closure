@@ -19,13 +19,13 @@
  * (its self-write suppression would swallow them) - the most common save path - so
  * this watcher is a separate, dedicated listener (hard constraint, design §A).
  */
-import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
+import { watchDir, type DirWatcher } from '../fs/watchFactory';
 import { assertSafePath } from '../ipc/pathGuard';
 import { reindexAssetCards } from './assetCardsIndexer';
 import { getLogger } from '../logger';
 
-let activeWatcher: FSWatcher | null = null;
+let activeWatcher: DirWatcher | null = null;
 let activeProjectDir: string | null = null;
 let debounceTimer: NodeJS.Timeout | null = null;
 
@@ -90,7 +90,7 @@ export function startAssetCardsWatcher(projectDir: string): void {
   stopAssetCardsWatcher();
 
   try {
-    activeWatcher = watch(resolved, { recursive: true }, (_event, filename) => {
+    activeWatcher = watchDir(resolved, (_event, filename) => {
       const name = typeof filename === 'string' ? filename : null;
       if (!shouldReact(name)) return;
       scheduleReindex();

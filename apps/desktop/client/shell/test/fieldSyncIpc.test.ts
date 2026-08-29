@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, rmSync } from 'node:fs';
+import { existsSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   createEmptyProjectDocument,
@@ -24,13 +25,13 @@ describe('field sync IPC', () => {
   beforeEach(() => {
     handle.mockReset();
     if (existsSync(TEST_PROJECT_PATH)) {
-      try { rmSync(TEST_PROJECT_PATH, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(TEST_PROJECT_PATH);
     }
   });
 
   afterEach(() => {
     if (existsSync(TEST_PROJECT_PATH)) {
-      try { rmSync(TEST_PROJECT_PATH, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(TEST_PROJECT_PATH);
     }
   });
 

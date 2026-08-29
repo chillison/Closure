@@ -1,4 +1,5 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -75,7 +76,7 @@ describe('dispatch_story_planner / dispatch_episode_planner 派发接线', () =>
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 
@@ -294,7 +295,7 @@ describe('graceful（mirror dispatch-researcher 五态降级）', () => {
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 

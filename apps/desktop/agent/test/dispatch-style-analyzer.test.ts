@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -97,15 +98,6 @@ function makeCtx(sessionId: string, projectPath: string, skillExecutor?: ToolCon
   return { sessionId, projectPath, abort: new AbortController().signal, ...(skillExecutor ? { skillExecutor } : {}) };
 }
 
-/**
- * best-effort tmp 目录清理：Windows 负载下 WAL/句柄释放与 rmSync 有竞态，偶发 EPERM
- * （fresh clone 并行 turbo 与 GitHub windows runner 双实录，08-28 release prep）。退避
- * 重试后仍失败则放弃——目录在 os.tmpdir()，残留无害，不为清理失败红测。
- */
-async function rmBestEffort(dir: string): Promise<void> {
-  try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
-}
-
 describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零参数倒序取最近）', () => {
   let projectPath = '';
   let sessionId = '';
@@ -119,7 +111,7 @@ describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零
   afterEach(async () => {
     closeDb(projectPath);
     deleteSession(sessionId);
-    await rmBestEffort(projectPath);
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 
@@ -255,7 +247,7 @@ describe('dispatch_style_analyzer — setting_md_patch envelope（既有卡分�
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-card-'));
   });
   afterEach(async () => {
-    await rmBestEffort(projectPath);
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 
@@ -366,7 +358,7 @@ describe('dispatch_style_analyzer — 材料不足双分支 + 超长上限门（
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-insuff-'));
   });
   afterEach(async () => {
-    await rmBestEffort(projectPath);
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 
@@ -424,7 +416,7 @@ describe('dispatch_style_analyzer — 提取失败分支（零参数倒序契约
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-extract-'));
   });
   afterEach(async () => {
-    await rmBestEffort(projectPath);
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 
@@ -464,7 +456,7 @@ describe('dispatch_style_analyzer — graceful（mirror dispatch-planners 降级
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-graceful-'));
   });
   afterEach(async () => {
-    await rmBestEffort(projectPath);
+    rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
 

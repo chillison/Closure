@@ -6,7 +6,9 @@ body:
     id: problem
     attributes:
       label: Problem
-      description: What problem does this feature solve? What are you trying to do?
+      description: >-
+        What problem does this feature solve? What are you trying to do? If it
+        relates to an item on the README roadmap, mention which one.
     validations:
       required: true
   - type: textarea

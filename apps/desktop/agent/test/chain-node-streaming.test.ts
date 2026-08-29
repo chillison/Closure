@@ -1,4 +1,5 @@
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -256,7 +257,7 @@ describe('WorkflowRuntime.runChapterChain — 链事件（chain-delta / chain-no
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     const { registry } = await import('../src/tool/registry');
     registry.__clearForTest();
     const workflow = await import('../src/runtime/workflow');

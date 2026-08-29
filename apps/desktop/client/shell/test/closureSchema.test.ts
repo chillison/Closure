@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type Database from 'better-sqlite3';
 
@@ -39,7 +40,7 @@ function clean() {
   // Close the handle first: Windows refuses to delete a locked db file.
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 describe.skipIf(!sqliteUsable)('closure derived-index schema (VS1 R1)', () => {
@@ -156,7 +157,7 @@ function buildPre87Db(build: (raw: Database.Database) => void): void {
   // over from an earlier getDb() in this suite).
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
   mkdirSync(path.join(TEST_HOME, '.orison', 'data'), { recursive: true });
   // Lazy require (same ABI-gate pattern as above): a top-level VALUE import of
   // better-sqlite3 would fail suite collection under plain-Node vitest when the

@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // fileHandlers → toolNotify → `import { BrowserWindow } from 'electron'`, which
@@ -21,12 +22,12 @@ function write(rel: string, content: string) {
 
 describe('searchProjectFiles', () => {
   beforeEach(() => {
-    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_DIR);
     mkdirSync(TEST_DIR, { recursive: true });
   });
 
   afterEach(() => {
-    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_DIR);
   });
 
   it('returns structured {path,line,text} hits with project-relative paths', () => {

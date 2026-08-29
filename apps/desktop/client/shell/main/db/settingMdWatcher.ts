@@ -27,13 +27,13 @@
  * (app quit) so no fs watcher / timer outlives the active project / the process
  * (mirror 2.7 BMad CR F-patch: watcher leak guard).
  */
-import { watch, type FSWatcher } from 'node:fs';
 import path from 'node:path';
+import { watchDir, type DirWatcher } from '../fs/watchFactory';
 import { assertSafePath } from '../ipc/pathGuard';
 import { reindexAllSettingMd } from './settingMdIndexer';
 import { getLogger } from '../logger';
 
-let activeWatcher: FSWatcher | null = null;
+let activeWatcher: DirWatcher | null = null;
 let activeProjectDir: string | null = null;
 let debounceTimer: NodeJS.Timeout | null = null;
 
@@ -96,7 +96,7 @@ export function startSettingMdWatcher(projectDir: string): void {
   stopSettingMdWatcher();
 
   try {
-    activeWatcher = watch(resolved, { recursive: true }, (_event, filename) => {
+    activeWatcher = watchDir(resolved, (_event, filename) => {
       const name = typeof filename === 'string' ? filename : null;
       if (!shouldReact(name)) return;
       scheduleReindex();

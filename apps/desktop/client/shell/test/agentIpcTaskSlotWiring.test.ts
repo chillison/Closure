@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { beforeAll, beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import type { ModelConfig, TaskModelSlot } from '@orison/shared-contracts';
 
@@ -65,13 +66,13 @@ describe('agentIpc task-slot resolver wiring (C3.2 / CR-001)', () => {
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     mkdirSync(TEST_MODEL_DIR, { recursive: true });
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     warn.mockReset();
     info.mockReset();
     // NOTE: the injected resolver deliberately STAYS installed — it was

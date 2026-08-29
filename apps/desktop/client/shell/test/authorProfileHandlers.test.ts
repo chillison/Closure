@@ -8,7 +8,8 @@
  * + note 载荷、不写盘）、accept IPC（author-profile:apply 经捕获的 ipcMain.handle 真跑
  * 追加 + 非法输入 structured error）。
  */
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -46,7 +47,7 @@ const ctx = (params: Record<string, unknown>) => ({
 });
 
 function clean() {
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 beforeAll(() => {

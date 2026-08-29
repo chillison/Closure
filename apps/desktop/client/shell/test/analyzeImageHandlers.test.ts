@@ -15,7 +15,8 @@
  * module-mocked (its real three-layer dispatch is covered in
  * visionAnalysis.test.ts).
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -176,7 +177,7 @@ describe('analyze_image handler — imagePath', () => {
   });
 
   afterEach(() => {
-    try { rmSync(projectDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectDir);
   });
 
   it('reads the file and hands base64 + extension mime + prompt to the vision kernel', async () => {
@@ -330,7 +331,7 @@ describe('analyze_image handler — params + kernel failure', () => {
       expect(res.metadata).toMatchObject({ source: 'local.png' });
       expect(res.output).toContain('本地赢了');
     } finally {
-      try { rmSync(projectDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(projectDir);
     }
   });
 
@@ -343,7 +344,7 @@ describe('analyze_image handler — params + kernel failure', () => {
       const res = await handler({ analyze })(ctx({ imagePath: 'ref.png', prompt: 'x' }, projectDir));
       expect(res.output).toContain('视觉分析失败');
     } finally {
-      try { rmSync(projectDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      rmBestEffort(projectDir);
     }
   });
 });

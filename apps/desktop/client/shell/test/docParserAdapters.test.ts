@@ -14,7 +14,8 @@
  *     throw, unreadable file, unconfigured config — ALL return
  *     {ok:false, error}, never a throw (the handler degrades to builtin).
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -51,7 +52,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(tmpDir);
 });
 
 interface RecordedCall {

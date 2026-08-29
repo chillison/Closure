@@ -16,7 +16,7 @@
  * - the two probe channels forward to the kernels with the settings-page
  *   semantics (doc probe force=true; canary takes the ref verbatim).
  */
-import { existsSync, rmSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { ResearchConfigSave } from '@orison/shared-contracts';
@@ -103,12 +103,12 @@ beforeEach(() => {
   setProxy.mockReset().mockResolvedValue(undefined);
   handle.mockReset();
   _setModelConfigDirForTest(TEST_MODEL_DIR);
-  try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_MODEL_DIR);
 });
 
 afterEach(() => {
   _setModelConfigDirForTest(null);
-  try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_MODEL_DIR);
 });
 
 describe('research settings IPC', () => {

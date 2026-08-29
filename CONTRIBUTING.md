@@ -1,72 +1,90 @@
-# Contributing to Closure
+# Closure 贡献指南
 
-Thanks for your interest in contributing! Closure is an Alpha-stage,
-local-first AI creative IDE built on Electron. This guide covers how to set up
-the project, the workflow we follow, and what we expect in a pull request.
+> **English quick start:** fork `chillison/Closure` → branch off `main` → `pnpm install && pnpm rebuild:native` → make your change → `pnpm typecheck && pnpm lint && pnpm test` → open a PR. CI runs the same three gates on Linux / Windows / macOS. By submitting a contribution you agree it is licensed under AGPL-3.0-or-later. The full guide below is in Chinese.
 
-## Prerequisites
+感谢你愿意为 Closure 出力！这是一份 Alpha 阶段的本地优先 AI 小说创作 IDE（Electron 桌面应用）。本指南覆盖环境搭建、双仓模型、开发流程与提交要求。
 
-- **Node.js** ≥ 20 (the repo pins `24` in [`.nvmrc`](.nvmrc); run `nvm use`)
-- **pnpm** ≥ 10 (the repo pins the exact version via `packageManager`)
+## 双仓模型（先读）
 
-## Setup
+Closure 有两个仓库：
+
+- **公仓 [`chillison/Closure`](https://github.com/chillison/Closure)**（`main` 单分支）——发布面与协作面。**所有 Issue 与 Pull Request 落在这里**，CI 在三个平台（Linux / Windows / macOS）上对每个 PR 跑同一组门。
+- **私仓 `chillison/Closure-private`**（`dev`）——维护者的开发发生地。改动定期以同步快照（`sync: dev@<hash>`）发布到公仓。
+
+因此公仓的历史是快照形态、没有细粒度开发脉络——这是设计使然，不是事故。**贡献者只需要与公仓打交道**：fork 公仓 → 从 `main` 切分支 → 提 PR。
+
+## 环境准备
+
+- **Node.js** ≥ 24（版本以 [`.nvmrc`](.nvmrc) 为准）：用 nvm 的话先 `nvm use`；无 nvm 的环境用官方安装包装 24.x 亦可
+- **pnpm** ≥ 10：仓库通过 `packageManager` 字段钉了确切版本；如果版本不符，`corepack enable` 后 pnpm 会自动切换
+
+## 本地开发
 
 ```bash
-pnpm install
-pnpm dev          # launch the Electron app in dev mode
+pnpm install        # 安装依赖
+pnpm rebuild:native # 重建 better-sqlite3 原生模块
+pnpm dev            # 以开发模式启动 Electron 应用
 ```
 
-Useful root scripts:
+`rebuild:native` 说明：better-sqlite3 是原生模块，ABI 与当前 Node / Electron 不匹配时测试会被静默 skip 而不是报错。**打包之后、切换 Node 版本之后、或者测试突然大面积 skip 时，先跑一遍 `pnpm rebuild:native` 再跑测试。**
 
-| Command | What it does |
-|---------|--------------|
-| `pnpm dev` | Run the desktop app (electron-vite dev) |
-| `pnpm build` | Build all workspace packages (Turbo) |
-| `pnpm build:desktop` | Build only the desktop shell |
-| `pnpm test` | Run the test suite (Vitest, via Turbo) |
-| `pnpm typecheck` | Type-check all packages |
-| `pnpm package:desktop` | Produce the Windows NSIS installer |
+常用根脚本：
 
-## Monorepo layout
+| 命令 | 作用 |
+|------|------|
+| `pnpm dev` | 运行桌面应用（electron-vite dev） |
+| `pnpm build` | 构建全部 workspace 包（Turbo） |
+| `pnpm build:desktop` | 只构建桌面 shell |
+| `pnpm test` | 跑测试套件（Vitest，经 Turbo 按包执行） |
+| `pnpm typecheck` | 全包类型检查 |
+| `pnpm lint` | ESLint + 依赖边界/安全门（dependency-cruiser） |
+| `pnpm rebuild:native` | 重建 better-sqlite3 原生模块 |
+| `pnpm package:desktop` | 产出 Windows NSIS 安装包 |
 
-This is a pnpm + Turbo monorepo. See the [README](README.md#仓库结构) for the full
-tree. In short:
+> 注意：不要在仓库根直接跑 `npx vitest run`——单一 node 环境会丢掉各包 vitest 配置（UI 包需要 jsdom），产生大片假失败。全量用 `pnpm test`，单包用 `pnpm --filter <pkg> test`。
 
-- `apps/desktop/client/shell` — Electron main process + preload + IPC
-- `apps/desktop/client/ui` — React renderer
-- `apps/desktop/agent` — `@orison/desktop-agent` orchestration library
-- `packages/*` — shared contracts, model protocols, story-sync
-- `docs/` — architecture & design docs
+## Monorepo 布局
 
-## Development workflow
+本仓库是 pnpm + Turbo monorepo。完整目录树见 [README](README.md#仓库结构)。速览：
 
-1. Branch off `main` (or the active `dev` branch) with a descriptive name.
-2. Make your change. Keep it focused — one concern per PR.
-3. **Before committing**, run:
+- `apps/desktop/client/shell` — Electron 主进程 + preload + IPC
+- `apps/desktop/client/ui` — React 渲染层
+- `apps/desktop/agent` — `@orison/desktop-agent` 编排库
+- `apps/desktop/local-bff` — 本地项目数据读写层
+- `packages/*` — 共享契约（Zod schema）、模型协议、story-sync
+- `docs/` — 架构与设计文档
+
+## 开发流程
+
+1. Fork 公仓 `chillison/Closure`，从 `main` 切一个描述性命名的分支。
+2. 做你的改动。保持聚焦——一个 PR 只处理一个关注点。
+3. **提交 PR 之前**跑：
    ```bash
    pnpm typecheck
+   pnpm lint
    pnpm test
    ```
-4. If you change architecture boundaries, storage locations, the IPC surface,
-   model config, or startup behavior, **update the matching docs** in `docs/`
-   and the root README. See [`docs/`](docs/) for which file owns what.
-5. Open a PR against `main` with a clear summary of what changed and how you
-   tested it.
+   这与 CI 在三个平台上跑的门完全一致；本地绿了 CI 大概率也绿。
+4. 如果你改动了架构边界、存储位置、IPC 面、模型配置或启动行为，**同步更新 `docs/` 中对应的文档**与根 README。哪个文件归哪个主题，见 [`docs/`](docs/)。
+5. 向 `main` 提交 PR，写清改了什么、你是怎么测试的。CI 三平台全绿后由维护者合并。
 
-## Code style
+## 代码约定
 
-- TypeScript throughout the app and packages; match the style of surrounding code.
-- Formatting is enforced by [`.editorconfig`](.editorconfig) (2-space indent, LF, UTF-8).
-- UI styling uses the design tokens in `tokens.css` — do not hardcode colors.
-- Keep commits scoped and write conventional-style messages where practical
-  (`feat:`, `fix:`, `chore:`, `docs:`).
+- 应用与包全部 TypeScript；风格随周围代码。
+- 格式由 [`.editorconfig`](.editorconfig) 约束（2 空格缩进、LF、UTF-8）。
+- UI 样式使用 `tokens.css` 中的设计令牌——不要硬编码颜色。
+- Commit 保持小而聚焦，尽量写 conventional 风格的提交信息（`feat:`、`fix:`、`chore:`、`docs:`）。
 
-## Reporting bugs
+## 报告 Bug
 
-Open an issue with reproduction steps and your system info (OS, app version).
-For security issues, **do not** open a public issue — see [SECURITY.md](SECURITY.md).
+开 Issue 并附上：复现步骤、系统信息（操作系统、应用版本——应用内「设置 → 关于」可查当前版本号）。如果界面上出现了错误信息，把错误文字一并贴进 Issue——这会帮大忙。**不要在 Issue 里贴 API Key。**
 
-## Feature suggestions
+安全问题**不要**开公开 Issue——见 [SECURITY.md](SECURITY.md)。
 
-Open an issue to discuss before building anything large. For small,
-self-contained improvements, a direct PR is welcome.
+## 功能建议
+
+先开 Issue 讨论再动手写大的功能。小而自洽的改进可以直接提 PR。提建议前不妨先看一眼 [README 路线图](README.md#路线图)——已在路线图上的项，说说你的优先级排序也是很有价值的输入。
+
+## 许可证
+
+提交贡献即表示你同意该贡献按 **AGPL-3.0-or-later**（或更新版本）授权。源自 OrisonSpace 的代码保留 Apache-2.0（见 [LICENSES/Apache-2.0.txt](LICENSES/Apache-2.0.txt)）；归属与 provenance 详见 [NOTICE](NOTICE)。

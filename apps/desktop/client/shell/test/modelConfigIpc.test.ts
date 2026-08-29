@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { existsSync, readFileSync, rmSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { parseFlatYaml, stringifyFlatYaml, type ModelConfig } from '@orison/shared-contracts';
 
@@ -144,7 +145,7 @@ describe('model config IPC', () => {
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     // CR-01 mocks: default getDb returns no closure_entry projects (so any
     // incidental embeddingModel change in the existing tests is a no-op sweep),
     // reindexAll resolves cleanly, logs reset.
@@ -166,7 +167,7 @@ describe('model config IPC', () => {
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   it('writes one YAML file per key in keys/ directory', async () => {
@@ -585,12 +586,12 @@ describe('model config IPC', () => {
 describe('readTaskModelSlots defensive parsing (C3.2)', () => {
   beforeEach(() => {
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   it('missing file → undefined (every slot auto-picks)', () => {
@@ -813,13 +814,13 @@ describe('readTaskModelSlots mtime cache + logging (CR-004/CR-005/CR-008)', () =
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     mkdirSync(TEST_MODEL_DIR, { recursive: true });
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   it('same mtime+size → cached record served; changed mtime → re-read (fresh-query semantics held)', () => {
@@ -1199,7 +1200,7 @@ describe('config:save-model → reindexAll fire-and-forget (CR-01/AC7)', () => {
     // assertion. Also reset the ipcMain handle mock so registerConfigIpc()
     // re-registers cleanly.
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
     handle.mockReset();
     // Default: two projects with derived rows, reindexAll resolves cleanly.
     getDb.mockReturnValue({
@@ -1213,7 +1214,7 @@ describe('config:save-model → reindexAll fire-and-forget (CR-01/AC7)', () => {
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(TEST_MODEL_DIR);
   });
 
   it('embeddingModel added → fires reindexAll for each project (after the IPC returns)', async () => {

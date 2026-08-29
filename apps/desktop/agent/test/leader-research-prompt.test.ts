@@ -7,7 +7,8 @@
  * `DEFAULT_ORISON_PROMPT`（workflow.ts 内部 const，非 export）经 buildRuntimeSystemPrompt
  * 组装进 leader system prompt。
  */
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,7 +25,7 @@ describe('leader system prompt — Research 段（Story 3.6 WP8.2）', () => {
   });
 
   afterEach(() => {
-    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    rmBestEffort(projectPath);
     vi.resetModules();
   });
 

@@ -1,5 +1,5 @@
 import path from 'node:path';
-import { existsSync, rmSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const TEST_HOME = path.join(process.cwd(), 'test-tmp-closure-index-ipc');
@@ -97,7 +97,7 @@ try {
 
 function clean() {
   closeDb();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 // The rebuild handler mocks every db dependency (projectRepository + both

@@ -1,17 +1,17 @@
 import os from 'node:os';
 import path from 'node:path';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Story 8.3 S3：chapters/ 目录 watcher 单测。索引器 mock（reindexChapter /
-// rebuildChapterChunks 捕获调用——本体在 chapterChunkIndexer.test.ts 真跑锚定）；fs.watch +
-// debounce + 生命周期 + inflight 串行化走真实实现（真定时器——vi.waitFor 等 debounce 窗）。
+// rebuildChapterChunks 捕获调用——本体在 chapterChunkIndexer.test.ts 真跑锚定）；
+// watcher 事件源经 watchFactory 注入缝合成（setWatchFactory fake，测试 emit 合成
+// 事件驱动）——debounce + 过滤 + 生命周期 + inflight 串行化走真实实现（真定时器
+// ——waitFor 等 debounce 窗）。
 // ─────────────────────────────────────────────────────────────────────────────
 
-// macOS FSEvents 按路径合并投递：上一测 rmSync 的删除事件会迟到送达下一测在同一
-// 路径上新开的 watcher（公仓 mac CI 首跑实录：非章零触发测收到前测 ch_001/ch_002
-// 两笔 reindex）。故 TMP 每测唯一（mkdtemp），从根上消除路径复用的跨测事件串扰。
+// TMP 每测唯一（mkdtemp，残留 tmpdir 交系统清理）——沿用既有形态。
 const tmpBox = vi.hoisted(() => ({ dir: '' }));
 let TMP = '';
 
@@ -42,8 +42,55 @@ import {
   startChapterChunkWatcher,
   stopChapterChunkWatcher,
 } from '../main/db/chapterChunkWatcher';
+import { setWatchFactory, type WatchFn } from '../main/fs/watchFactory';
 
-/** 等真实事件循环跑几拍（fs.watch 回调经 libuv——非 faked timer）。 */
+// ── fake watch 源（注入缝）：捕获 watcher 注册的回调，测试合成事件驱动 ──
+
+interface FakeHandle {
+  cb: (event: string, filename: string | null) => void;
+  closed: boolean;
+}
+const fakeWatches: { dir: string; handle: FakeHandle }[] = [];
+
+const fakeWatchFn: WatchFn = (dir, cb) => {
+  const handle: FakeHandle = { cb, closed: false };
+  fakeWatches.push({ dir, handle });
+  return {
+    close() {
+      handle.closed = true;
+    },
+    on() {
+      // fake 源不产 error 事件——error listener 仅保 DirWatcher 结构契约。
+    },
+  };
+};
+
+/**
+ * 合成一次 libuv 投递：调该目录最新未 close 句柄的回调。closed 句柄静默丢弃
+ * （mirror 生产 close 语义——stop / 项目切换后旧句柄不再有事件）。目录从未注册
+ * 任何句柄 → throw（CR-010：防负向断言空洞——目录拼错/时序错时 emit 静默空过，
+ * 「未触发」断言就成了假绿）。
+ */
+function emitWatchEvent(dir: string, filename: string | null): void {
+  let sawClosedHandle = false;
+  for (let i = fakeWatches.length - 1; i >= 0; i -= 1) {
+    const w = fakeWatches[i]!;
+    if (path.resolve(w.dir) !== path.resolve(dir)) continue;
+    if (w.handle.closed) {
+      sawClosedHandle = true;
+      continue;
+    }
+    w.handle.cb('change', filename);
+    return;
+  }
+  if (!sawClosedHandle) {
+    throw new Error(
+      `emitWatchEvent: 目录从未注册活句柄（${dir}）——先 startChapterChunkWatcher 再 emit；目录拼错或时序错，负向断言疑似空洞`,
+    );
+  }
+}
+
+/** 等真实事件循环跑几拍（debounce 是真定时器，非 faked timer）。 */
 const tick = (ms = 30) => new Promise<void>((r) => setTimeout(r, ms));
 
 async function waitForCalls(spy: { mock: { calls: unknown[][] } }, n: number, timeoutMs = 5000) {
@@ -56,48 +103,38 @@ async function waitForCalls(spy: { mock: { calls: unknown[][] } }, n: number, ti
   }
 }
 
-function writeChapter(projectDir: string, chapterId: string, content = '正文'): void {
-  const dir = path.join(projectDir, 'chapters');
-  if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
-  writeFileSync(path.join(dir, `${chapterId}.md`), content, 'utf-8');
-}
-
-// ⚠️ CI windows 跳过（08-29 release prep 六轮实录）：GitHub windows runner 上
-// libuv fs-event C 层断言 `!_wcsnicmp (fs-event.c:72)` 直接 abort 进程（JS 无从捕获；
-// drain 拍 / 不删目录 / 短路径假设逐一排除均不收敛，仅 threads 池 + 该 runner 组合触发）。
-// 覆盖不缺位：mac/linux CI + 本地 Windows 全跑本套。真修（watcher 生命周期注入 seam
-// 或 Node/libuv 升级）记 deferred 批，届时移除此门。
-describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
-  'chapterChunkWatcher（Story 8.3 S3）',
-  () => {
+// libuv windows CI 断言问题已由 watchFactory 注入缝根除（08-29 R3）——事件合成，无真句柄。
+describe('chapterChunkWatcher（Story 8.3 S3）', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // 默认实现每测重挂（clearAllMocks 不清 implementation，防上测 mockImplementation 泄漏）。
+    reindexChapter.mockImplementation(async () => ({ outcome: 'written', chunkCount: 1 }));
+    rebuildChapterChunks.mockImplementation(async () => ({ reindexed: 1, orphaned: 0 }));
     TMP = tmpBox.dir = mkdtempSync(path.join(os.tmpdir(), 'chapter-chunk-watcher-'));
     allowPath(TMP); // assertSafePath 授权（mirror 生产 project:watch 前的 allowPath）
     stopChapterChunkWatcher();
+    fakeWatches.length = 0;
+    setWatchFactory(fakeWatchFn);
   });
-  afterEach(async () => {
-    // libuv Windows fs-event 断言规避（公仓 windows CI threads 池三连实录）：断言
-    // `!_wcsnicmp (fs-event.c:72)` 在「事件处理中 close 句柄」时触发——慢 runner 上
-    // 事件密集，stop 直接撞上 fs-event 线程在途回调 → C 层 abort 进程（JS 无从捕获；
-    // 不删目录后仍复现，故真触发器是 close 竞态非删除）。先等 debounce 窗（500ms）
-    // + flush + 余量排空在途事件再关。TMP 每测唯一 mkdtemp（残留 tmpdir 交系统清理）。
-    await tick(700);
+  afterEach(() => {
+    // 合成事件源无在途竞态（R3 前真 fs.watch 的 libuv close 竞态排空 tick 已无必要）。
     stopChapterChunkWatcher();
+    setWatchFactory(null);
+    fakeWatches.length = 0;
   });
 
-  it('章文件写事件 → debounce 后 reindexChapter(projectId, projectDir, chapterId)；rebuild 不触发', async () => {
+  it('章文件事件 → debounce 后 reindexChapter(projectId, projectDir, chapterId)；rebuild 不触发', async () => {
     startChapterChunkWatcher(TMP);
-    writeChapter(TMP, 'ch_001');
+    emitWatchEvent(TMP, 'chapters/ch_001.md');
     await waitForCalls(reindexChapter, 1);
     expect(reindexChapter).toHaveBeenCalledWith('00091', TMP, 'ch_001');
     expect(rebuildChapterChunks).not.toHaveBeenCalled();
   });
 
-  it('debounce 合并：两章连写 → 同一 debounce 窗内零散触发、窗后一次 flush 双章', async () => {
+  it('debounce 合并：两章连发 → 同一 debounce 窗内零散触发、窗后一次 flush 双章', async () => {
     startChapterChunkWatcher(TMP);
-    writeChapter(TMP, 'ch_001');
-    writeChapter(TMP, 'ch_002');
+    emitWatchEvent(TMP, 'chapters/ch_001.md');
+    emitWatchEvent(TMP, 'chapters/ch_002.md');
     await tick(250); // debounce 窗（500ms）内：尚未 flush
     expect(reindexChapter).not.toHaveBeenCalled();
     await waitForCalls(reindexChapter, 2);
@@ -105,11 +142,18 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
     expect(ids.sort()).toEqual(['ch_001', 'ch_002']);
   });
 
+  it('filename 不可用（null，rename 类平台省略）→ 保守全量 rebuild（宁多扫不漏索引）', async () => {
+    startChapterChunkWatcher(TMP);
+    emitWatchEvent(TMP, null);
+    await waitForCalls(rebuildChapterChunks, 1);
+    expect(rebuildChapterChunks).toHaveBeenCalledWith('00091', TMP);
+    expect(reindexChapter).not.toHaveBeenCalled();
+  });
+
   it('非章路径零触发：settings/*.md 与根级文件不reindex', async () => {
     startChapterChunkWatcher(TMP);
-    mkdirSync(path.join(TMP, 'settings'), { recursive: true });
-    writeFileSync(path.join(TMP, 'settings', 'magic.md'), '设定', 'utf-8');
-    writeFileSync(path.join(TMP, 'notes.md'), '笔记', 'utf-8');
+    emitWatchEvent(TMP, 'settings/magic.md');
+    emitWatchEvent(TMP, 'notes.md');
     await tick(900); // 过 debounce 窗 + 余量
     expect(reindexChapter).not.toHaveBeenCalled();
     expect(rebuildChapterChunks).not.toHaveBeenCalled();
@@ -117,9 +161,7 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
 
   it('子目录章形态（chapters/draft/x.md）不触发', async () => {
     startChapterChunkWatcher(TMP);
-    const dir = path.join(TMP, 'chapters', 'draft');
-    mkdirSync(dir, { recursive: true });
-    writeFileSync(path.join(dir, 'x.md'), '草稿', 'utf-8');
+    emitWatchEvent(TMP, 'chapters/draft/x.md');
     await tick(900);
     expect(reindexChapter).not.toHaveBeenCalled();
   });
@@ -127,7 +169,7 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
   it('stop 后不再触发（生命周期）', async () => {
     startChapterChunkWatcher(TMP);
     stopChapterChunkWatcher();
-    writeChapter(TMP, 'ch_001');
+    emitWatchEvent(TMP, 'chapters/ch_001.md');
     await tick(900);
     expect(reindexChapter).not.toHaveBeenCalled();
   });
@@ -135,14 +177,12 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
   it('项目切换 re-point：旧项目事件不再触发', async () => {
     const projectA = path.join(TMP, 'project-a');
     const projectB = path.join(TMP, 'project-b');
-    mkdirSync(projectA, { recursive: true });
-    mkdirSync(projectB, { recursive: true });
     allowPath(projectA);
     allowPath(projectB);
     startChapterChunkWatcher(projectA);
-    startChapterChunkWatcher(projectB); // 切换：A 停、B 起
-    writeChapter(projectA, 'ch_001');
-    writeChapter(projectB, 'ch_002');
+    startChapterChunkWatcher(projectB); // 切换：A 停（句柄 closed，事件不再投递）、B 起
+    emitWatchEvent(projectA, 'chapters/ch_001.md');
+    emitWatchEvent(projectB, 'chapters/ch_002.md');
     await waitForCalls(reindexChapter, 1);
     expect(reindexChapter).toHaveBeenCalledWith('00091', projectB, 'ch_002');
     expect(reindexChapter.mock.calls.map((c) => c[2])).not.toContain('ch_001'); // A 已停
@@ -159,9 +199,9 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
     });
 
     startChapterChunkWatcher(TMP);
-    writeChapter(TMP, 'ch_001');
+    emitWatchEvent(TMP, 'chapters/ch_001.md');
     await waitForCalls(reindexChapter, 1); // flush1 开跑（挂起）
-    writeChapter(TMP, 'ch_002');
+    emitWatchEvent(TMP, 'chapters/ch_002.md');
     await tick(800); // flush2 debounce 到点 → enqueue（链在 flush1 后，不并发开跑）
     expect(order).toEqual(['start:ch_001']); // 串行化断言：flush2 未偷跑
 
@@ -181,12 +221,11 @@ describe.skipIf(process.platform === 'win32' && !!process.env.CI)(
       return { outcome: 'written', chunkCount: 1 };
     });
     startChapterChunkWatcher(TMP);
-    writeChapter(TMP, 'ch_001');
+    emitWatchEvent(TMP, 'chapters/ch_001.md');
     await waitForCalls(reindexChapter, 1);
     await tick(100); // 让第一轮 work 的拒绝被链吞掉
-    writeChapter(TMP, 'ch_002');
+    emitWatchEvent(TMP, 'chapters/ch_002.md');
     await waitForCalls(reindexChapter, 2); // 后续章照常（未死链）
     expect(reindexChapter.mock.calls[1]![2]).toBe('ch_002');
   });
-  },
-);
+});

@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   buildCognitionSnapshot,
@@ -51,8 +52,8 @@ import {
 //      触发、窗收窄不触发、维持 defer（实测值记 deferred-work 收档）**。对拍锚 =
 //      shared tests/cognition.test.ts S7 基线（修前实现内嵌 reference，deep-equal 全 fixture）。
 //   ⑤ 延迟 + ANN 记档：KNN 规模曲线（1k / 实际档 / 5k / 20k / 50k，median×5）+ 50k 全
-//      searchClosure 宽上限 <500ms + 100k/1M 线性外推 → 「ANN 不需要」实测数据（结论落
-//      epics 归收尾站，本站只出数据）。
+//      searchClosure 比率宽上限（≤ max(5k×15, 5s)，R6 撤 CI 环境分叉）+ 100k/1M 线性外推
+//      → 「ANN 不需要」实测数据（结论落 epics 归收尾站，本站只出数据）。
 //
 // fixture（确定性合成，零网络零 LLM——全 DI seam stub）：
 //   - 400 章 `ch_NNN.md`：段落 30-200 字分布 + 每 5 章显式转场标记（--- / *** / * * *）+ 每 7
@@ -604,7 +605,7 @@ let baseVecRows = 0; // 基础档向量行数（beforeAll 末快照——⑤ 扩
 function clean(): void {
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 检索不崩 + ANN 记档）', () => {
@@ -1077,7 +1078,7 @@ describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 
   );
 
   it(
-    '⑤ 延迟 + 规模曲线（1k/实际/5k/20k/50k）+ 50k 全查询宽上限 <500ms + ANN 记档外推',
+    '⑤ 延迟 + 规模曲线（1k/实际/5k/20k/50k）+ 50k 全查询比率宽上限（≤ max(5k×15, 5s)）+ ANN 记档外推',
     async () => {
       const q = floatArrayToBuffer(queryVec('curve:q')); // 独立簇心（不命中任何实体——纯扫描成本）
 
@@ -1117,10 +1118,16 @@ describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 
       curve.push({ label: '50k', rows: vecRowCount(PID!), ms: knn50k });
       const full50k = await medianFullSearchMs();
 
-      // 宽上限断言（防架构回归——非精确性能断言；expected 量级 ~50-150ms）。CI 共享
-      // runner 噪声大（windows-latest 实测同负载可到本机 3-7×），上限按 CI 环境放大
-      // ——量级保护不变（回归会到秒级/超时），假跳消掉。
-      const fullSearchCeiling = process.env.CI ? 2_000 : 500;
+      // 基线 sanity 前置（CR-016）：5k 正常 ~20ms 量级，2s 上限只拦病态——机器
+      // 停顿把 5k 基线抬高时比率上限随之膨胀（full5k×15），50k 真回归会漏网
+      // （比率断言失效开门）；基线病态先红本行再谈比率。
+      expect(full5k.medianMs).toBeLessThan(2_000);
+      // 宽上限断言（防架构回归——非精确性能断言；expected 量级 ~50-150ms）。比率形态：
+      // ceiling = max(5k×15, 5s)。50k 行数 = 5k 的 10 倍，15 倍上限 ≈ 粗模 10 倍冗余
+      // 线性保住；5s 宽绝对上限防挂死。同机自参照（5k 实测作基线）对 CI 共享 runner
+      // 的负载噪声天然免疫（windows-latest 同负载可到本机 3-7×，环境分叉已撤）——
+      // 量级保护不变（回归会到秒级/超时，比率/绝对双闸必拦）。
+      const fullSearchCeiling = Math.max(full5k.medianMs * 15, 5_000);
       expect(full50k.medianMs).toBeLessThan(fullSearchCeiling);
       expect(full50k.hits).toBe(10);
 
@@ -1130,7 +1137,7 @@ describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 
           curve.map((c) => `${c.label}=${c.ms.toFixed(1)}ms(${c.rows}行)`).join(' | '),
       );
       console.log(
-        `[retrievalScale] ⑤ 全 searchClosure（k=10，stub rerank，median×5）：5k=${full5k.medianMs.toFixed(1)}ms / 50k=${full50k.medianMs.toFixed(1)}ms（宽上限断言 <${fullSearchCeiling}ms 过）`,
+        `[retrievalScale] ⑤ 全 searchClosure（k=10，stub rerank，median×5）：5k=${full5k.medianMs.toFixed(1)}ms / 50k=${full50k.medianMs.toFixed(1)}ms（比率宽上限 ≤ max(5k×15, 5s)=${fullSearchCeiling.toFixed(0)}ms 过，无环境分叉）`,
       );
       console.log(
         `[retrievalScale] ANN 记档：sqlite-vec 暴力 50k×1024 实测 ${knn50k.toFixed(1)}ms，线性外推 100k≈${extrapolate(100_000).toFixed(0)}ms / 1M≈${extrapolate(1_000_000).toFixed(0)}ms —— ` +

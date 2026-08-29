@@ -1,5 +1,6 @@
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Point the SQLite registry at a throwaway home so the real ~/.orison db is
@@ -37,7 +38,7 @@ function clean() {
   // Close the handle first: Windows refuses to delete a locked db file.
   closeDb();
   resetSqliteVecState();
-  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+  rmBestEffort(TEST_HOME);
 }
 
 describe.skipIf(!sqliteUsable)('sqlite-vec extension load + vec0 round-trip', () => {
