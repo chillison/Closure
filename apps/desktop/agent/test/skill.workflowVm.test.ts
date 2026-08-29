@@ -21,7 +21,7 @@ second line
   });
 
   afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
+    try { rmSync(root, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('executes instruction, load_reference, delegate_skill, ask_user, spawn_agent, and checkpoint nodes from compiled plans', async () => {

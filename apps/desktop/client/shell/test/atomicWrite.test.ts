@@ -7,12 +7,12 @@ const TEST_DIR = path.join(process.cwd(), 'test-tmp-atomic-write');
 
 describe('atomicWriteFileSync', () => {
   beforeEach(() => {
-    if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_DIR, { recursive: true });
   });
 
   afterEach(() => {
-    if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('writes through a temp file and leaves no temp files behind', () => {

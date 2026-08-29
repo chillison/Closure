@@ -63,7 +63,7 @@ try {
 function clean() {
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 let PID: string | undefined;

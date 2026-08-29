@@ -300,7 +300,7 @@ describe('style-card：readStyleCardBody（文件读取归一）', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   function writeStyleCard(content: string): void {
@@ -457,7 +457,7 @@ describe('A↔B 跨路接缝：yaml 契约样例卡 → 统计注入 → envelop
         expect(brief).toContain(`## ${heading}`);
       }
     } finally {
-      rmSync(projectPath, { recursive: true, force: true });
+      try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     }
   });
 });

@@ -31,7 +31,7 @@ describe('write_chapter tool（Story 4.0 §4.8）', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 
@@ -385,7 +385,7 @@ describe('write_chapter tool readiness gate（4.1 §3.2）', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 
@@ -639,7 +639,7 @@ describe('write_chapter tool chapter_accept metadata（4.1 Step 4 / CR-15b）', 
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

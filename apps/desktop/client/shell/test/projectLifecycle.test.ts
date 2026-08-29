@@ -57,13 +57,13 @@ function projectRecord(overrides: Record<string, unknown> = {}) {
 describe('project lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_ROOT, { recursive: true });
     allowPath(TEST_ROOT);
   });
 
   afterEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('duplicates project files, excludes runtime history, and writes a fresh identity', async () => {

@@ -79,11 +79,11 @@ const TEST_PROJECT_DIR = path.join(process.cwd(), 'test-tmp-vision-media');
 beforeEach(() => {
   vi.clearAllMocks();
   nativeImage.createFromBuffer.mockReset().mockReturnValue(makeImage());
-  if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true });
+  try { if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 });
 
 afterEach(() => {
-  if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true });
+  try { if (existsSync(TEST_PROJECT_DIR)) rmSync(TEST_PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 });
 
 // ── Format sniffing (pure) ──

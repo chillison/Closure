@@ -63,7 +63,7 @@ describe('Story 8.6 — 创作管线能力段 + 流程雷达三态 + 弧段 arc_
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

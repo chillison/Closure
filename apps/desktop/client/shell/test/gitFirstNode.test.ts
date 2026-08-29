@@ -43,12 +43,12 @@ function freshDir(name: string): string {
 
 describe('git 首节点语义（CR-28）', () => {
   beforeEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_ROOT, { recursive: true });
   });
 
   afterEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('initRepo 空目录：建 repo 但零提交——首节点等初始内容，不再是空「开启版本管理」节点', async () => {

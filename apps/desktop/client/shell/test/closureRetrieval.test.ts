@@ -63,7 +63,7 @@ function clean() {
   // Close the handle first: Windows refuses to delete a locked db file.
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 // A stub ResolvedModel used by the DI seam. The stubbed `embed` below returns a

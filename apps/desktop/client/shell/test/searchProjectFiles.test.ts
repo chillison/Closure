@@ -21,12 +21,12 @@ function write(rel: string, content: string) {
 
 describe('searchProjectFiles', () => {
   beforeEach(() => {
-    if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_DIR, { recursive: true });
   });
 
   afterEach(() => {
-    if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_DIR)) rmSync(TEST_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('returns structured {path,line,text} hits with project-relative paths', () => {

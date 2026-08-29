@@ -48,7 +48,7 @@ function clean() {
   closeDb();
   resetSqliteVecState();
   _setCraftKbUserDirForTest(null);
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 function stubModel(): ResolvedModel {
@@ -579,12 +579,12 @@ describe('listCraftMdFiles scan path (CR-craft-kb-002/003/007)', () => {
 
   beforeEach(() => {
     _setCraftKbUserDirForTest(SCAN_DIR);
-    if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true });
+    try { if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(SCAN_DIR, { recursive: true });
   });
   afterEach(() => {
     _setCraftKbUserDirForTest(null);
-    if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true });
+    try { if (existsSync(SCAN_DIR)) rmSync(SCAN_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('CR-craft-kb-003: recursively descends into subdirectories for .md docs', () => {

@@ -68,7 +68,7 @@ describe('write_chapter Director 决策登记段（Story 2.6）', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

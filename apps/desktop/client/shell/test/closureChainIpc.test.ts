@@ -1821,8 +1821,8 @@ describe('closure:run-chapter-chain style_context 注入（风格卡 CR-026）',
     );
   });
   afterAll(() => {
-    rmSync(WITH_STYLE_DIR, { recursive: true, force: true });
-    rmSync(NO_STYLE_DIR, { recursive: true, force: true });
+    try { rmSync(WITH_STYLE_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    try { rmSync(NO_STYLE_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   beforeEach(() => {

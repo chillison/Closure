@@ -115,7 +115,7 @@ describe('write_chapter Story 3.7 findings metadata 透传', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

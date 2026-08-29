@@ -37,7 +37,7 @@ function clean() {
   // Close the handle first: Windows refuses to delete a locked db file.
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe.skipIf(!sqliteUsable)('sqlite-vec extension load + vec0 round-trip', () => {

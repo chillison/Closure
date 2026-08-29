@@ -84,7 +84,7 @@ describe('agent:compact-session handler (08-25 manual compaction entry)', () => 
     // CR-005：handler 现读 task-models sidecar 解析窗口——模型目录指向空隔离目录
     //（缺省无 sidecar → opts 不传），防读到真实 ~/.orison/model 使断言环境相关。
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_MODEL_DIR, { recursive: true });
     // 每测前清 D4 注册表（mirror projectRunGate.test 形态——生产只在启动空表，测试直驱
     // 需复位；断言中途失败时防租约泄漏到下一测）。
@@ -95,7 +95,7 @@ describe('agent:compact-session handler (08-25 manual compaction entry)', () => 
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('runtime without manualCompactSession → false + warn (agent-side S4 batch not landed)', async () => {

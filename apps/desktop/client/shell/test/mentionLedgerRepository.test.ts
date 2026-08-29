@@ -44,7 +44,7 @@ try {
 
 function clean() {
   closeDb();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 // Story 8.7 S3 suite：每测试独立 project id（composite PK 跨项目隔离——测试间状态零泄漏，

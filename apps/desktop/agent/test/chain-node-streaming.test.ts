@@ -256,7 +256,7 @@ describe('WorkflowRuntime.runChapterChain — 链事件（chain-delta / chain-no
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     const { registry } = await import('../src/tool/registry');
     registry.__clearForTest();
     const workflow = await import('../src/runtime/workflow');

@@ -63,7 +63,7 @@ describe('write_chapter — compileReport L3 复杂场景文案（R2-盲1 回归
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

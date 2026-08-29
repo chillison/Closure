@@ -43,7 +43,7 @@ describe('Story 3.5 — batches.json persistence', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('文件不存在 → []（合法「从未跑过」）；load 后 save round-trip', () => {
@@ -148,7 +148,7 @@ describe('Story 3.5 — 消息盖章 registry', () => {
 
   afterEach(() => {
     clearActiveBatchStamp(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('无活跃批量 → 消息不盖章（零回归）', () => {

@@ -103,7 +103,7 @@ const dirs: string[] = [];
 afterEach(() => {
   for (const d of dirs.splice(0)) {
     try {
-      rmSync(d, { recursive: true, force: true });
+      try { rmSync(d, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     } catch {
       // best-effort cleanup（tmpdir 系统级兜底）
     }

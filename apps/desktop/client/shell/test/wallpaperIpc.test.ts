@@ -48,13 +48,13 @@ function getHandlers() {
 }
 
 beforeEach(() => {
-  if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true });
+  try { if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   mkdirSync(TEST_ROOT, { recursive: true });
   appGetPath.mockReturnValue(USER_DATA);
 });
 
 afterEach(() => {
-  if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true });
+  try { if (existsSync(TEST_ROOT)) rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   showOpenDialog.mockReset();
 });
 

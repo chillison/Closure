@@ -29,9 +29,9 @@ describe('skill hot plugging', () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
     closeDb(otherProjectPath);
-    rmSync(homePath, { recursive: true, force: true });
-    rmSync(projectPath, { recursive: true, force: true });
-    rmSync(otherProjectPath, { recursive: true, force: true });
+    try { rmSync(homePath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    try { rmSync(otherProjectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 
@@ -61,7 +61,7 @@ describe('skill hot plugging', () => {
 
     expect(await runtime.loadSkill(session.id, 'deleted-skill')).toBeDefined();
 
-    rmSync(skillDir, { recursive: true, force: true });
+    try { rmSync(skillDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 
     await expect(runtime.loadSkillsForSession(session.id)).resolves.not.toContain('deleted-skill');
     await expect(runtime.loadSkill(session.id, 'deleted-skill')).resolves.toBeUndefined();

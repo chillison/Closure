@@ -25,7 +25,7 @@ line four
   });
 
   afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
+    try { rmSync(root, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('resolves relative reference paths and loads content in full, excerpt, and summary modes', async () => {

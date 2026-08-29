@@ -246,7 +246,7 @@ let chapter2Length = 0;
 function clean(): void {
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe.skipIf(!sqliteUsable)('retrievalEval — fiction eval 框架合成 smoke（Story 8.3 S8）', () => {

@@ -27,7 +27,7 @@ setTimeout(() => {
   });
 
   afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
+    try { rmSync(root, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('runs only scripts under the skill scripts directory and captures stdout/stderr', async () => {

@@ -23,7 +23,7 @@ describe('Story 3.5 — session participation gear', () => {
     const { closeDb, evictSession } = await import('../src/agent/persistence');
     void evictSession;
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

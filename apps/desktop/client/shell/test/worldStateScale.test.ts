@@ -400,7 +400,7 @@ describe.skipIf(!sqliteUsable)('worldState 合成规模压测（Story 8.1 Step 7
 
   function clean(): void {
     closeDb();
-    if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   }
 
   /** subject ≤ at 的全史 patch 数（「无 checkpoint 世界」对照——mirror listWorldPatches 过滤语义的 COUNT）。 */

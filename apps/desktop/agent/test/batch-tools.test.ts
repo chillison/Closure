@@ -73,7 +73,7 @@ describe('Story 3.5 — start_batch', () => {
   afterEach(async () => {
     closeDb(projectPath);
     clearActiveBatchStamp(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('正常启动：拓扑序 3 场（截到锚点 s3）+ 信号卡 + 承诺对照 + 落盘 running + metadata', async () => {
@@ -276,7 +276,7 @@ describe('Story 3.5 — batch_status 对账 + end_batch 收口', () => {
   afterEach(async () => {
     closeDb(projectPath);
     clearActiveBatchStamp(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('无活跃批量 → 告知（不崩）', async () => {
@@ -412,7 +412,7 @@ describe('Story 3.5 — set_participation_gear（chat 指令调档）', () => {
 
   afterEach(async () => {
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('设置档位 + 圈类别 + trust（直接字段更新，mid-run 安全）', async () => {

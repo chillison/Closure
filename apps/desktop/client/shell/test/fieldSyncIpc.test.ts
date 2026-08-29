@@ -24,13 +24,13 @@ describe('field sync IPC', () => {
   beforeEach(() => {
     handle.mockReset();
     if (existsSync(TEST_PROJECT_PATH)) {
-      rmSync(TEST_PROJECT_PATH, { recursive: true, force: true });
+      try { rmSync(TEST_PROJECT_PATH, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     }
   });
 
   afterEach(() => {
     if (existsSync(TEST_PROJECT_PATH)) {
-      rmSync(TEST_PROJECT_PATH, { recursive: true, force: true });
+      try { rmSync(TEST_PROJECT_PATH, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     }
   });
 

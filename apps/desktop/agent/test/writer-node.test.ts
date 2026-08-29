@@ -1493,7 +1493,7 @@ describe('writeDraftCheckpointArchive（#93 P0-1 草稿安全副本）', () => {
     dir = mkdtempSync(path.join(os.tmpdir(), 'orison-writer-draft-archive-'));
   });
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('首写 → draft-v1.md；再写 → draft-v2.md（版本 = 到达 checkpoint 的写作轮次）', async () => {
@@ -1520,7 +1520,7 @@ describe('fs 章档案（.orison/chapter-archive/<episodeId>/research-brief.json
     dir = mkdtempSync(path.join(os.tmpdir(), 'orison-writer-archive-'));
   });
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   /** fs 默认档案路径的节点输入（projectPath 覆盖为临时目录）。 */
@@ -1760,7 +1760,7 @@ describe('CR-001 — 生产装配 signal 接线（chapter-chain 装配形态）'
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   /** 生产装配链的 draft-writer 节点（真 createResearchVerifier 注入形态）。 */

@@ -62,7 +62,7 @@ describe.runIf(sqliteUsable)('relation retrieval + indexer (Story 6.4 D2)', () =
   afterAll(() => {
     closeDb();
     try {
-      rmSync(TEST_HOME, { recursive: true, force: true });
+      try { rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     } catch {
       // ignore
     }

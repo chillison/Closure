@@ -28,7 +28,7 @@ try {
 function clean() {
   // 先关闭 SQLite 句柄再删目录：Windows 不允许删除被进程锁定的打开文件。
   closeDb();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe.skipIf(!sqliteUsable)('projectRepository registry', () => {

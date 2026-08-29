@@ -32,12 +32,12 @@ async function headTreeHas(dir: string, filepath: string): Promise<boolean> {
 
 describe('createNode 删件暂存（R2 #26）', () => {
   beforeEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_ROOT, { recursive: true });
   });
 
   afterEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('已删文件（删除对话移走 session jsonl）：快照成功且删除进树', async () => {

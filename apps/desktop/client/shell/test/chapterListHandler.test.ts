@@ -85,7 +85,7 @@ describe('composeChapterCatalogLine（纯函数拼行）', () => {
 describe('chapterListHandler 目录行密度升级（Story 8.7 S6：storyTime 窗 + 梗概）', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
+    try { if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(path.join(TMP, 'chapters'), { recursive: true });
     writeChapter('ch_001.md', '# 第一章 初雪');
     writeChapter('ch_002.md', '# 第二章');
@@ -93,7 +93,7 @@ describe('chapterListHandler 目录行密度升级（Story 8.7 S6：storyTime �
     getProject.mockReturnValue({ projectId: '00001' });
   });
   afterEach(() => {
-    if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
+    try { if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   function mockDoc(episodes: unknown, chapters: unknown): void {
@@ -192,7 +192,7 @@ describe('chapterListHandler 目录行密度升级（Story 8.7 S6：storyTime �
   });
 
   it('chapters 目录不存在 → 现状 miss 文案', async () => {
-    rmSync(path.join(TMP, 'chapters'), { recursive: true, force: true });
+    try { rmSync(path.join(TMP, 'chapters'), { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     const res = await chapterListHandler(ctx());
     expect(res.output).toBe('尚未创建章节目录（还没有任何章节）。');
     expect(res.metadata).toMatchObject({ count: 0 });

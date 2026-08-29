@@ -334,7 +334,7 @@ describe('Story 3.5 — 批量编排集成（真 runLoop + 真 runChapterChain�
   afterEach(async () => {
     closeDb(projectPath);
     clearActiveBatchStamp(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   // ──────────────────────────────────────────────────────────────────────────

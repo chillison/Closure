@@ -75,7 +75,7 @@ describe('dispatch_story_planner / dispatch_episode_planner 派发接线', () =>
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.clearAllMocks();
   });
 
@@ -294,7 +294,7 @@ describe('graceful（mirror dispatch-researcher 五态降级）', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.clearAllMocks();
   });
 

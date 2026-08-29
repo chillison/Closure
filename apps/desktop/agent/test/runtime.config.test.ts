@@ -26,8 +26,8 @@ describe('runtime config loader', () => {
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
-    rmSync(homeRef.dir, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+    try { rmSync(homeRef.dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     homeRef.dir = '';
     vi.resetModules();
   });

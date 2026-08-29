@@ -604,7 +604,7 @@ let baseVecRows = 0; // 基础档向量行数（beforeAll 末快照——⑤ 扩
 function clean(): void {
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 检索不崩 + ANN 记档）', () => {

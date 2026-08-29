@@ -51,7 +51,7 @@ describe('skill resource tools', () => {
   });
 
   afterEach(() => {
-    rmSync(root, { recursive: true, force: true });
+    try { rmSync(root, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

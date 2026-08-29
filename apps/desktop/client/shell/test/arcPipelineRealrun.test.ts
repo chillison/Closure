@@ -52,13 +52,13 @@ function makeFixtureDoc() {
 }
 
 beforeAll(() => {
-  if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true });
+  try { if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   mkdirSync(PROJECT_DIR, { recursive: true });
   saveProject(PROJECT_DIR, makeFixtureDoc());
 });
 
 afterAll(() => {
-  if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true });
+  try { if (existsSync(PROJECT_DIR)) rmSync(PROJECT_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 });
 
 const ctx = (params: Record<string, unknown>) => ({

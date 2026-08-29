@@ -45,7 +45,7 @@ try {
 
 function clean() {
   closeDb();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 // All Story 6.6 tests share one project id; the composite subject PK keeps

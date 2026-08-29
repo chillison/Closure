@@ -49,13 +49,13 @@ describe('project:save-meta / ensure-document → git 首节点 wiring（CR-28�
     handle.mockReset();
     commitProjectCreateNode.mockReset();
     commitProjectCreateNode.mockResolvedValue({ committed: true });
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     allowPath(TEST_ROOT);
     registerProjectMetaIpc();
   });
 
   afterEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('save-meta 全新目录（无 project.yaml）→ 首写落地后挂首节点', async () => {

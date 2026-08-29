@@ -38,12 +38,12 @@ function getHandlers() {
 
 describe('user preferences IPC round-trip', () => {
   beforeEach(() => {
-    if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(TEST_HOME, { recursive: true });
   });
 
   afterEach(() => {
-    if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+    try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('persists all fields, including previously-dropped writing/appearance settings', async () => {

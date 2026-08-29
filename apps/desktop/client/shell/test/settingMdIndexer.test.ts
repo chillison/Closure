@@ -54,7 +54,7 @@ try {
 function clean() {
   closeDb();
   resetSqliteVecState();
-  if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true });
+  try { if (existsSync(TEST_HOME)) rmSync(TEST_HOME, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 function stubModel(): ResolvedModel {
@@ -114,7 +114,7 @@ function writeSettingDoc(projectDir: string, fileName: string, frontmatter: stri
  *  orphan cleanup deletes stale setting_md rows whose files are gone). */
 function cleanSettingsDir() {
   const settingsDir = path.join(PROJECT_DIR, 'settings');
-  if (existsSync(settingsDir)) rmSync(settingsDir, { recursive: true, force: true });
+  try { if (existsSync(settingsDir)) rmSync(settingsDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe.skipIf(!sqliteUsable)('settingMdIndexer DB integration (Story 2.3)', () => {
@@ -839,11 +839,11 @@ describe('listSettingMdFiles scan path (Story 2.3)', () => {
   const SCAN_PROJECT = path.join(TEST_HOME, 'scan-test-project');
 
   beforeEach(() => {
-    if (existsSync(SCAN_PROJECT)) rmSync(SCAN_PROJECT, { recursive: true, force: true });
+    try { if (existsSync(SCAN_PROJECT)) rmSync(SCAN_PROJECT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     mkdirSync(SCAN_PROJECT, { recursive: true });
   });
   afterEach(() => {
-    if (existsSync(SCAN_PROJECT)) rmSync(SCAN_PROJECT, { recursive: true, force: true });
+    try { if (existsSync(SCAN_PROJECT)) rmSync(SCAN_PROJECT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('recursively descends into subdirectories for .md docs', () => {

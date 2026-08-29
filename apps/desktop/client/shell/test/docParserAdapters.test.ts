@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-  rmSync(tmpDir, { recursive: true, force: true });
+  try { rmSync(tmpDir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 });
 
 interface RecordedCall {

@@ -38,12 +38,12 @@ describe('project:create-directory → initRepo 接线（新项目自动开版�
     handle.mockReset();
     initRepo.mockReset();
     initRepo.mockResolvedValue({ initialized: true });
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     initProjectsRoot(path.dirname(TEST_ROOT));
   });
 
   afterEach(() => {
-    rmSync(TEST_ROOT, { recursive: true, force: true });
+    try { rmSync(TEST_ROOT, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('新项目目录创建后对它调 initRepo（版本管理从创建起开启）', async () => {

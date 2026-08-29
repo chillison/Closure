@@ -71,7 +71,7 @@ describe('write_chapter Director atomic-edit apply（Story 7.4 Step 3+4）', () 
   });
 
   afterEach(() => {
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

@@ -103,15 +103,7 @@ function makeCtx(sessionId: string, projectPath: string, skillExecutor?: ToolCon
  * 重试后仍失败则放弃——目录在 os.tmpdir()，残留无害，不为清理失败红测。
  */
 async function rmBestEffort(dir: string): Promise<void> {
-  for (let attempt = 0; ; attempt++) {
-    try {
-      rmSync(dir, { recursive: true, force: true });
-      return;
-    } catch {
-      if (attempt >= 2) return;
-      await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
-    }
-  }
+  try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
 }
 
 describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零参数倒序取最近）', () => {

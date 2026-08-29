@@ -27,12 +27,12 @@ describe('config IPC migration profiles -> keys', () => {
   beforeEach(() => {
     handle.mockReset();
     _setModelConfigDirForTest(TEST_MODEL_DIR);
-    if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   afterEach(() => {
     _setModelConfigDirForTest(null);
-    if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true });
+    try { if (existsSync(TEST_MODEL_DIR)) rmSync(TEST_MODEL_DIR, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   it('migrates old profiles/ directory into new keys/ on first read', async () => {

@@ -165,7 +165,7 @@ describe('S4b 接线 — writer 双档思考策略不杂交（selfcheck assignme
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     setTaskSlotResolver(undefined);
   });
 
@@ -488,7 +488,7 @@ describe('S4 接线 — writer 双档分离（生产装配形态，writer-selfch
   });
 
   afterEach(() => {
-    rmSync(dir, { recursive: true, force: true });
+    try { rmSync(dir, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     setTaskSlotResolver(undefined);
   });
 
@@ -655,7 +655,7 @@ describe('S4 接线 — dispatch 档（workflow.ts:491 派发单点按 agentName
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 
@@ -709,7 +709,7 @@ describe('S4 接线 — dialogue 档（leader runLoop，sendMessage 车道）', 
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 
@@ -768,7 +768,7 @@ describe('S4 接线 — extraction 档（runBackfill 旧章 5 轴补提取）', 
     setTaskSlotResolver(undefined);
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     vi.resetModules();
   });
 

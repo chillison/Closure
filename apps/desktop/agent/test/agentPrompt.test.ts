@@ -149,7 +149,7 @@ describe('setPromptsBaseDir 注入（dogfood #48）', () => {
       expect(r.system).toBe('stub system\n');
       expect(r.userTemplate).toBe('stub {{brief}}\n');
     } finally {
-      rmSync(tmp, { recursive: true, force: true });
+      try { rmSync(tmp, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     }
   });
 
@@ -164,8 +164,8 @@ describe('setPromptsBaseDir 注入（dogfood #48）', () => {
       setPromptsBaseDir(tmpB);
       expect((await loadAgentPrompt('swap-agent')).system).toBe('B\n');
     } finally {
-      rmSync(tmpA, { recursive: true, force: true });
-      rmSync(tmpB, { recursive: true, force: true });
+      try { rmSync(tmpA, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
+      try { rmSync(tmpB, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
     }
   });
 });

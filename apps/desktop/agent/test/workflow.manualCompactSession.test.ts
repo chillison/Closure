@@ -43,7 +43,7 @@ describe('WorkflowRuntime.manualCompactSession（S4a 手动压缩）', () => {
 
   afterEach(() => {
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true });
+    try { rmSync(projectPath, { recursive: true, force: true }); } catch { /* tmpdir best-effort：Windows 句柄竞态 EPERM 残留无害 */ }
   });
 
   function makeRuntime(overrides?: { onRuntimeEvent?: (sessionId: string, event: RuntimeStreamEvent) => void }) {
