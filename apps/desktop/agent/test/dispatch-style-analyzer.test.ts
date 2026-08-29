@@ -111,14 +111,15 @@ describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零
     closeDb(projectPath);
     deleteSession(sessionId);
     // Windows 负载下 WAL/句柄释放与 rmSync 有竞态，偶发 EPERM（fresh clone 并行 turbo
-    // 两连现实录，08-28 release prep）。退避重试消噪——force 删除最终态不变。
+    // 与 GitHub windows runner 双实录，08-28 release prep）。退避重试后仍失败则放弃——
+    // best-effort 清理：目录在 os.tmpdir()，残留无害，不为清理失败红测。
     for (let attempt = 0; ; attempt++) {
       try {
         rmSync(projectPath, { recursive: true, force: true });
         break;
-      } catch (err) {
-        if (attempt >= 2) throw err;
-        await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+      } catch {
+        if (attempt >= 2) break;
+        await new Promise((resolve) => setTimeout(resolve, 150 * (attempt + 1)));
       }
     }
     vi.clearAllMocks();

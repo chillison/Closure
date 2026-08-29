@@ -1117,8 +1117,11 @@ describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 
       curve.push({ label: '50k', rows: vecRowCount(PID!), ms: knn50k });
       const full50k = await medianFullSearchMs();
 
-      // 宽上限断言（防架构回归——非精确性能断言；expected 量级 ~50-150ms）。
-      expect(full50k.medianMs).toBeLessThan(500);
+      // 宽上限断言（防架构回归——非精确性能断言；expected 量级 ~50-150ms）。CI 共享
+      // runner 噪声大（windows-latest 实测同负载可到本机 3-7×），上限按 CI 环境放大
+      // ——量级保护不变（回归会到秒级/超时），假跳消掉。
+      const fullSearchCeiling = process.env.CI ? 2_000 : 500;
+      expect(full50k.medianMs).toBeLessThan(fullSearchCeiling);
       expect(full50k.hits).toBe(10);
 
       const extrapolate = (rows: number): number => (knn50k * rows) / 50_000;
@@ -1127,7 +1130,7 @@ describe.skipIf(!sqliteUsable)('retrieval 合成规模压测（Story 8.3 S6 — 
           curve.map((c) => `${c.label}=${c.ms.toFixed(1)}ms(${c.rows}行)`).join(' | '),
       );
       console.log(
-        `[retrievalScale] ⑤ 全 searchClosure（k=10，stub rerank，median×5）：5k=${full5k.medianMs.toFixed(1)}ms / 50k=${full50k.medianMs.toFixed(1)}ms（宽上限断言 <500ms 过）`,
+        `[retrievalScale] ⑤ 全 searchClosure（k=10，stub rerank，median×5）：5k=${full5k.medianMs.toFixed(1)}ms / 50k=${full50k.medianMs.toFixed(1)}ms（宽上限断言 <${fullSearchCeiling}ms 过）`,
       );
       console.log(
         `[retrievalScale] ANN 记档：sqlite-vec 暴力 50k×1024 实测 ${knn50k.toFixed(1)}ms，线性外推 100k≈${extrapolate(100_000).toFixed(0)}ms / 1M≈${extrapolate(1_000_000).toFixed(0)}ms —— ` +
