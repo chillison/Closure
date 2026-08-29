@@ -1,6 +1,6 @@
 import os from 'node:os';
 import path from 'node:path';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,12 +71,11 @@ describe('chapterChunkWatcher（Story 8.3 S3）', () => {
   });
   afterEach(async () => {
     stopChapterChunkWatcher();
-    // libuv Windows fs-event 断言 workaround（nodejs/node#12841 族）：递归 watch 的目录
-    // 树被 rm 时，pending change notification 与已关句柄竞态 → C 层 `!_wcsnicmp` 断言
-    // 直接 abort 进程（非 JS 异常无从捕获；公仓 windows CI 实录）。stop 后 drain 一拍
-    // 事件循环（句柄真正关闭）再删目录。
-    await tick(30);
-    if (TMP && existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
+    // 有意不删 TMP：libuv Windows fs-event 在「递归 watch 的目录树被 rm」时 C 层
+    // `!_wcsnicmp` 断言直接 abort 进程（nodejs/node#12841 族，JS 无从捕获；公仓
+    // windows CI 两轮实录——stop 后 drain 拍也不敌 fs-event 线程竞态）。TMP 是每测
+    // 唯一 mkdtemp（os.tmpdir() 下），残留无害，交由系统清理。绝不在 watcher 生命
+    // 周期内删除其监听目录——测试与生产（项目关闭先 unwatch 再动盘）皆然。
   });
 
   it('章文件写事件 → debounce 后 reindexChapter(projectId, projectDir, chapterId)；rebuild 不触发', async () => {
