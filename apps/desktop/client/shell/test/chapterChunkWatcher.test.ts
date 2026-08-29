@@ -69,8 +69,13 @@ describe('chapterChunkWatcher（Story 8.3 S3）', () => {
     allowPath(TMP); // assertSafePath 授权（mirror 生产 project:watch 前的 allowPath）
     stopChapterChunkWatcher();
   });
-  afterEach(() => {
+  afterEach(async () => {
     stopChapterChunkWatcher();
+    // libuv Windows fs-event 断言 workaround（nodejs/node#12841 族）：递归 watch 的目录
+    // 树被 rm 时，pending change notification 与已关句柄竞态 → C 层 `!_wcsnicmp` 断言
+    // 直接 abort 进程（非 JS 异常无从捕获；公仓 windows CI 实录）。stop 后 drain 一拍
+    // 事件循环（句柄真正关闭）再删目录。
+    await tick(30);
     if (TMP && existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
   });
 
