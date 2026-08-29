@@ -1,5 +1,6 @@
+import os from 'node:os';
 import path from 'node:path';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -8,11 +9,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // debounce + 生命周期 + inflight 串行化走真实实现（真定时器——vi.waitFor 等 debounce 窗）。
 // ─────────────────────────────────────────────────────────────────────────────
 
-const TMP = path.join(process.cwd(), 'test-tmp-chapter-chunk-watcher');
+// macOS FSEvents 按路径合并投递：上一测 rmSync 的删除事件会迟到送达下一测在同一
+// 路径上新开的 watcher（公仓 mac CI 首跑实录：非章零触发测收到前测 ch_001/ch_002
+// 两笔 reindex）。故 TMP 每测唯一（mkdtemp），从根上消除路径复用的跨测事件串扰。
+const tmpBox = vi.hoisted(() => ({ dir: '' }));
+let TMP = '';
 
 vi.mock('electron', () => ({
   app: {
-    getPath: (_: string) => TMP,
+    getPath: (_: string) => tmpBox.dir,
     isPackaged: false,
   },
 }));
@@ -60,14 +65,13 @@ function writeChapter(projectDir: string, chapterId: string, content = '正文')
 describe('chapterChunkWatcher（Story 8.3 S3）', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
-    mkdirSync(TMP, { recursive: true });
+    TMP = tmpBox.dir = mkdtempSync(path.join(os.tmpdir(), 'chapter-chunk-watcher-'));
     allowPath(TMP); // assertSafePath 授权（mirror 生产 project:watch 前的 allowPath）
     stopChapterChunkWatcher();
   });
   afterEach(() => {
     stopChapterChunkWatcher();
-    if (existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
+    if (TMP && existsSync(TMP)) rmSync(TMP, { recursive: true, force: true });
   });
 
   it('章文件写事件 → debounce 后 reindexChapter(projectId, projectDir, chapterId)；rebuild 不触发', async () => {

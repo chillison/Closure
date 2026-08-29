@@ -165,9 +165,15 @@ beforeEach(() => {
 });
 
 describe('D4 per-project run 闸（dogfood T1 Stage 3，design §5.4）', () => {
-  it('normalizeProjectKey：Windows 大小写/尾斜杠/反斜杠归一（防双 key 漏闸）', () => {
-    expect(normalizeProjectKey('C:\\Proj\\A/')).toBe(normalizeProjectKey('c:/proj/a'));
+  it('normalizeProjectKey：尾斜杠归一（跨平台——path.resolve）', () => {
     expect(normalizeProjectKey(PROJ)).toBe(normalizeProjectKey(`${PROJ}/`));
+  });
+
+  // 大小写归一是 win32 专属行为（NTFS 不区分大小写；normalizeForCompare 平台条件化）。
+  // posix 上 `C:\Proj\A` 与 `c:/proj/a` 是两个合法不同的路径，不相等才是正确行为
+  // ——公仓 mac CI 首跑实录（08-28 release prep）此前把 Windows 断言写成了无条件。
+  it.runIf(process.platform === 'win32')('normalizeProjectKey：win32 大小写/反斜杠归一（防双 key 漏闸）', () => {
+    expect(normalizeProjectKey('C:\\Proj\\A/')).toBe(normalizeProjectKey('c:/proj/a'));
   });
 
   it('同项目两会话：第二个 stream-message 被结构化拒绝（含占用会话 id + 项目路径）', async () => {

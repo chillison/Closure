@@ -107,10 +107,20 @@ describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零
     sessionId = session.id;
   });
 
-  afterEach(() => {
+  afterEach(async () => {
     closeDb(projectPath);
     deleteSession(sessionId);
-    rmSync(projectPath, { recursive: true, force: true });
+    // Windows 负载下 WAL/句柄释放与 rmSync 有竞态，偶发 EPERM（fresh clone 并行 turbo
+    // 两连现实录，08-28 release prep）。退避重试消噪——force 删除最终态不变。
+    for (let attempt = 0; ; attempt++) {
+      try {
+        rmSync(projectPath, { recursive: true, force: true });
+        break;
+      } catch (err) {
+        if (attempt >= 2) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 120 * (attempt + 1)));
+      }
+    }
     vi.clearAllMocks();
   });
 
