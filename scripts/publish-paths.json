@@ -1,0 +1,39 @@
+{
+  "$comment": "公栖路径清单（publish-public.mjs 与审计共用单源）。= 当初 fresh-root 导出（git archive）的白名单。目录进则整树进；文件逐项列。改动此清单必须同步验证 scripts/publish-public.mjs 的同步行为。",
+  "dirs": [
+    "apps",
+    "packages",
+    "scripts",
+    ".github",
+    "docs/guides",
+    "docs/assets",
+    "docs/diagrams"
+  ],
+  "files": [
+    "README.md",
+    "README.en.md",
+    "LICENSE",
+    "LICENSES/AGPL-3.0.txt",
+    "LICENSES/Apache-2.0.txt",
+    "LICENSES/MIT.txt",
+    "NOTICE",
+    "CHANGELOG.md",
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    ".gitignore",
+    ".gitattributes",
+    ".nvmrc",
+    ".npmrc",
+    ".editorconfig",
+    ".dependency-cruiser.cjs",
+    "eslint.config.mjs",
+    "knip.json",
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "tsconfig.base.json",
+    "turbo.json",
+    "run.bat",
+    "run.sh"
+  ]
+}
