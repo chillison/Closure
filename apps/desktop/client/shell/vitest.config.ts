@@ -14,5 +14,7 @@ export default defineConfig({
     // threads 池（worker_threads，无子进程 IPC）从根上消后者；前者由 ignore 兜底。
     pool: 'threads',
     dangerouslyIgnoreUnhandledErrors: true,
+    // rmBestEffort：fs.rmSync EPERM 全局兜底（同 agent 包——Windows 句柄释放竞态）。
+    setupFiles: ['./test/setup/rmBestEffort.ts'],
   },
 });
