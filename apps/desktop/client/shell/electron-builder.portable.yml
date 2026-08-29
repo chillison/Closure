@@ -53,3 +53,4 @@ publish:
   provider: github
   owner: chillison
   repo: Closure
+  releaseType: release

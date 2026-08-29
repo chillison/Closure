@@ -89,7 +89,10 @@ linux:
     - target: AppImage # 跨发行版的免安装可执行格式
 
 # GitHub Releases 直传（本地构建 --publish always 走 GH_TOKEN；CI release.yml 同源）。
+# releaseType: release = 上传到既有正式 release（默认 draft 在「同 tag 已有 published
+# release」时会整批 skipped publishing——v0.1.0 mac/linux 产物蒸发实录）。
 publish:
   provider: github
   owner: chillison
   repo: Closure
+  releaseType: release
