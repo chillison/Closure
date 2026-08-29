@@ -4,6 +4,9 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createSession, deleteSession } from '../src/agent/session';
+// 静态 closeDb：与上方静态 createSession 绑定同代模块实例——resetModules 后动态 import 解析到
+// 新代，旧代 dbCache 里的静态句柄只有静态引用够得着（S1 制图 §2.2-A 静态实例孤儿向量）。
+import { closeDb } from '../src/agent/persistence';
 
 vi.mock('../src/skill/discovery', () => ({
   discoverSkills: vi.fn(async () => []),
@@ -62,8 +65,9 @@ describe('Story 3.5 — batch prompt segment（buildInteractionModeSegment）', 
   });
 
   afterEach(async () => {
-    const { closeDb } = await import('../src/agent/persistence');
-    closeDb(projectPath);
+    const { closeDb: closeDbDynamic } = await import('../src/agent/persistence');
+    closeDbDynamic(projectPath);
+    closeDb(projectPath); // 静态代实例的句柄也关（见文件头注释）——两代全关后才 rm/reset。
     rmBestEffort(projectPath);
     vi.resetModules();
   });

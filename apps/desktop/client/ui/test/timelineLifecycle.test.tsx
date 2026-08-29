@@ -31,6 +31,17 @@ import { SceneEditPopover } from '../src/features/structure/SceneEditPopover';
 import { StructurePage } from '../src/features/structure/StructurePage';
 import { useAppStore } from '../src/shared/store/appStore';
 
+// 文件级单 spy（vitest 4 `vi.spyOn` 对已挂 mock 直接复用 × zustand 快照血缘传播
+// ——task 08-29-vitest4-ui-migration design §3.1 范式）：updateField 恒挂一次
+// （passthrough——写入须真实落库供读回断言），计数由 beforeEach mockClear 按测清；
+// 测试体内不再 spyOn / mockRestore。（scrollIntoView 等原型 spy 不走 zustand 快照
+// 血缘，维持逐测挂/还原形态。）
+const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
+
+beforeEach(() => {
+  updateSpy.mockClear();
+});
+
 function parseGraph(raw: unknown): SceneGraph {
   return sceneGraphSchema.parse(raw);
 }
@@ -128,14 +139,12 @@ describe('SP-1 scene context menu (open + actions)', () => {
   });
 
   it('role item writes update_scene via the shared projector', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     fireEvent.contextMenu(container.querySelector('[data-node-id="s1"]')!);
     fireEvent.click(container.querySelector('[data-menu-key="role-fork-point"]')!);
     expect(updateSpy).toHaveBeenCalledTimes(1);
     const written = updateSpy.mock.calls[0][1] as SceneGraph;
     expect(written.nodes.find((n) => n.id === 's1')!.role).toBe('fork-point');
-    updateSpy.mockRestore();
   });
 
   it('copy-id does not crash without a clipboard (jsdom)', () => {
@@ -181,7 +190,6 @@ describe('SP-1 add scene (column ＋ / blank & column contextmenu)', () => {
   afterEach(() => cleanup());
 
   it('column ＋ button writes add_scene with the default line + opens the popover focused', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<StructurePage />);
     // causal 侧「第 2 章」列头里的 ＋（批 7：col-value = 章 index）。
     const addBtn = container.querySelector(
@@ -201,21 +209,17 @@ describe('SP-1 add scene (column ＋ / blank & column contextmenu)', () => {
     const popover = container.querySelector('[data-popover="scene-edit"]') as HTMLElement;
     expect(popover?.dataset.sceneId).toBe('S-1');
     expect((document.activeElement as HTMLElement)?.dataset?.field).toBe('title');
-    updateSpy.mockRestore();
   });
 
   it('default line follows the focused lane when one is focused', () => {
     seedStore({ focusedLineId: 'l_side' });
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     fireEvent.click(container.querySelector('[data-col-value="2"] [data-action="add-scene"]')!);
     const written = updateSpy.mock.calls[0][1] as SceneGraph;
     expect(written.nodes.find((n) => n.id === 'S-1')!.lineTags).toEqual(['l_side']);
-    updateSpy.mockRestore();
   });
 
   it('column-header contextmenu offers add-in-this-column (same projection)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     fireEvent.contextMenu(container.querySelector('[data-col-value="2"]')!);
     fireEvent.click(container.querySelector('[data-menu-key="add-scene"]')!);
@@ -223,7 +227,6 @@ describe('SP-1 add scene (column ＋ / blank & column contextmenu)', () => {
     const added = written.nodes.find((n) => n.id === 'S-1')!;
     expect(added.presentationOrder.chapter).toBe(2);
     expect(added.storyTime).toBe(4);
-    updateSpy.mockRestore();
   });
 
   it('grid-blank contextmenu opens the add menu at the hit chapter (clientX inside column 0)', () => {
@@ -260,13 +263,11 @@ describe('SP-3 line management (add / inline rename / topology / visibility / de
     expect(useAppStore.getState().editingLineId).toBe('L-1');
     const input = container.querySelector('[data-lane-edit="L-1"]') as HTMLInputElement;
     expect(input).not.toBeNull();
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     fireEvent.change(input, { target: { value: '感情线' } });
     fireEvent.keyDown(input, { key: 'Enter' });
     const written = useAppStore.getState().creativeFields.scene_graph as SceneGraph;
     expect(written.lines.find((l) => l.id === 'L-1')!.name).toBe('感情线');
     expect(useAppStore.getState().editingLineId).toBeNull();
-    updateSpy.mockRestore();
   });
 
   it('lane contextmenu rename turns the label into an input (Esc cancels)', () => {
@@ -289,7 +290,6 @@ describe('SP-3 line management (add / inline rename / topology / visibility / de
   });
 
   it('same-value menu submissions write nothing (CR-11: scene role / line topology / displacement)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     // s2 role = core-anchor → 右键同值 role 项不写。
     fireEvent.contextMenu(container.querySelector('[data-node-id="s2"]')!);
@@ -303,11 +303,9 @@ describe('SP-3 line management (add / inline rename / topology / visibility / de
     fireEvent.contextMenu(container.querySelector('[data-lane-id="l_main"]')!);
     fireEvent.click(container.querySelector('[data-menu-key="disp-none"]')!);
     expect(updateSpy).toHaveBeenCalledTimes(0);
-    updateSpy.mockRestore();
   });
 
   it('line rename: same-name Enter writes nothing; blur commit still works after an Enter commit (CR-11/CR-14)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     // 同值改名：Enter 提交现名 → 不写。
     fireEvent.contextMenu(container.querySelector('[data-lane-id="l_side"]')!);
@@ -325,7 +323,6 @@ describe('SP-3 line management (add / inline rename / topology / visibility / de
     expect(updateSpy).toHaveBeenCalledTimes(1);
     const written = useAppStore.getState().creativeFields.scene_graph as SceneGraph;
     expect(written.lines.find((l) => l.id === 'l_side')!.name).toBe('感情线');
-    updateSpy.mockRestore();
   });
 
   it('hidden-until menu path opens the target input and writes visibility on Enter', () => {
@@ -371,17 +368,13 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
   it('storyTime number commits on blur with the nonnegative clamp', () => {
     const { container } = render(<SceneEditPopover />);
     const input = container.querySelector('[data-field="storyTime"]') as HTMLInputElement;
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     fireEvent.change(input, { target: { value: '-4' } });
     fireEvent.blur(input);
     const written = useAppStore.getState().creativeFields.scene_graph as SceneGraph;
     expect(written.nodes.find((n) => n.id === 's2')!.storyTime).toBe(0);
-    updateSpy.mockRestore();
   });
 
   it('cleared / non-numeric storyTime restores the current value without writing (CR-19)', () => {
-    // spy 先于 render（组件闭包引用渲染时的 updateField——后 spy 会漏计）。
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<SceneEditPopover />);
     const input = container.querySelector('[data-field="storyTime"]') as HTMLInputElement;
     // 清空提交：还原现值（s2 storyTime=2），绝不静默跳 t=0。
@@ -396,11 +389,9 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
     expect((container.querySelector('[data-field="storyTime"]') as HTMLInputElement).value).toBe('2');
     const graph = useAppStore.getState().creativeFields.scene_graph as SceneGraph;
     expect(graph.nodes.find((n) => n.id === 's2')!.storyTime).toBe(2);
-    updateSpy.mockRestore();
   });
 
   it('same-value drawer submissions write nothing (CR-11: role select / enum select)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<SceneEditPopover />);
     // s2 role = core-anchor → select 同值不写。
     fireEvent.change(container.querySelector('[data-field="role"]')!, { target: { value: 'core-anchor' } });
@@ -411,11 +402,9 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
     expect(updateSpy).toHaveBeenCalledTimes(1);
     fireEvent.change(container.querySelector('[data-field="outcomeType"]')!, { target: { value: '达成' } });
     expect(updateSpy).toHaveBeenCalledTimes(1);
-    updateSpy.mockRestore();
   });
 
   it('enum custom input: Esc cancels without writing; blur commit still works after Esc (CR-14 lock re-arms per session)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<SceneEditPopover />);
     // 进自定义态 → 打字 → Esc：不写（回退 select）。
     fireEvent.change(container.querySelector('[data-field="pacingRole"]')!, { target: { value: '__custom__' } });
@@ -431,7 +420,6 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
     expect(updateSpy).toHaveBeenCalledTimes(1);
     const graph = useAppStore.getState().creativeFields.scene_graph as SceneGraph;
     expect(graph.nodes.find((n) => n.id === 's2')!.pacingRole).toBe('双线并进');
-    updateSpy.mockRestore();
   });
 
   it('a stored value equal to the __custom__ sentinel renders ONE sentinel option (CR-23)', () => {
@@ -523,7 +511,6 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
 
   it('title + summary direct writes flush after the 500ms debounce (OutlineEditor mirror)', () => {
     vi.useFakeTimers();
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<SceneEditPopover />);
     const title = container.querySelector('[data-field="title"]') as HTMLInputElement;
     const summary = container.querySelector('[data-field="summary"]') as HTMLTextAreaElement;
@@ -538,7 +525,6 @@ describe('SP-2 popover direct-write zones (projection assertions)', () => {
     expect(updateSpy).toHaveBeenCalledTimes(1); // 一次手势批 = 一次写（两字段并一笔）
     const written = updateSpy.mock.calls[0][1] as SceneGraph;
     expect(written.nodes.find((n) => n.id === 's2')!).toMatchObject({ title: '新标题', summary: '新摘要' });
-    updateSpy.mockRestore();
   });
 
   it('clearing the title flushes title: undefined (falls back to id display)', () => {

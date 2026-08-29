@@ -109,8 +109,10 @@ describe('dispatch_style_analyzer — 派发接线 + D4 原文直传（AC5，零
   });
 
   afterEach(async () => {
-    closeDb(projectPath);
+    // deleteSession 先、closeDb 后——反序会让 deletePersistedSession 的 getDb 在关库后
+    // cache-miss 重开句柄（S1 制图 §2.2-C：全 suite 唯一「close-之后-又开」生产者）。
     deleteSession(sessionId);
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
@@ -247,6 +249,8 @@ describe('dispatch_style_analyzer — setting_md_patch envelope（既有卡分�
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-card-'));
   });
   afterEach(async () => {
+    // S1 根治（08-29）：句柄当测关——攒到 setup afterAll 才关会进拆卸期 GC 彩票位。
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
@@ -358,6 +362,8 @@ describe('dispatch_style_analyzer — 材料不足双分支 + 超长上限门（
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-insuff-'));
   });
   afterEach(async () => {
+    // S1 根治（08-29）：句柄当测关——攒到 setup afterAll 才关会进拆卸期 GC 彩票位。
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
@@ -416,6 +422,8 @@ describe('dispatch_style_analyzer — 提取失败分支（零参数倒序契约
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-extract-'));
   });
   afterEach(async () => {
+    // S1 根治（08-29）：句柄当测关——攒到 setup afterAll 才关会进拆卸期 GC 彩票位。
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.clearAllMocks();
   });
@@ -456,6 +464,8 @@ describe('dispatch_style_analyzer — graceful（mirror dispatch-planners 降级
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'dispatch-style-analyzer-graceful-'));
   });
   afterEach(async () => {
+    // S1 根治（08-29）：句柄当测关——攒到 setup afterAll 才关会进拆卸期 GC 彩票位。
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.clearAllMocks();
   });

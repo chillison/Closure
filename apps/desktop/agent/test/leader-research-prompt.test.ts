@@ -24,7 +24,11 @@ describe('leader system prompt — Research 段（Story 3.6 WP8.2）', () => {
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'orison-leader-research-'));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // 测试内 runtime.createSession 开的句柄先关再删目录（mirror chain-node-streaming.test.ts
+    // 清理形态）——零 close 直接 resetModules 会孤儿化句柄（S1 制图 §2.2-B）。
+    const { closeDb } = await import('../src/agent/persistence');
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.resetModules();
   });

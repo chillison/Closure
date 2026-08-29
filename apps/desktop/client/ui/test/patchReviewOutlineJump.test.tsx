@@ -27,6 +27,12 @@ vi.mock('../src/features/editor/TiptapEditor', () => ({
   ),
 }));
 
+// 文件级单 spy（vitest 4 `vi.spyOn` 对已挂 mock 直接复用 × zustand 快照血缘传播
+// ——task 08-29-vitest4-ui-migration design §3.1 范式）：showToast 恒挂一次
+// （passthrough——全文件用例只断言调用形态，无真实 toast 渲染断言），计数由
+// beforeEach mockClear 按测清；测试体内不再 spyOn / mockRestore。
+const toastSpy = vi.spyOn(useToastStore.getState(), 'showToast');
+
 const outlinePatch: ProjectFieldPatch = {
   runId: 'run-d1',
   createdAt: '2026-08-26T00:00:00Z',
@@ -60,7 +66,8 @@ function setupPanel(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  vi.restoreAllMocks();
+  // 原 vi.restoreAllMocks 会拆文件级共享 spy（从快照血缘掉队毁后续用例）——改按测清计数。
+  toastSpy.mockClear();
 });
 
 afterEach(() => {
@@ -194,13 +201,12 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
     expect(applySelectedPatches).toHaveBeenCalledTimes(1);
-    expect(showToast).toHaveBeenCalledTimes(1);
-    const [message, level, duration, action] = showToast.mock.calls[0] as unknown as [
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    const [message, level, duration, action] = toastSpy.mock.calls[0] as unknown as [
       string, string, number, { label: string; onClick: () => void },
     ];
     // toast 基建 = useToastStore（复用既有 Toast.tsx 行内动作钮渲染，非新提示组件）。
@@ -241,11 +247,10 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
-    expect(showToast).toHaveBeenCalledTimes(1);
-    (showToast.mock.calls[0][3] as { onClick: () => void }).onClick();
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    (toastSpy.mock.calls[0][3] as { onClick: () => void }).onClick();
     expect(setOutlineFocusTarget).toHaveBeenCalledWith({ section: 'core' });
     cleanup();
 
@@ -256,18 +261,18 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast2 = vi.spyOn(useToastStore.getState(), 'showToast');
+    toastSpy.mockClear(); // 子场计数归零（文件级 spy）
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
-    expect(showToast2).not.toHaveBeenCalled();
+    expect(toastSpy).not.toHaveBeenCalled();
     cleanup();
 
     // apply 返回 null（空手）→ 不 toast。
     setupPanel({ applySelectedPatches: vi.fn(() => null) });
-    const showToast3 = vi.spyOn(useToastStore.getState(), 'showToast');
+    toastSpy.mockClear(); // 子场计数归零（文件级 spy）
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
-    expect(showToast3).not.toHaveBeenCalled();
+    expect(toastSpy).not.toHaveBeenCalled();
   });
 
   // ── CR-5（dogfood R2 BMad CR）：locked outline 的「已落盘」toast 假阳性破除 ──
@@ -282,13 +287,12 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
     // apply 照发（locked 拒绝在 shell 持久化层），但「已落盘」成功 toast + 跳转不出。
     expect(applySelectedPatches).toHaveBeenCalledTimes(1);
-    expect(showToast).not.toHaveBeenCalled();
+    expect(toastSpy).not.toHaveBeenCalled();
     expect(setOutlineFocusTarget).not.toHaveBeenCalled();
     expect(setActivePage).not.toHaveBeenCalled();
   });
@@ -330,12 +334,11 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
     // 版本 = 应用后 store 值（7）；首个新增卷 p3 来自末 entry（旧实现取首 entry 会错跳 p2）。
-    const [message, , , action] = showToast.mock.calls[0] as unknown as [
+    const [message, , , action] = toastSpy.mock.calls[0] as unknown as [
       string, string, number, { label: string; onClick: () => void },
     ];
     expect(message).toBe('Applied: Outline v7 · +1 volumes');
@@ -379,11 +382,10 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget: vi.fn(),
       setActivePage: vi.fn(),
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
-    const [message] = showToast.mock.calls[0] as unknown as [string];
+    const [message] = toastSpy.mock.calls[0] as unknown as [string];
     expect(message).toBe('Applied: Outline v4 · +2 volumes · +3 turning points');
   });
 
@@ -409,12 +411,11 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       applySelectedPatches: vi.fn(() => sceneGraphPatch),
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
-    expect(showToast).toHaveBeenCalledTimes(1);
-    const [message, level, , action] = showToast.mock.calls[0] as unknown as [
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    const [message, level, , action] = toastSpy.mock.calls[0] as unknown as [
       string, string, number, { label: string; onClick: () => void },
     ];
     expect(message).toBe('Applied: Scene graph');
@@ -447,16 +448,15 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       setOutlineFocusTarget,
       setActivePage,
     });
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast');
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
 
     // 混合批：outline toast（带计数）+ scene_graph toast（带时间线跳转）各一条。
-    expect(showToast).toHaveBeenCalledTimes(2);
-    const messages = showToast.mock.calls.map((c) => c[0] as string);
+    expect(toastSpy).toHaveBeenCalledTimes(2);
+    const messages = toastSpy.mock.calls.map((c) => c[0] as string);
     expect(messages.some((m) => m.startsWith('Applied: Outline v3'))).toBe(true);
     expect(messages).toContain('Applied: Scene graph');
-    const sgAction = showToast.mock.calls
+    const sgAction = toastSpy.mock.calls
       .map((c) => c[3] as { label: string; onClick: () => void } | undefined)
       .find((a) => a?.label === 'View in timeline →');
     sgAction!.onClick();
@@ -475,10 +475,10 @@ describe('PatchReviewPanel：接受落盘 → toast + 跳转闭环（D1）', () 
       applySelectedPatches: vi.fn(() => sgOnlyPatch),
       setActivePage,
     });
-    const showToast2 = vi.spyOn(useToastStore.getState(), 'showToast');
+    toastSpy.mockClear(); // 子场计数归零（文件级 spy）
     render(<PatchReviewPanel />);
     fireEvent.click(screen.getByRole('button', { name: 'Apply Selected' }));
-    expect(showToast2).not.toHaveBeenCalled();
+    expect(toastSpy).not.toHaveBeenCalled();
   });
 });
 

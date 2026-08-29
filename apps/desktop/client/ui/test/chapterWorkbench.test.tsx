@@ -21,6 +21,17 @@ import { episodeTrackCountOf, PENDING_CHAPTER_SENTINEL, WORKBENCH_GEOMETRY } fro
 import { MAX_SETTLE_ROUNDS } from '../src/features/structure/workbenchPacking';
 import { useAppStore } from '../src/shared/store/appStore';
 
+// 文件级单 spy（vitest 4 `vi.spyOn` 对已挂 mock 直接复用 × zustand 快照血缘传播
+// ——task 08-29-vitest4-ui-migration design §3.1 范式）：updateField 恒挂一次
+// （passthrough——写入须真实落库供读回断言），计数由 beforeEach mockClear 按测清；
+// 测试体内不再 spyOn / mockRestore。（console / 原型 spy 不走 zustand 快照血缘，
+// 维持 describe 级挂/还原形态。）
+const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
+
+beforeEach(() => {
+  updateSpy.mockClear();
+});
+
 function parseGraph(raw: unknown): SceneGraph {
   return sceneGraphSchema.parse(raw);
 }
@@ -534,8 +545,6 @@ describe('batch 8: pinned-right pending column + overflow collapse', () => {
   });
 
   it('#63 drag a placed chip back onto the pending slot → chapter becomes the sentinel（撤章归属）', () => {
-    // spy 先于 render（CR-19 同款：组件闭包引用渲染时的 updateField）。
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     const source = container.querySelector('.workbench-chip[data-node-id="s_plain"]') as HTMLElement;
     expect(source).toBeTruthy();
@@ -552,7 +561,6 @@ describe('batch 8: pinned-right pending column + overflow collapse', () => {
     const written = updateSpy.mock.calls[0][1] as SceneGraph;
     const node = written.nodes.find((n) => n.id === 's_plain')!;
     expect(node.presentationOrder!.chapter).toBe(PENDING_CHAPTER_SENTINEL);
-    updateSpy.mockRestore();
   });
 
   it('causal mirror keeps both behaviours consistent (same pin class + same R7 counter)', () => {
@@ -631,7 +639,6 @@ const slotSel = (lineId: string, chapter: number | string) =>
 
 describe('R1/R6: workbench slot-surface routing (integration)', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
-  let updateSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     // 错误哨兵先于 render（级联崩坏形态 = 渲染树中途抛错被边界静默吞掉的观测面）。
@@ -647,12 +654,10 @@ describe('R1/R6: workbench slot-surface routing (integration)', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
     errorSpy.mockRestore();
   });
 
   it('#70 回归：s_plain 与第 3 章空格往返 ×5 —— 每次 1 写、落点即时反映到 DOM、console 零错', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     for (let round = 0; round < 5; round++) {
       const goingOut = round % 2 === 0;
@@ -673,7 +678,6 @@ describe('R1/R6: workbench slot-surface routing (integration)', () => {
   });
 
   it('跨行空槽直投合法（AC2：任意线格均为落点）——节点级章写入、行归属不变', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     dragChipTo(container, 's_plain', slotSel('l_side', 0));
     expect(updateSpy).toHaveBeenCalledTimes(1);
@@ -703,7 +707,6 @@ describe('R1/R6: workbench slot-surface routing (integration)', () => {
       edges: [],
     });
     useAppStore.setState({ creativeFields: { scene_graph: pair, episode_outlines: EPISODES() } } as any);
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     // 拖 sd（pos1）落到 s1（pos0）表面 → sd 插到 s1 前。
     dragChipTo(container, 'sd', '.workbench-chip[data-node-id="s1"]');
@@ -722,7 +725,6 @@ describe('R1/R6: workbench slot-surface routing (integration)', () => {
       { id: 'e2', index: 2, title: 'C2' },
     ]);
     useAppStore.setState({ creativeFields: { scene_graph: workbenchGraph(), episode_outlines: gapped } } as any);
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     const gapSlot = container.querySelector(slotSel('l_main', 1)) as HTMLElement; // track 存在、episode 缺席
     expect(gapSlot).toBeTruthy();
@@ -760,7 +762,6 @@ describe('R1/R6: workbench slot-surface routing (integration)', () => {
       edges: [],
     });
     useAppStore.setState({ creativeFields: { scene_graph: wide, episode_outlines: eps5 } } as any);
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     dragChipTo(container, 'w_wide', slotSel('l_main', 3));
     expect(updateSpy).toHaveBeenCalledTimes(1);
@@ -848,7 +849,6 @@ function dragChipToX(
 
 describe('T1 measured column-hit routing (fake rect injection, CR3 G-F9)', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
-  let updateSpy: ReturnType<typeof vi.spyOn>;
 
   /** 五章 fixture + 宽卡 w_wide [0..2]（渲染于 l_main×ch0 槽，顶面覆盖 ch0..ch2）。 */
   function wideFiveChapterFixture() {
@@ -890,13 +890,11 @@ describe('T1 measured column-hit routing (fake rect injection, CR3 G-F9)', () =>
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
     errorSpy.mockRestore();
   });
 
   it('他卡投到宽卡表面：同一 slot 处理器按实测 x 正裁到 ch3（T2 面锚会说 ch0——宽卡不截胡）', () => {
     const eps5 = wideFiveChapterFixture();
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField'); // 先于 render（组件闭包）
     const { container } = render(<ChapterWorkbench />);
     injectColumnRects(container, episodeTrackCountOf(eps5));
     // s_plain（ch1）投到宽卡 chip 表面（宿主槽 = l_main×ch0），实测 x 指向 ch3 列。
@@ -911,7 +909,6 @@ describe('T1 measured column-hit routing (fake rect injection, CR3 G-F9)', () =>
 
   it('宽卡自体表面 + 实测 x 出自身区间 → 整区间平移 [2..4]（AC10 平移半走 T1 主路径）', () => {
     const eps5 = wideFiveChapterFixture();
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     injectColumnRects(container, episodeTrackCountOf(eps5));
     // 拿起 w_wide 放回自己身上、实测 x 在 ch3（自身 [0..2] 之外）→ 真实平移意图。
@@ -938,7 +935,6 @@ describe('T1 measured column-hit routing (fake rect injection, CR3 G-F9)', () =>
       selectedNodeId: null,
       currentProject: null,
     } as any);
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     injectColumnRects(container, episodeTrackCountOf(gapped));
     // drop 打在 ch2 槽（可写、面锚=2），实测 x 落 gap 列 1 轨道 → T1 返回 1 → 拒收。
@@ -972,7 +968,6 @@ describe('R11/T24: workbench col-header add-scene button', () => {
   afterEach(() => cleanup());
 
   it('章列头钮可见可达：点击后在归属章尾插一枚新场景并选中开抽屉（恰好 1 写）', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     const btn = container.querySelector(
       '.workbench-col-header[data-col-index="1"] [data-action="add-scene"]'
@@ -988,7 +983,6 @@ describe('R11/T24: workbench col-header add-scene button', () => {
     // 建后选中 + 抽屉聚焦旗标（SP-1 手感契约，两区一致）。
     expect(useAppStore.getState().selectedNodeId).toBe(created.id);
     expect(useAppStore.getState().drawerTitleFocus).toBe(true);
-    updateSpy.mockRestore();
   });
 
   it('T24 迁位锁：槽内零残留、每真实章列头恰一枚、待编排列头无 ＋（章语义不存在）', () => {
@@ -1087,8 +1081,6 @@ describe('R7: per-line pending counter parity across zones', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('R8/R11: workbench blank + column-header context menu', () => {
-  let updateSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     useAppStore.setState({
       creativeFields: { scene_graph: workbenchGraph(), episode_outlines: EPISODES() },
@@ -1103,7 +1095,6 @@ describe('R8/R11: workbench blank + column-header context menu', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
   });
 
   it('空白（空槽面）右键 → 列菜单弹出，add-scene 与 insert-chapter 两项可用', () => {
@@ -1149,7 +1140,6 @@ describe('R8/R11: workbench blank + column-header context menu', () => {
   });
 
   it('列头右键 → insert-chapter 双字段落盘：章表 k 位新章 + 旧章右移 + 裸章号场景同步 +1（spans 零触碰）', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     fireEvent.contextMenu(container.querySelector('.workbench-col-header[data-col-index="1"]')!);
     const item = container.querySelector('[data-menu-key="insert-chapter"]') as HTMLButtonElement;
@@ -1214,7 +1204,6 @@ describe('H1 handover: builtColumnSet wiring (resize preview gap gate)', () => {
       selectedNodeId: null,
       currentProject: null,
     } as any);
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     injectColumnRects(container, episodeTrackCountOf(gapped));
     // s_cross spans e0,e2 → 视觉 [0..2] 宽卡（覆盖 gap 列 1），右把手在场。
@@ -1233,7 +1222,6 @@ describe('H1 handover: builtColumnSet wiring (resize preview gap gate)', () => {
     // 抬手提交等值区间 → 模型层引用级 no-op（零写）。
     firePointer(handle, 'pointerup', { clientX: xOfCol(2) });
     expect(updateSpy).not.toHaveBeenCalled();
-    updateSpy.mockRestore();
   });
 });
 
@@ -1243,7 +1231,6 @@ describe('H1 handover: builtColumnSet wiring (resize preview gap gate)', () => {
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe('CR3 G-edge guards: blank data-chapter + ghost drawer', () => {
-  let updateSpy: ReturnType<typeof vi.spyOn>;
   let errorSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
@@ -1261,12 +1248,12 @@ describe('CR3 G-edge guards: blank data-chapter + ghost drawer', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
+    // ghost 用例经 state 缝注入的失效 updateField 还原（文件级 spy 回位，防泄漏到后续 describe）。
+    useAppStore.setState({ updateField: updateSpy } as any);
     errorSpy.mockRestore();
   });
 
   it('空 data-chapter 串（DOM 篡改形态）→ T2 面锚不把空白串别名成章 0——drop 拒收零写', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     // 篡改 ch2 槽的 data-chapter 为空串（Number('')===0 会过 isInteger——守卫根除该路径）。
     const tampered = container.querySelector(slotSel('l_main', 2)) as HTMLElement;
@@ -1279,9 +1266,10 @@ describe('CR3 G-edge guards: blank data-chapter + ghost drawer', () => {
   });
 
   it('ghost drawer 守卫：写通道未落图（updateField 失效注入）→ 不选 ghost、不开抽屉', () => {
-    updateSpy = vi
-      .spyOn(useAppStore.getState(), 'updateField')
-      .mockImplementation(() => {});
+    // 范式迁移：共享 spy 禁测试内 mockImplementation（vitest 4 复用语义下会黏住跨测）
+    // ——失效注入改走 store state 缝（OutlineEditor describe setState 注入同款），
+    // describe afterEach 还原为文件级 spy。
+    useAppStore.setState({ updateField: () => {} } as any);
     const { container } = render(<ChapterWorkbench />);
     const btn = container.querySelector('.workbench-col-header[data-col-index="1"] [data-action="add-scene"]') as HTMLButtonElement;
     fireEvent.click(btn);
@@ -1300,7 +1288,6 @@ describe('CR3 G-edge guards: blank data-chapter + ghost drawer', () => {
 
 describe('T15 live-widen wiring (fake rect injection, parent seam)', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
-  let updateSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -1315,15 +1302,11 @@ describe('T15 live-widen wiring (fake rect injection, parent seam)', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
     errorSpy.mockRestore();
   });
 
   it('s1 右把手拖至第 2 格 → 卡体实时 2 格宽（240px）；拖回回 1 格；抬手清零', () => {
     const eps = EPISODES();
-    // spy 先于 render（useWeavingEdit 经 hook 选择器捕获 updateField——render 后
-    // 再 spy 组件闭包看不到，断言会假绿）。
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     injectColumnRects(container, episodeTrackCountOf(eps));
     // s1：单章卡 ch0（canExtendRight = has(1) 真）。fake 表：col0 [100..220]，
@@ -1472,7 +1455,6 @@ describe('T14: drag admission liveness + ordinal refresh (发现批6)', () => {
 
 describe('T16b: wide-card displacement translation (integration)', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
-  let updateSpy: ReturnType<typeof vi.spyOn>;
 
   /** 九章域（0..8）+ 宽卡 w78 spans [e6..e7]（第 7~8 章，锚列 6）。 */
   function wideNineChapterFixture() {
@@ -1510,12 +1492,10 @@ describe('T16b: wide-card displacement translation (integration)', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
     errorSpy.mockRestore();
   });
 
   it('锚列 6 → 自身覆盖列 7 = 位移 +1 平移 [7..8]（此前静默取消的真机红形态）', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     dragChipTo(container, 'w78', slotSel('l_main', 7));
     expect(updateSpy).toHaveBeenCalledTimes(1);
@@ -1532,7 +1512,6 @@ describe('T16b: wide-card displacement translation (integration)', () => {
   });
 
   it('抓起列放回（位移 0）= 取消式零写（G-F2「拖起放回」语义保留）', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     dragChipTo(container, 'w78', slotSel('l_main', 6));
     expect(updateSpy).not.toHaveBeenCalled();
@@ -1540,7 +1519,6 @@ describe('T16b: wide-card displacement translation (integration)', () => {
   });
 
   it('往返双通：6→7 平移 [7..8] 后 7→6 平移回 [6..7]（「拖得过去也拖得回」）', () => {
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<ChapterWorkbench />);
     // 第一段：锚 6 → 7。
     dragChipTo(container, 'w78', slotSel('l_main', 7));
@@ -1686,6 +1664,9 @@ describe('T23: lane skyline packing (integration)', () => {
 describe('T23 settle fixed-point regression (hostile scrollHeight mocks)', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;
   let warnSpy: ReturnType<typeof vi.spyOn>;
+  // 原型 getter spy 句柄：afterEach 显式还原（vi.restoreAllMocks 会连带拆文件级
+  // updateField spy——禁；改逐 spy 还原）。
+  let scrollHeightSpy: ReturnType<typeof vi.spyOn> | null = null;
 
   beforeEach(() => {
     errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
@@ -1701,7 +1682,10 @@ describe('T23 settle fixed-point regression (hostile scrollHeight mocks)', () =>
 
   afterEach(() => {
     cleanup();
-    vi.restoreAllMocks();
+    scrollHeightSpy?.mockRestore();
+    scrollHeightSpy = null;
+    errorSpy.mockRestore();
+    warnSpy.mockRestore();
   });
 
   /**
@@ -1711,7 +1695,7 @@ describe('T23 settle fixed-point regression (hostile scrollHeight mocks)', () =>
    */
   function mockTitleScrollHeight(fn: (el: HTMLElement, readCount: number) => number) {
     const reads = new WeakMap<Element, number>();
-    vi.spyOn(Element.prototype as unknown as { scrollHeight: number }, 'scrollHeight', 'get').mockImplementation(
+    scrollHeightSpy = vi.spyOn(Element.prototype as unknown as { scrollHeight: number }, 'scrollHeight', 'get').mockImplementation(
       function (this: HTMLElement) {
         if (!this.classList?.contains('workbench-chip-title')) return 0;
         const n = (reads.get(this) ?? 0) + 1;

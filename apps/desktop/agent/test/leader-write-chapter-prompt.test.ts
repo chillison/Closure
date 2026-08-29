@@ -26,7 +26,11 @@ describe('leader system prompt — write_chapter 引导（Story 4.1 Step 5）', 
     projectPath = mkdtempSync(path.join(os.tmpdir(), 'orison-leader-prompt-'));
   });
 
-  afterEach(() => {
+  afterEach(async () => {
+    // 测试内 runtime.createSession 开的句柄先关再删目录（mirror chain-node-streaming.test.ts
+    // 清理形态）——零 close 直接 resetModules 会孤儿化句柄（S1 制图 §2.2-B）。
+    const { closeDb } = await import('../src/agent/persistence');
+    closeDb(projectPath);
     rmBestEffort(projectPath);
     vi.resetModules();
   });

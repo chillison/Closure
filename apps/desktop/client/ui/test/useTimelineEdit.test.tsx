@@ -31,6 +31,16 @@ import {
 import { PENDING_CHAPTER_SENTINEL } from '../src/features/structure/workbenchLayout';
 import { useAppStore } from '../src/shared/store/appStore';
 
+// ── 文件级单 spy（vitest 4 `vi.spyOn` 对已挂 mock 直接复用 × zustand 快照血缘传播
+// ——task 08-29-vitest4-ui-migration design §3.1 范式）：updateField 恒挂一次
+// （passthrough——写入须真实落库供读回断言），计数由 beforeEach mockClear 按测清；
+// 测试体内不再 spyOn / mockRestore。──
+const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
+
+beforeEach(() => {
+  updateSpy.mockClear();
+});
+
 // ── fixtures ──
 function parseGraph(raw: unknown): SceneGraph {
   return sceneGraphSchema.parse(raw);
@@ -183,7 +193,6 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
   });
 
   it('causal drag: drop s1 on the third-chapter column → s1 lands in chapter 2; other nodes unchanged', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
 
     const { container } = render(<NarrativeTimelinePanel />);
     // 章轨道 [0,1,2]。data-drop-col=2 即第三章列头/轨道。
@@ -195,18 +204,15 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
     // Write happened exactly once on drop (not per dragover).
     expect(updateSpy).toHaveBeenCalledTimes(1);
     expect(updateSpy.mock.calls[0][0]).toBe('scene_graph');
-    updateSpy.mockRestore();
   });
 
   it('causal drag: drop on the scene’s own chapter column → no write (no-op)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
 
     const { container } = render(<NarrativeTimelinePanel />);
     // s1 在章 0 → 轨道 0。drop 回自身列 = no-op。
     dragAndDrop(container, 's1', '[data-drop-col="0"]');
 
     expect(updateSpy).not.toHaveBeenCalled();
-    updateSpy.mockRestore();
   });
 
   it('drop on a cell-stack wrapper (not just column header) resolves to that chapter', () => {
@@ -258,7 +264,6 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
   });
 
   it('foreign drop (no scene payload on dataTransfer) is ignored — no write', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
 
     const { container } = render(<NarrativeTimelinePanel />);
     const target = container.querySelector('[data-drop-col="2"]') as HTMLElement;
@@ -267,11 +272,9 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
     fireEvent.drop(target, { dataTransfer: dt });
 
     expect(updateSpy).not.toHaveBeenCalled();
-    updateSpy.mockRestore();
   });
 
   it('+ button on a causal chapter header creates a scene assigned to that chapter (column semantics axis swap)', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     const addBtn = container.querySelector('.narrative-timeline-col-header[data-grid-col="1"] [data-action="add-scene"]') as HTMLButtonElement;
     addBtn.click();
@@ -280,7 +283,6 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
     // 新场景归属点击列对应章、pos 追加到该章尾、storyTime 中性默认 max+1。
     expect(created.presentationOrder.chapter).toBe(1);
     expect(created.storyTime).toBe(4);
-    updateSpy.mockRestore();
   });
 
   it('add-scene contract (channel/once/pos/readback): sparse chapter appends past maxPos（旧成员计数会撞位）', () => {
@@ -295,7 +297,6 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
       edges: [],
     });
     setStateWith(sparse);
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     const addBtn = container.querySelector('.narrative-timeline-col-header[data-grid-col="0"] [data-action="add-scene"]') as HTMLButtonElement;
     addBtn.click();
@@ -309,7 +310,6 @@ describe('useTimelineEdit via NarrativeTimelinePanel (integration, chapter axis)
     expect(
       current.nodes.find((n) => n.id === created.id)?.presentationOrder
     ).toEqual({ chapter: 0, pos: 3 });
-    updateSpy.mockRestore();
   });
 });
 
@@ -374,7 +374,6 @@ describe('pending mirror drop (integration, #63)', () => {
   });
 
   it('dropping a placed card on the pending column writes the sentinel chapter', () => {
-    const updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
     const { container } = render(<NarrativeTimelinePanel />);
     dragAndDrop(container, 's1', '.narrative-timeline-cell-stack--pending');
     expect(updateSpy).toHaveBeenCalledTimes(1);
@@ -382,7 +381,6 @@ describe('pending mirror drop (integration, #63)', () => {
     expect(written.nodes.find((n) => n.id === 's1')!.presentationOrder.chapter).toBe(
       PENDING_CHAPTER_SENTINEL
     );
-    updateSpy.mockRestore();
   });
 });
 
@@ -430,8 +428,6 @@ const CAUSAL_STACK = (n: number) =>
   `[data-skeleton="causal"] .narrative-timeline-cell-stack[data-drop-col="${n}"]`;
 
 describe('CR 批 A：拖拽写通道契约矩阵（StructurePage）', () => {
-  let updateSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     useAppStore.setState({
       creativeFields: { scene_graph: matrixGraph(), episode_outlines: EPISODES() },
@@ -444,7 +440,6 @@ describe('CR 批 A：拖拽写通道契约矩阵（StructurePage）', () => {
 
   afterEach(() => {
     cleanup();
-    updateSpy?.mockRestore();
   });
 
   /** 真实 dragstart 起手（payload 来自源元素的真处理器），再落在目标元素。 */
@@ -464,10 +459,6 @@ describe('CR 批 A：拖拽写通道契约矩阵（StructurePage）', () => {
   const writtenCount = (): number => updateSpy.mock.calls.length;
 
   describe('P0 ghost-write 回归：spans/episodeId 遮蔽下写=真改、回=不写', () => {
-    beforeEach(() => {
-      updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
-    });
-
     it('legacy episodeId 场景落回自己视觉列 → 解析口径 no-op，零写入（旧码裸章号比对会 ghost write）', () => {
       const { container } = render(<StructurePage />);
       // sl 视觉格 = 章2（episodeId e2 遮蔽裸章号 0）。旧判据 raw 0≠2 会写入被遮蔽。
@@ -501,10 +492,6 @@ describe('CR 批 A：拖拽写通道契约矩阵（StructurePage）', () => {
   });
 
   describe('全组合矩阵：2 源（因果卡 / 工作台 chip）× 5 类目标', () => {
-    beforeEach(() => {
-      updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
-    });
-
     const sources: Array<{ kind: string; pick: (c: HTMLElement) => HTMLElement | null }> = [
       { kind: 'causal 卡', pick: (c) => c.querySelector(CAUSAL_CARD('sa')) },
       { kind: 'workbench chip', pick: (c) => c.querySelector(CHIP('sa')) },
@@ -645,8 +632,6 @@ const EPISODES_GAPPED = () =>
   ]);
 
 describe('R10 因果侧手势矩阵补缺（gesture-matrix-r10）', () => {
-  let updateSpy: ReturnType<typeof vi.spyOn>;
-
   beforeEach(() => {
     useAppStore.setState({
       creativeFields: { scene_graph: matrixGraph(), episode_outlines: EPISODES() },
@@ -656,12 +641,10 @@ describe('R10 因果侧手势矩阵补缺（gesture-matrix-r10）', () => {
       canvasZoom: 1,
       currentProject: null,
     } as any);
-    updateSpy = vi.spyOn(useAppStore.getState(), 'updateField');
   });
 
   afterEach(() => {
     cleanup();
-    updateSpy.mockRestore();
   });
 
   /** 真实 dragstart 起手 → dragover → drop（与 CR 批 A describe 的 dragFrom 同款）。 */

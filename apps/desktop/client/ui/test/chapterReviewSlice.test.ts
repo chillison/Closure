@@ -63,6 +63,12 @@ const useTestStore = create<TestState>()((...a) => ({
   setPendingPatch: pendingPatchSpy,
 }));
 
+// 文件级单 spy（vitest 4 `vi.spyOn` 对已挂 mock 直接复用 × zustand 快照血缘传播——
+// task 08-29-vitest4-ui-migration design §3.1 范式）：showToast 恒挂一次，no-op stub
+// 一次设定（全文件用例均为 stub 断言调用形态，无真实 toast 渲染断言），计数由
+// beforeEach mockClear 按测清；测试体内不再 spyOn / mockRestore。
+const toastSpy = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
+
 const draftMeta: ChapterReviewMetadata = {
   type: 'chapter_review',
   stage: 'draft',
@@ -94,6 +100,7 @@ const SAMPLE_INTENT: RevisionIntent = {
 
 beforeEach(() => {
   __clearAgentEventTracks(); // CR-T1-025 用例间隔离（rememberSessionProject 模块级 Map）
+  toastSpy.mockClear(); // 文件级 spy 计数按测清
   apiMocks.resumeChapterChain.mockReset();
   apiMocks.resumeChapterChain.mockResolvedValue({ status: 'completed', errors: [] });
   apiMocks.compileRevisionIntent.mockReset();
@@ -326,7 +333,6 @@ describe('chapterReviewSlice — CR-002 项目切换 mid-resume 丢弃老结果'
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     const { promise, resolve } = deferred<RunChapterChainSummary>();
     apiMocks.resumeChapterChain.mockReturnValue(promise);
-    const toastSpy = vi.spyOn(useToastStore.getState(), 'showToast');
 
     const inflight = useTestStore.getState().reviewContinue();
     useTestStore.setState({ pausedReviewBySession: {}, currentProject: { path: '/other-proj' } });
@@ -337,14 +343,12 @@ describe('chapterReviewSlice — CR-002 项目切换 mid-resume 丢弃老结果'
     expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
     expect(useTestStore.getState().reviewResuming).toBe(false);
     expect(toastSpy).not.toHaveBeenCalled();
-    toastSpy.mockRestore();
   });
 
   it('await 期间切项目 → IPC throw 也不 toast（静默丢弃，不污染新项目）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     const { promise, reject } = deferred<RunChapterChainSummary>();
     apiMocks.resumeChapterChain.mockReturnValue(promise);
-    const toastSpy = vi.spyOn(useToastStore.getState(), 'showToast');
 
     const inflight = useTestStore.getState().reviewContinue();
     useTestStore.setState({ pausedReviewBySession: {}, currentProject: { path: '/other-proj' } });
@@ -354,7 +358,6 @@ describe('chapterReviewSlice — CR-002 项目切换 mid-resume 丢弃老结果'
     expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
     expect(useTestStore.getState().reviewResuming).toBe(false);
     expect(toastSpy).not.toHaveBeenCalled();
-    toastSpy.mockRestore();
   });
 
   it('未切项目（await 前后同 path）→ paused summary 正常写回（CR-002 不误伤 happy path）', async () => {
@@ -638,7 +641,6 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
 
   it('completed + chapter_accept + 未直落 → setPendingPatch（chapter_candidate entry，mirror leader metadata 形态）+ 完成 toast', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       draftTitle: '第二章 B 城',
       draftWordCount: 2800,
@@ -658,17 +660,15 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     expect(patch.patches[0].generatedBy).toBe('write_chapter');
     expect(patch.patches[0].data).toMatchObject({ chapterId: 'ch_001', runId: 'run_mock' });
     // P0-3 完成回报：toast 含标题 + 字数 + 下一步动作（去审阅）。
-    const toastText = String(showToast.mock.calls[0][0]);
+    const toastText = String(toastSpy.mock.calls[0][0]);
     expect(toastText).toContain('写章完成');
     expect(toastText).toContain('第二章 B 城');
     expect(toastText).toContain('2800');
     expect(toastText).toContain('待审阅');
-    showToast.mockRestore();
   });
 
   it('completed + escalate 路由 + chapter_accept → 同样 stage + 灰区裁决 toast（PatchReview accept=接受为真相）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       routeDecision: { decision: 'escalate_user', reason: '灰区' },
       chapter_accept: ACCEPT,
@@ -677,13 +677,11 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).toHaveBeenCalledTimes(1);
-    expect(String(showToast.mock.calls[0][0])).toContain('灰区裁决');
-    showToast.mockRestore();
+    expect(String(toastSpy.mock.calls[0][0])).toContain('灰区裁决');
   });
 
   it('completed + chapterPersisted（auto 档 shell 已直落）→ 不 stage（防双写）+ 落盘 toast', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       draftTitle: '第二章 B 城',
       routeDecision: { decision: 'accept_as_truth', reason: 'r' },
@@ -694,15 +692,13 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    const toastText = String(showToast.mock.calls[0][0]);
+    const toastText = String(toastSpy.mock.calls[0][0]);
     expect(toastText).toContain('写章完成');
     expect(toastText).toContain('已直接落盘');
-    showToast.mockRestore();
   });
 
   it('completed + accept 路由但无 envelope（章映射失败 skip）→ 不 stage + error toast 透传 errors（不静默）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       routeDecision: { decision: 'accept_as_truth', reason: 'r' },
       errors: ['accept 未持久化——章未在 project.yaml 注册或映射歧义'],
@@ -711,15 +707,13 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    const toastText = String(showToast.mock.calls[0][0]);
+    const toastText = String(toastSpy.mock.calls[0][0]);
     expect(toastText).toContain('未生成章节候选');
     expect(toastText).toContain('accept 未持久化');
-    showToast.mockRestore();
   });
 
   it('completed + escalate 路由但无 envelope（灰区无候选——shell review 档 errors 文案）→ 不 stage + error toast 消费（check 补：escalate 分支不静默）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       routeDecision: { decision: 'escalate_user', reason: '灰区' },
       errors: ['灰区上发：无章节候选（章未在 project.yaml 注册或映射歧义）——无法落盘，请在对话中裁决处理'],
@@ -728,23 +722,20 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    const toastText = String(showToast.mock.calls[0][0]);
+    const toastText = String(toastSpy.mock.calls[0][0]);
     expect(toastText).toContain('未生成章节候选');
     expect(toastText).toContain('灰区上发');
     expect(toastText).toContain('请在对话中裁决处理');
-    showToast.mockRestore();
   });
 
   it('aborted → 无 envelope 路由零动作（弃链段无候选可审）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted' }));
 
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    expect(showToast).not.toHaveBeenCalled();
-    showToast.mockRestore();
+    expect(toastSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -797,7 +788,6 @@ describe('chapterReviewSlice — #83/#84 挂起 pause 载荷透传（metadataFro
 describe('chapterReviewSlice — resume 终态反哺路由（storySyncReview / storySyncLanded）', () => {
   it('storySyncReview（suggest 人审档）→ setPendingPatch 进 PatchReview + info toast（非静默）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       storySyncReview: {
         note: '章节 ch_001 story-sync 提取',
@@ -814,12 +804,11 @@ describe('chapterReviewSlice — resume 终态反哺路由（storySyncReview / s
     expect(patch.patches).toHaveLength(1);
     expect(patch.patches[0].field).toBe('world_setting');
     expect(patch.patches[0].generatedBy).toBe('story-sync-agent');
-    expect(String(showToast.mock.calls[0][0])).toContain('待审阅');
+    expect(String(toastSpy.mock.calls[0][0])).toContain('待审阅');
   });
 
   it('storySyncLanded（auto 直落档）→ success toast，不 stage patch', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       storySyncLanded: { note: '章节 ch_001 story-sync 提取', fields: ['world_setting', 'asset_cards'] },
     }));
@@ -827,19 +816,18 @@ describe('chapterReviewSlice — resume 终态反哺路由（storySyncReview / s
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    expect(String(showToast.mock.calls[0][0])).toContain('已自动落盘');
-    expect(String(showToast.mock.calls[0][0])).toContain('world_setting');
+    expect(String(toastSpy.mock.calls[0][0])).toContain('已自动落盘');
+    expect(String(toastSpy.mock.calls[0][0])).toContain('world_setting');
   });
 
   it('无反哺载荷（缺省）→ 零动作（无 stage 无 toast）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'completed' }));
 
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    expect(showToast).not.toHaveBeenCalled();
+    expect(toastSpy).not.toHaveBeenCalled();
   });
 });
 
@@ -855,20 +843,18 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
       status: 'error',
       errors: ['project_run_active|heldBy=sess-other|project=/proj'],
     }));
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
 
     await useTestStore.getState().reviewContinue();
 
     // 面板保留（busy run 未动 chainSnapshot——结束后可重试），不透出机器串。
     expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
     expect(useTestStore.getState().reviewResuming).toBe(false);
-    expect(showToast).toHaveBeenCalledTimes(1);
-    expect(String(showToast.mock.calls[0][0])).not.toContain('project_run_active');
-    const action = showToast.mock.calls[0][3] as { label: string; onClick: () => void } | undefined;
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).not.toContain('project_run_active');
+    const action = toastSpy.mock.calls[0][3] as { label: string; onClick: () => void } | undefined;
     expect(action?.label).toBeTruthy(); // 一键跳转钮（与 chat 路径同款体验）
     action?.onClick();
     expect(switchAgentSessionSpy).toHaveBeenCalledWith('sess-other');
-    showToast.mockRestore();
   });
 
   it('chain_run_active（agent 层链守卫，批2 前缀）→ pausedReview 保留 + 提示等待（无跳转钮）', async () => {
@@ -877,17 +863,15 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
       status: 'error',
       errors: ['chain_run_active|heldBy=sess-leader'],
     }));
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
 
     await useTestStore.getState().reviewContinue();
 
     expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
     expect(useTestStore.getState().reviewResuming).toBe(false);
-    expect(showToast).toHaveBeenCalledTimes(1);
-    expect(String(showToast.mock.calls[0][0])).not.toContain('chain_run_active');
-    expect(showToast.mock.calls[0][3]).toBeUndefined(); // 链在跑——跳过去也只能等，无跳转钮
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).not.toContain('chain_run_active');
+    expect(toastSpy.mock.calls[0][3]).toBeUndefined(); // 链在跑——跳过去也只能等，无跳转钮
     expect(switchAgentSessionSpy).not.toHaveBeenCalled();
-    showToast.mockRestore();
   });
 
   it('占用者为链租约 id（chain-run:closure:*）→ 换文案无跳转（CR-T1-030——stub 会话不可跳）', async () => {
@@ -896,15 +880,13 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
       status: 'error',
       errors: ['project_run_active|heldBy=chain-run:closure:9f0e|project=/proj'],
     }));
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
 
     await useTestStore.getState().reviewContinue();
 
     expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
-    expect(showToast).toHaveBeenCalledTimes(1);
-    expect(showToast.mock.calls[0][3]).toBeUndefined(); // 无跳转
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(toastSpy.mock.calls[0][3]).toBeUndefined(); // 无跳转
     expect(switchAgentSessionSpy).not.toHaveBeenCalled();
-    showToast.mockRestore();
   });
 
   it('非 busy error（无前缀）→ 既有行为不变：清 pausedReview + 通用失败 toast', async () => {
@@ -913,13 +895,11 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
       status: 'error',
       errors: ['chapter chain failed: boom'],
     }));
-    const showToast = vi.spyOn(useToastStore.getState(), 'showToast').mockImplementation(() => {});
 
     await useTestStore.getState().reviewContinue();
 
     expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeUndefined();
-    expect(showToast).toHaveBeenCalledTimes(1);
-    expect(String(showToast.mock.calls[0][0])).toContain('boom');
-    showToast.mockRestore();
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('boom');
   });
 });

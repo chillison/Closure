@@ -1,4 +1,5 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -26,8 +27,8 @@ describe('native skill loading', () => {
   afterEach(async () => {
     const { closeDb } = await import('../src/agent/persistence');
     closeDb(projectPath);
-    rmSync(projectPath, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
-    rmSync(homePath, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    rmBestEffort(projectPath); // 08-29：turbo 并行负载 EPERM 实证（登记残留 #8 换收敛）
+    rmBestEffort(homePath); // 同上（登记残留 #9）
     vi.resetModules();
   });
 

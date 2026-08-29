@@ -15,7 +15,7 @@ Closure 有两个仓库：
 
 ## 环境准备
 
-- **Node.js** ≥ 24（版本以 [`.nvmrc`](.nvmrc) 为准）：用 nvm 的话先 `nvm use`；无 nvm 的环境用官方安装包装 24.x 亦可
+- **Node.js** ≥ 20，钉 22.20.0 LTS（版本以 [`.nvmrc`](.nvmrc) 为准——node 24.x 有 ObjectWrap 拆卸原生崩溃回归 [nodejs/node#65195](https://github.com/nodejs/node/issues/65195)，修复发版后回 24 LTS 线（注意 22.23.2 起的 22.x 晚期补丁也带回植——回 24 前勿顺手升 22 小版本））：用 nvm 的话先 `nvm use`；无 nvm 的环境用官方安装包装 22.20.x 亦可
 - **pnpm** ≥ 10：仓库通过 `packageManager` 字段钉了确切版本；如果版本不符，`corepack enable` 后 pnpm 会自动切换
 
 ## 本地开发

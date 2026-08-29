@@ -224,7 +224,7 @@ describe('thinking injection (openai-compatible path)', () => {
     expect('thinking' in body).toBe(false);
     expect('reasoning_effort' in body).toBe(false);
     expect('output_config' in body).toBe(false);
-    const skipWarns = warnSpy.mock.calls.filter((c) => String(c[0]).includes('not injectable'));
+    const skipWarns = warnSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes('not injectable'));
     expect(skipWarns.length).toBe(1); // once per (keyId, kind), not per request
   });
 
@@ -556,7 +556,7 @@ describe('cap resolution (design §2.2)', () => {
       { model: 'x', messages: [{ role: 'user', content: 'hi' }], maxTokens: 8_192, thinking: { level: 'off' } },
     );
     expect(bodyOf().max_tokens).toBe(8_192);
-    expect(warnSpy.mock.calls.filter((c) => String(c[0]).includes('thinking floor'))).toHaveLength(0);
+    expect(warnSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes('thinking floor'))).toHaveLength(0);
   });
 
   it('CR-007: kimi-k3 floor (16K) lifts a too-small explicit cap under the renamed parameter', async () => {
@@ -850,7 +850,7 @@ describe('zen probe: gateway silently stripping the thinking field', () => {
     await generateText(probeModel, { model: 'x', messages: [{ role: 'user', content: 'hi' }], thinking: { level: 'high' } });
     await generateText(probeModel, { model: 'x', messages: [{ role: 'user', content: 'hi' }], thinking: { level: 'high' } });
 
-    const stripWarns = warnSpy.mock.calls.filter((c) => String(c[0]).includes('silently stripping'));
+    const stripWarns = warnSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes('silently stripping'));
     expect(stripWarns.length).toBe(1); // once per (keyId, modelId), not per request
   });
 
@@ -868,7 +868,7 @@ describe('zen probe: gateway silently stripping the thinking field', () => {
       { model: 'x', messages: [{ role: 'user', content: 'hi' }], thinking: { level: 'high' } },
     );
 
-    expect(warnSpy.mock.calls.filter((c) => String(c[0]).includes('silently stripping')).length).toBe(0);
+    expect(warnSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes('silently stripping')).length).toBe(0);
   });
 
   it('does not arm when the effective state is off (zero thinking is expected then)', async () => {
@@ -879,6 +879,6 @@ describe('zen probe: gateway silently stripping the thinking field', () => {
       { model: 'x', messages: [{ role: 'user', content: 'hi' }], thinking: { level: 'off' } },
     );
 
-    expect(warnSpy.mock.calls.filter((c) => String(c[0]).includes('silently stripping')).length).toBe(0);
+    expect(warnSpy.mock.calls.filter((c: unknown[]) => String(c[0]).includes('silently stripping')).length).toBe(0);
   });
 });

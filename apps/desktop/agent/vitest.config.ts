@@ -7,5 +7,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     testTimeout: 30_000,
+    // 08-29 vitest 4 迁移专项 S1：每测试文件收尾显式关 persistence dbCache 全部句柄
+    // ——worker 拆卸期不再析构未 close 的 better-sqlite3 Database（详 test/setup.ts）。
+    setupFiles: ['./test/setup.ts'],
   },
 });

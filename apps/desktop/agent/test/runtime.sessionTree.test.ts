@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
+import { rmBestEffort } from './rmBestEffort';
 import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +17,7 @@ describe('runtime session tree', () => {
 
   afterEach(() => {
     closeAllDbs();
-    rmSync(projectPath, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 });
+    rmBestEffort(projectPath); // 08-29：turbo 并行负载 EPERM 实证 maxRetries 不敌（登记残留 #7 换收敛，CR-001 全吞定谳）
     vi.resetModules();
   });
 

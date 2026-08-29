@@ -30,6 +30,7 @@
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
     "@types/turndown": "^5.0.5",
-    "jsdom": "^26.1.0"
+    "jsdom": "^26.1.0",
+    "vitest": "^4.1.11"
   }
 }
