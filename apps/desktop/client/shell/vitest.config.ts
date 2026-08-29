@@ -8,9 +8,11 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     testTimeout: 30_000,
-    // vitest 3.2.4 worker↔主进程 RPC 在慢 runner 重负载下偶发 `Timeout calling
-    // "onTaskUpdate"`（1611 全过仍 exit 1——公仓 CI 三平台两连实录）。该噪声与测试
-    // 正确性无关：断言失败照样红，只放过进程级 unhandled error。
+    // vitest 3 默认 forks 池在 Windows 慢 runner 重负载下有两族进程级噪声：
+    // `Timeout calling "onTaskUpdate"`（RPC 超时）与 tinypool `ERR_IPC_CHANNEL_CLOSED`
+    // （拆台竞态）——均与测试正确性无关（1611 全过仍 exit 1，公仓 CI 多轮实录）。
+    // threads 池（worker_threads，无子进程 IPC）从根上消后者；前者由 ignore 兜底。
+    pool: 'threads',
     dangerouslyIgnoreUnhandledErrors: true,
   },
 });
