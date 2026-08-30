@@ -842,11 +842,15 @@ function readUserPreferences(): UserPreferencesConfig {
         typeof raw?.wallpaperOpacity === 'number' && Number.isFinite(raw.wallpaperOpacity)
           ? Math.min(1, Math.max(0.1, raw.wallpaperOpacity))
           : DEFAULT_USER_PREFERENCES.wallpaperOpacity,
-      // 磨砂开关：布尔直读，缺省/非法回 false（存量 preferences.yaml 无此键 = 未磨砂）。
-      wallpaperFrost:
-        typeof raw?.wallpaperFrost === 'boolean'
-          ? raw.wallpaperFrost
-          : DEFAULT_USER_PREFERENCES.wallpaperFrost,
+      // 磨砂强度（08-29 开关→滑杆）：读路径归一零迁移——新键 number 钳 0–50 整数；
+      // 旧布尔键 wallpaperFrost（固定 20px 开关）仅在新键缺席/非法时折算：
+      // true → 20、false/缺省 → 0。读写两侧同守一道钳（wallpaperOpacity 同款）。
+      wallpaperFrostBlur:
+        typeof raw?.wallpaperFrostBlur === 'number' && Number.isFinite(raw.wallpaperFrostBlur)
+          ? Math.min(50, Math.max(0, Math.round(raw.wallpaperFrostBlur)))
+          : raw?.wallpaperFrost === true
+            ? 20
+            : DEFAULT_USER_PREFERENCES.wallpaperFrostBlur,
       // R8 全局界面缩放：读路径钳回合法带（0.85–1.3）；非法/缺键回默认 1（存量文件零迁移）。
       interfaceScale: clampInterfaceScale(raw?.interfaceScale),
     };
@@ -883,7 +887,15 @@ function writeUserPreferences(config: UserPreferencesConfig): void {
   }
   if (config.wallpaperUrl) flat.wallpaperUrl = config.wallpaperUrl;
   if (typeof config.wallpaperOpacity === 'number') flat.wallpaperOpacity = config.wallpaperOpacity;
-  if (typeof config.wallpaperFrost === 'boolean') flat.wallpaperFrost = config.wallpaperFrost;
+  // 磨砂强度：**写时钳制** 0–50 整数（照 interfaceScale 写时钳制先例——越界值不先
+  // 落盘）；NaN/Infinity 不写键（盘面保持干净可手改）。只写新键 wallpaperFrostBlur，
+  // 旧布尔键不再写（读路径折算兜底存量，升级后首次保存自然收敛到新键）。
+  if (
+    typeof config.wallpaperFrostBlur === 'number' &&
+    Number.isFinite(config.wallpaperFrostBlur)
+  ) {
+    flat.wallpaperFrostBlur = Math.min(50, Math.max(0, Math.round(config.wallpaperFrostBlur)));
+  }
   // R8：界面缩放**写时钳制**（BMad CR 组4：读写两侧同守一道钳——此前只有读路径
   // clampInterfaceScale 自愈，越界值会先落盘，盘面短暂携带非法值）。有限数值落盘前
   // 钳回合法带；NaN/Infinity 仍不写键（盘面保持干净可手改）。

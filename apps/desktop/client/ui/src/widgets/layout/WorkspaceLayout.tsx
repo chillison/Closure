@@ -17,11 +17,15 @@ import { StatusBar } from '../../features/status-bar/StatusBar';
 const ProjectTree = lazy(() => import('../../features/project-tree/ProjectTree').then((m) => ({ default: m.ProjectTree })));
 const SearchPanel = lazy(() => import('../../features/search-panel/SearchPanel').then((m) => ({ default: m.SearchPanel })));
 const TimelinePanel = lazy(() => import('../../features/timeline/TimelinePanel').then((m) => ({ default: m.TimelinePanel })));
+// 世界状态面板（#92）：左槽同族（timeline 分支照抄），与 explorer/search/timeline 互斥。
+const WorldStatePanel = lazy(() => import('../../features/world-state/WorldStatePanel').then((m) => ({ default: m.WorldStatePanel })));
 const OverviewPage = lazy(() => import('../../features/overview/OverviewPage').then((m) => ({ default: m.OverviewPage })));
 const OutlineEditor = lazy(() => import('../../features/editor/OutlineEditor').then((m) => ({ default: m.OutlineEditor })));
 const ImageGenEditor = lazy(() => import('../../features/editor/ImageGenEditor').then((m) => ({ default: m.ImageGenEditor })));
 const AssetsPanel = lazy(() => import('../../features/assets/AssetsPanel').then((m) => ({ default: m.AssetsPanel })));
 const StructurePage = lazy(() => import('../../features/structure/StructurePage').then((m) => ({ default: m.StructurePage })));
+// 「设定」页（task 08-30-asset-cards-visualization A1）：asset_cards 设定卡浏览/编辑。
+const SettingPage = lazy(() => import('../../features/setting/SettingPage').then((m) => ({ default: m.SettingPage })));
 const FileTabBar = lazy(() => import('../../features/editor/FileTabBar').then((m) => ({ default: m.FileTabBar })));
 const FileEditor = lazy(() => import('../../features/editor/FileEditor').then((m) => ({ default: m.FileEditor })));
 const SplitFileEditor = lazy(() => import('../../features/editor/SplitFileEditor').then((m) => ({ default: m.SplitFileEditor })));
@@ -133,6 +137,7 @@ export function WorkspaceLayout() {
       case 'image_gen': return <div className="workspace-panel-content"><ImageGenEditor /></div>;
       case 'assets': return <div className="workspace-panel-content"><AssetsPanel /></div>;
       case 'structure': return <div className="workspace-panel-content"><StructurePage /></div>;
+      case 'setting': return <div className="workspace-panel-content"><SettingPage /></div>;
       default: return <div className="workspace-panel-content"><OverviewPage /></div>;
     }
   };
@@ -145,7 +150,7 @@ export function WorkspaceLayout() {
           <>
             <ErrorBoundary>
               <Suspense fallback={<PageSkeleton variant="sidebar" />}>
-                {activeSidebarPanel === 'timeline' ? <TimelinePanel /> : activeSidebarPanel === 'search' ? <SearchPanel /> : <ProjectTree />}
+                {activeSidebarPanel === 'timeline' ? <TimelinePanel /> : activeSidebarPanel === 'world' ? <WorldStatePanel /> : activeSidebarPanel === 'search' ? <SearchPanel /> : <ProjectTree />}
               </Suspense>
             </ErrorBoundary>
             <ResizeHandle onResize={handleTreeResize} />

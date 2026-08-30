@@ -88,10 +88,13 @@ describe('preload security surface', () => {
       'maximize',
       'minimize',
       'moveProjectFile',
+      // dogfood R2 #92：世界状态面板读面（三 invoke + world:changed 订阅/退订）。
+      'offWorldChanged',
       'onAgentStreamEvent',
       'onBeforeClose',
       'onToolEvent',
       'onUpdateEvent',
+      'onWorldChanged',
       'openExternal',
       'openLogsDir',
       'openPath',
@@ -140,6 +143,9 @@ describe('preload security surface', () => {
       'upsertTask',
       'watchProject',
       'wordCount',
+      'worldOverview',
+      'worldSliceDetail',
+      'worldSubjectDetail',
       'writeFile',
       'writeLog',
     ]);

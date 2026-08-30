@@ -135,6 +135,23 @@ export interface SkillExecutorRef {
     },
   ): Promise<RunSnapshotSummary>;
   /**
+   * dogfood R2 #105 缝①（R2.1）：write_chapter 自家租约重入分派所需的快照 seam。
+   *
+   * runtime（WorkflowRuntime）已实现两方法（resume IPC abort 入口 / RunStateStore 读回的既有
+   * 成员）；leader runLoop 的 tool ctx.skillExecutor 即 runtime，结构化类型天然满足。
+   *
+   * write_chapter busy 检测点解析 `chain_run_active|heldBy=<id>` 识别自家 paused 链时：
+   * - getChainSnapshot 读快照 chapter_brief_input.brief 与本次 chapterBrief 比对——有差异（①②改卡
+   *   语义）→ clearChainSnapshot 释放租约 + fresh 重跑（briefHash 变 → cardChanged=true → 全量重查）；
+   * - 无差异 / 无 brief / 拿不到快照（③维持原案默认语义）→ resume:{fromSnapshot:true} 裸 continue
+   *   重调（挂起 belt 自动转重查 + approvedDeviations 绑定）。
+   *
+   * optional——mock / 旧 runtime 不实现时 write_chapter 拿不到快照 → 按缺省语义保守走 resume。
+   */
+  getChainSnapshot?(sessionId: string): import('./contracts/run').RunSnapshot | undefined;
+  /** R2.1 分派规则 fresh 车道用（mirror runtime.clearChainSnapshot：释放活动链守卫 + 清快照）。 */
+  clearChainSnapshot?(sessionId: string): boolean;
+  /**
    * Story 3.4（C-A1 backfill 接线）：leader `diagnose_impacts` tool 经此触发旧章 world-state 补提取
    * （design §3 / world-state-backfill.ts:146）。mirror runChapterChain 模式——runtime 持 generateImpl +
    * 能构造 writeWorldEvents writer（registry.get('write_world_events')），故 local tool 经

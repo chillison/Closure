@@ -34,7 +34,9 @@ import type {
 import {
   assembleChapterChainArtifacts,
   assertBriefReady,
+  autoCreatedChapterFileContent,
   BriefNotReadyError,
+  buildAcceptStoryDecisions,
   buildChapterAccept,
   buildCognitionSnapshot,
   buildPresenceSignal,
@@ -44,9 +46,11 @@ import {
   describeAcceptSkip,
   parseAdjudication,
   parseRevisionIntent,
+  planAutoCreateChapter,
   resumeChapterChainInputSchema,
   runChapterChainInputSchema,
   type AdjudicationSuggestion,
+  type ChapterAcceptArtifact,
   type ChapterAcceptResult,
   type ChapterAcceptSkipReason,
   type ChapterBrief,
@@ -76,6 +80,11 @@ import { withProjectLock } from '../fs/projectWriteLock';
 // Story 2.2 WP-E（CR-08-16-201）：resume 终态直调 story-sync applier 的 shell handler（同进程，
 // 直调也吃 cap / 白名单 / merge-only / 版本锁机械门——「直调 handler 也拦」语义）。
 import { storySyncApplyHandler } from './toolHandlers/storySyncHandlers';
+// dogfood R2 #107 / R1.1：no-chapter 自动建章的落盘通道——直调 chapter_write 的 shell handler
+// （同进程，mirror storySyncApplyHandler 直调先例；handler 自带 snapshotToLocalHistory +
+// atomicWrite + 主动 notifyUI（chapter:changed + file:changed）→ renderer 300ms debounce →
+// derive → sync-chapters-meta 注册闭环现成）。
+import { chapterWriteHandler } from './toolHandlers/chapterHandlers';
 // Story 6.6 Phase D（8.1 Step 5 checkpoint 化）：world_state_snapshot 一致基底——shell 直调
 // worldStateRepository（同进程 db，无 IPC 往返，mirror queryStoryHandler 直调 reduceClosure* 的姿态）。
 // snapshot 注入 initialArtifacts 供 Reader-Audit 消费。
@@ -471,12 +480,38 @@ async function applyStorySyncOnResume(args: {
 }
 
 /**
+ * #107 R1.1 自动建章判定的入口上下文（run/resume 两车道各自组装，persistChapterAcceptIfNeeded 消费）。
+ *
+ * - episodeId / episodeOutlines / novelChapters / directChapterId：判定输入（planAutoCreateChapter 单源）。
+ * - runId：onAccept 闭包捕获的链段 runId（no-chapter skip 发生时留档）——补产 envelope 的
+ *   last_run_id / StoryDecision id 源；闭包未跑（mock / paused-resume continue 路径 route 被跳过）
+ *   → 调用方兜底 randomUUID。
+ */
+interface ChapterAutoCreateContext {
+  episodeId: string;
+  episodeOutlines?: ReadonlyArray<ResolvableEpisode>;
+  novelChapters?: ReadonlyArray<ResolvableChapter>;
+  directChapterId?: string;
+  runId?: string;
+}
+
+/**
  * Story 4.3 Step 3：chapter_accept 持久化 + accept/escalate 文案 helper（run-chapter-chain + resume-chapter-chain 共用）。
  *
  * 抽自 run-chapter-chain 既有内联块（行为不变，DRY——两入口 resume 续跑 accept 也须持久化，否则 dogfood resume
  * 路径丢工作）。mutates summary.errors（持久化失败 / escalate 候选未落盘 / accept 章映射失败告知）。
  *
+ * - **#107 R1.1 前置（dogfood R2 首章冷启动）**：no-chapter（skipReason 或兜底）+ 空位判定（planAutoCreateChapter
+ *   单源：未显式传 chapterId + 0 命中 + R1.1d 落位守卫）+ draftText 在 → 经 chapterWriteHandler 建
+ *   `chapters/<stem>.md`。**模式门（用户拍板）**：mode='direct' 建全文（正文=采信稿）；mode='review' 只建
+ *   骨架（frontmatter+标题无正文——review「写内容须人批」语义不破）。建后补产 summary.chapter_accept
+ *   envelope（chapterId=stem，candidate.content=完整文件形态保 frontmatter——accept 落盘整体覆盖写，
+ *   body-only 会抹掉 order 致派生重排错位），含 storyDecisions（R1.1c：summary.routeDecision.deviation
+ *   投影 + buildAcceptStoryDecisions 单源，不静默降级）。
  * - accept_as_truth + chapter_accept → acceptChapterCandidate（经 withProjectLock 串行，CR-4.1-03）写盘。
+ *   **direct + 自动建章时容忍失败**：注册是 renderer 驱动（派生 300ms debounce 未至），acceptChapterCandidate
+ *   在注册前调用必 throw「chapter not found」——文件即落点（与 #107 救场实录一致），注册等 app 打开项目后
+ *   由派生补上；chapterPersisted=true 告知 UI 免二次 stage。
  * - escalate_user → 不落盘（dogfood IPC 无裁决 UI；正文在 summary.draftText，findings 在 escalateFindings），
  *   **除非** autoTrustAccept=true（Story 4.3 Step 6：全自动模式 auto-trust accept 复用 4.6 accept 路径真落盘）。
  * - accept 但 chapter_accept 缺省 → describeAcceptSkip 文案（CR-4.1-08）。
@@ -493,7 +528,10 @@ async function applyStorySyncOnResume(args: {
  *
  * @param logTag           调用方 channel 名（日志辨识）。
  * @param autoTrustAccept  Story 4.3 Step 6：auto-trust accept 时传 true → escalate chapter_accept 真落盘（design §3.8）。
- * @param mode             #93 P0-2：'direct'（直落，缺省）| 'review'（envelope 返 UI 人审）。
+ * @param mode             #93 P0-2：'direct'（直落，缺省）| 'review'（envelope 返 UI 人审）。兼作 #107 模式门
+ *                         （direct 建全文 / review 建骨架）——同档位语义，一源两用。
+ * @param autoCreate       #107 R1.1：判定上下文（episodeId + project 数据 + 闭包捕获 runId）。缺省（旧调用方 /
+ *                         测试）不自动建，行为零回归。
  */
 async function persistChapterAcceptIfNeeded(
   projectPath: string,
@@ -502,15 +540,84 @@ async function persistChapterAcceptIfNeeded(
   logTag: string,
   autoTrustAccept = false,
   mode: 'direct' | 'review' = 'direct',
+  autoCreate?: ChapterAutoCreateContext,
 ): Promise<void> {
+  // ── #107 R1.1 前置：no-chapter 自动建章（判定 + 建文件 + envelope 补产）──
+  // skipReason 兜底 'no-chapter'（mirror describeAcceptSkip 调用点兜底：mock / paused-resume continue
+  // 路径闭包未跑但 chapter_accept 缺 + accept/escalate 终态，现实就是章未注册）。no-draft 明确排除。
+  let autoCreated = false;
+  if (!summary.chapter_accept && (acceptSkipReason ?? 'no-chapter') === 'no-chapter' && autoCreate) {
+    const plan = planAutoCreateChapter({
+      episodeId: autoCreate.episodeId,
+      ...(autoCreate.episodeOutlines ? { episodeOutlines: autoCreate.episodeOutlines } : {}),
+      ...(autoCreate.novelChapters ? { novelChapters: autoCreate.novelChapters } : {}),
+      ...(autoCreate.directChapterId ? { directChapterId: autoCreate.directChapterId } : {}),
+      ...(summary.draftTitle !== undefined ? { title: summary.draftTitle } : {}),
+    });
+    if (plan && summary.draftText !== undefined) {
+      try {
+        await chapterWriteHandler({
+          params: {
+            chapterId: plan.stem,
+            content: mode === 'direct'
+              ? autoCreatedChapterFileContent(plan, summary.draftText)
+              : autoCreatedChapterFileContent(plan),
+          },
+          projectDir: projectPath,
+          sessionId: 'closure-chain-auto-create',
+          abort: new AbortController().signal,
+        });
+        autoCreated = true;
+        // envelope 补产（onAccept 已在链内同步调用过不可重入，入口层组装——directChapterId=stem 语义）。
+        // storyDecisions 补产（R1.1c 不降级）：summary.routeDecision.deviation 投影 + 单源构造器。
+        const autoStoryDecisions = buildAcceptStoryDecisions({
+          routeDecision: summary.routeDecision,
+          episodeId: autoCreate.episodeId,
+          runId: autoCreate.runId ?? randomUUID(),
+          nowISO: new Date().toISOString(),
+        });
+        const envelope: ChapterAcceptArtifact = {
+          chapterId: plan.stem,
+          candidate: {
+            title: plan.title,
+            // 完整文件形态（frontmatter+标题+正文）：review 档人审 accept 落盘整体覆盖写——body-only
+            // 候选会把 frontmatter 连 order 抹掉 → 派生重排错位（#107 最高风险事故）。
+            content: autoCreatedChapterFileContent(plan, summary.draftText),
+            ...(summary.draftWordCount !== undefined ? { wordCount: summary.draftWordCount } : {}),
+          },
+          runId: autoCreate.runId ?? randomUUID(),
+          ...(autoStoryDecisions && autoStoryDecisions.length > 0 ? { storyDecisions: autoStoryDecisions } : {}),
+        };
+        summary.chapter_accept = envelope;
+        getLogger().info(
+          { projectPath, episodeId: autoCreate.episodeId, stem: plan.stem, episodeIndex: plan.episodeIndex, mode },
+          `${logTag}: #107 auto-created chapter file（no-chapter 救场；frontmatter order = 登记载体，磁盘派生注册自动闭环）`,
+        );
+      } catch (autoErr) {
+        // graceful：建文件失败不 fail resume/run——维持现状告警（describeAcceptSkip 文案指路手建）。
+        getLogger().warn(
+          { err: autoErr instanceof Error ? autoErr.message : String(autoErr), projectPath, episodeId: autoCreate.episodeId },
+          `${logTag}: #107 auto-create chapter file failed → graceful（维持现状告警，不建）`,
+        );
+      }
+    } else if (plan) {
+      getLogger().info(
+        { projectPath, episodeId: autoCreate.episodeId, stem: plan.stem },
+        `${logTag}: #107 auto-create skipped — summary 无 draftText（候选无法组装）`,
+      );
+    }
+  }
+
   const isEscalate = summary.routeDecision?.decision === 'escalate_user';
   if (summary.chapter_accept && (!isEscalate || autoTrustAccept)) {
     const ca = summary.chapter_accept;
     if (mode === 'review') {
       // #93 P0-2：review 档不落盘——envelope 随 summary 返 UI 进 pendingPatch（PatchReview accept 后经
       // applyAgentFieldPatch → acceptChapterCandidateCore 落 chapters/，与 leader 路径同一收口）。
+      // #107：自动建的骨架章此时已注册（建文件 → notifyUI → 300ms debounce 派生；人审节奏 >> 300ms），
+      // acceptChapterCandidateCore 按 id 命中；竞态输了也是 CR-4.1-04 显式 toast 非静默丢。
       getLogger().info(
-        { projectPath, chapterId: ca.chapterId, runId: ca.runId },
+        { projectPath, chapterId: ca.chapterId, runId: ca.runId, autoCreated },
         `${logTag}: chapter_accept envelope 返 UI 人审（review 档不直落——mirror write_chapter metadata 路径）`,
       );
       return;
@@ -535,11 +642,23 @@ async function persistChapterAcceptIfNeeded(
       );
     } catch (persistErr) {
       const pmsg = persistErr instanceof Error ? persistErr.message : String(persistErr);
-      getLogger().error(
-        { err: pmsg, projectPath, chapterId: ca.chapterId },
-        `${logTag}: chapter candidate persistence failed`,
-      );
-      summary.errors = [...summary.errors, `chapter persist failed: ${pmsg}`];
+      if (autoCreated) {
+        // #107 R1.1 容忍：direct 车道刚建的文件注册滞后（renderer 派生 300ms debounce 未至）→
+        // acceptChapterCandidate 找不到章必 throw——**文件即落点**（含全文 + frontmatter order），
+        // 注册等 app 打开项目后由派生补上（与 #107 救场实录一致）；storyDecisions 随下次注册补登。
+        // chapterPersisted=true 告知 UI 正文已落（免二次 stage）。
+        summary.chapterPersisted = true;
+        getLogger().info(
+          { projectPath, chapterId: ca.chapterId, err: pmsg },
+          `${logTag}: chapter meta persist tolerated — #107 auto-created file is the landing point（注册滞后，派生后补）`,
+        );
+      } else {
+        getLogger().error(
+          { err: pmsg, projectPath, chapterId: ca.chapterId },
+          `${logTag}: chapter candidate persistence failed`,
+        );
+        summary.errors = [...summary.errors, `chapter persist failed: ${pmsg}`];
+      }
     }
   } else if (isEscalate && !autoTrustAccept) {
     if (mode === 'review') {
@@ -554,10 +673,12 @@ async function persistChapterAcceptIfNeeded(
       return;
     }
     getLogger().info(
-      { projectPath, hasChapterAccept: !!summary.chapter_accept, findingsCount: summary.escalateFindings?.length ?? 0 },
+      { projectPath, hasChapterAccept: !!summary.chapter_accept, autoCreated, findingsCount: summary.escalateFindings?.length ?? 0 },
       `${logTag}: escalate → not persisting chapter_accept (dogfood no adjudication UI); summary returned`,
     );
-    summary.errors = [...(summary.errors ?? []), '灰区裁决：chapter_accept 候选未落盘（dogfood IPC 无裁决 UI）；正文在 summary.draftText，裁决信息在 escalateFindings'];
+    summary.errors = [...(summary.errors ?? []), autoCreated
+      ? '灰区裁决：自动建章文件已落盘（#107），章节元数据待注册后补——裁决信息在 escalateFindings'
+      : '灰区裁决：chapter_accept 候选未落盘（dogfood IPC 无裁决 UI）；正文在 summary.draftText，裁决信息在 escalateFindings'];
   } else if (summary.routeDecision?.decision === 'accept_as_truth') {
     summary.errors = [
       ...summary.errors,
@@ -747,7 +868,10 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
         const novelChapters = (doc as { novel?: { chapters?: ResolvableChapter[] } }).novel?.chapters;
         // CR-4.1-08：onAccept 闭包捕获 skipReason（no-draft/no-chapter/no-nowiso），accept 但 chapter_accept
         // 缺省时据此出对应文案（非旧统一「章未注册」误导——no-draft 是 draft-writer 没写正文 ≠ 章未注册）。
+        // #107 R1.1c：no-chapter skip 发生时链段 runId 留档——补产 envelope 的 last_run_id /
+        // StoryDecision id 源（与正常路径同构）。
         let acceptSkipReason: ChapterAcceptSkipReason | undefined;
+        let acceptSkipRunId: string | undefined;
         const onAccept = (
           snapshot: { runId: string; artifacts: Record<string, unknown> },
           ctx: { nowISO: string },
@@ -759,7 +883,10 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
             ...(novelChapters ? { novelChapters } : {}),
             ...(chapterId ? { directChapterId: chapterId } : {}),
           });
-          if ('skipReason' in result) acceptSkipReason = result.skipReason;
+          if ('skipReason' in result) {
+            acceptSkipReason = result.skipReason;
+            if (result.skipReason === 'no-chapter') acceptSkipRunId = snapshot.runId;
+          }
           return result;
         };
 
@@ -803,7 +930,15 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
 
           // 4.1 Step 4（CR-15b）/ Story 4.3 Step 3/6：accept 持久化经共享 helper（resume 入口复用，DRY）。
           // autoTrustAccept=true → escalate chapter_accept 真落盘（auto-trust accept 复用 4.6 accept 路径）。
-          await persistChapterAcceptIfNeeded(projectPath, summary, acceptSkipReason, 'closure:run-chapter-chain', autoTrustAccept);
+          // #107 R1.1：run 入口恒 direct（#93 拍板——stub 车道无审核面板消费面）→ 自动建章 = 全文直落；
+          // autoCreate 上下文 = 判定输入（doc 数据 + episodeId/chapterId）+ 闭包捕获 runId。
+          await persistChapterAcceptIfNeeded(projectPath, summary, acceptSkipReason, 'closure:run-chapter-chain', autoTrustAccept, 'direct', {
+            episodeId,
+            ...(episodeOutlines ? { episodeOutlines } : {}),
+            ...(novelChapters ? { novelChapters } : {}),
+            ...(chapterId ? { directChapterId: chapterId } : {}),
+            ...(acceptSkipRunId !== undefined ? { runId: acceptSkipRunId } : {}),
+          });
 
           getLogger().info(
             {
@@ -955,7 +1090,9 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
 
         const episodeOutlines = (doc as { episode_outlines?: ResolvableEpisode[] }).episode_outlines;
         const novelChapters = (doc as { novel?: { chapters?: ResolvableChapter[] } }).novel?.chapters;
+        // CR-4.1-08 + #107 R1.1c mirror run 入口：skipReason / no-chapter runId 闭包捕获。
         let acceptSkipReason: ChapterAcceptSkipReason | undefined;
+        let acceptSkipRunId: string | undefined;
         const onAccept = (
           snapshot: { runId: string; artifacts: Record<string, unknown> },
           ctx: { nowISO: string },
@@ -967,7 +1104,10 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
             ...(novelChapters ? { novelChapters } : {}),
             ...(chapterId ? { directChapterId: chapterId } : {}),
           });
-          if ('skipReason' in result) acceptSkipReason = result.skipReason;
+          if ('skipReason' in result) {
+            acceptSkipReason = result.skipReason;
+            if (result.skipReason === 'no-chapter') acceptSkipRunId = snapshot.runId;
+          }
           return result;
         };
 
@@ -1046,7 +1186,15 @@ export function registerClosureChainIpc(getWin?: () => BrowserWindow | null) {
           const isStubChainSession = session?.agentName === 'chapter-chain-dogfood';
           const persistMode: 'direct' | 'review' =
             session?.permissionMode === 'auto' || autoTrustAccept || isStubChainSession ? 'direct' : 'review';
-          await persistChapterAcceptIfNeeded(projectPath, summary, acceptSkipReason, 'closure:resume-chapter-chain', autoTrustAccept, persistMode);
+          // #107 R1.1：autoCreate 上下文 mirror run 入口（doc 数据 + episodeId/chapterId + 闭包 runId）。
+          // persistMode 兼作模式门（direct 建全文 / review 建骨架——同档位语义一源两用）。
+          await persistChapterAcceptIfNeeded(projectPath, summary, acceptSkipReason, 'closure:resume-chapter-chain', autoTrustAccept, persistMode, {
+            episodeId,
+            ...(episodeOutlines ? { episodeOutlines } : {}),
+            ...(novelChapters ? { novelChapters } : {}),
+            ...(chapterId ? { directChapterId: chapterId } : {}),
+            ...(acceptSkipRunId !== undefined ? { runId: acceptSkipRunId } : {}),
+          });
 
           // Story 2.2 WP-E（CR-08-16-201）：resume 终态 story-sync 反哺消费（详 applyStorySyncOnResume
           // 块注释——缺省档链段必 pause，终态提取只经此回到落盘点）。mutates summary（storySyncReview /

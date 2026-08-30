@@ -98,8 +98,8 @@ describe('AppearanceSettingsPage 界面缩放卡（R8）', () => {
         setWallpaperUrl={vi.fn()}
         wallpaperOpacity={1}
         setWallpaperOpacity={vi.fn()}
-        wallpaperFrost={false}
-        setWallpaperFrost={vi.fn()}
+        wallpaperFrostBlur={0}
+        setWallpaperFrostBlur={vi.fn()}
         interfaceScale={opts.scale ?? 1}
         setInterfaceScale={opts.setScale ?? vi.fn()}
       />,

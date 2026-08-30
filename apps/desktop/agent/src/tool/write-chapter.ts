@@ -7,6 +7,8 @@ import {
   assertBriefReady,
   arcAuditResultSchema,
   arcBeatSchema,
+  autoCreatedChapterFileContent,
+  buildAcceptStoryDecisions,
   chapterBriefSchema,
   computeReadiness,
   BriefNotReadyError,
@@ -22,6 +24,7 @@ import {
   parseDirectorStoryDecisions,
   expandAtomicEditOp,
   validateAtomicEditOps,
+  planAutoCreateChapter,
   collectCreatedSceneIds,
   collectRelevantDecisions,
   isSceneInEpisode,
@@ -35,6 +38,7 @@ import {
   type ArcAuditResult,
   type ArcBeat,
   type AtomicEditProposal,
+  type ChapterAcceptArtifact,
   type ChapterAcceptResult,
   type ChapterAcceptSkipReason,
   type ChapterBrief,
@@ -61,6 +65,9 @@ import { CHAIN_RUN_ACTIVE_ERROR_PREFIX, deriveCheckpointPolicy, type RunSnapshot
 import { fetchWorldStateSnapshotViaTool, fetchCognitionSnapshotViaTool, fetchPresenceSignalViaTool } from '../nodes/world-state-query';
 import { writeLintChapterLedger } from '../lint/lintLedger';
 import { extractJson } from '../nodes/extract-json';
+// dogfood R2 #105 缝①（R2.1）：stableStringify 单源复用（writer-node 章档案 briefHash 同款——key 序
+// 无关的稳定序列化，快照 brief 与本次 brief 比对不受 zod parse 后 key 插入序漂移影响）。
+import { stableStringify } from '../nodes/writer-node';
 import { dispatchRevisionOptimizer } from './revision-optimizer';
 import { buildStyleContext, readStyleCardBody } from './style-card';
 import { registry } from './registry';
@@ -113,6 +120,35 @@ const writeChapterParams = z.object({
     '可选：目标 chapter id（用户工作台选章直传，优先于 episode.index→sort_order 映射推断）',
   ),
 });
+
+// ── dogfood R2 #105 缝①（R2.1）：write_chapter 自家租约重入分派 helper ──
+//
+// chain_run_active busy 错误串形态 = `chain_run_active|heldBy=<holderSessionId>`（workflow.ts 守卫
+// 产出，contracts/run.ts CHAIN_RUN_ACTIVE_ERROR_PREFIX 单源）。解析失败（形态漂移）→ undefined →
+// caller 按「他 session 持有」保守处理（维持 busy 文案，与修前行为一致）。
+function parseChainRunActiveHolder(errors: string[] | undefined): string | undefined {
+  const busy = (errors ?? []).find((e) => e.startsWith(CHAIN_RUN_ACTIVE_ERROR_PREFIX));
+  if (!busy) return undefined;
+  const match = /^chain_run_active\|heldBy=(.+)$/.exec(busy);
+  return match ? match[1] : undefined;
+}
+
+/**
+ * 从 chainSnapshot 抽 chapter_brief_input.brief（快照 brief 比对源，R2.1 分派规则用）。
+ * mirror brief-compiler-node resolveBriefInput 的两形态兼容：
+ * - 结构化 `{episodeId, brief}`（canonical，assembleChapterChainArtifacts 产）→ 抽 .brief；
+ * - raw ChapterBrief（缺包装）→ 整体作 brief。
+ * 快照缺 / artifacts 缺 / 形态不对 → undefined（caller 语义 = 拿不到快照 brief → 保守走 resume）。
+ */
+function briefFromChapterBriefInput(
+  snapshot: { artifacts?: Record<string, unknown> } | undefined,
+): ChapterBrief | undefined {
+  const input = snapshot?.artifacts?.['chapter_brief_input'];
+  if (!input || typeof input !== 'object') return undefined;
+  const obj = input as Record<string, unknown>;
+  if ('brief' in obj && obj.brief && typeof obj.brief === 'object') return obj.brief as ChapterBrief;
+  return obj as ChapterBrief;
+}
 
 /**
  * 读 project.yaml 并解析为链段组装所需字段（agent 直读，无 local-bff 迁移）。
@@ -2360,6 +2396,10 @@ export const writeChapterTool = defineTool({
       const novelChapters = project.novelChapters;
       const directChapterId = params.chapterId;
       let acceptSkipReason: ChapterAcceptSkipReason | undefined;
+      // dogfood R2 #107 / R1.1c：no-chapter skip 发生时链段 runId 留档——入口层补产
+      // chapter_accept（chapterId=自动建章 stem）的 runId 源（last_run_id / StoryDecision id
+      // `accept-<runId>` 与正常路径同构）。只在 no-chapter 捕获（no-draft/no-nowiso 无候选可补）。
+      let acceptSkipRunId: string | undefined;
       const onAccept = (snapshot: { runId: string; artifacts: Record<string, unknown> }, ctx: { nowISO: string }): ChapterAcceptResult => {
         const result = buildChapterAccept(snapshot, {
           nowISO: ctx.nowISO,
@@ -2368,7 +2408,10 @@ export const writeChapterTool = defineTool({
           ...(novelChapters ? { novelChapters } : {}),
           ...(directChapterId ? { directChapterId } : {}),
         });
-        if ('skipReason' in result) acceptSkipReason = result.skipReason;
+        if ('skipReason' in result) {
+          acceptSkipReason = result.skipReason;
+          if (result.skipReason === 'no-chapter') acceptSkipRunId = snapshot.runId;
+        }
         return result;
       };
 
@@ -2376,7 +2419,10 @@ export const writeChapterTool = defineTool({
       // permissionMode 不加新旋钮）。session 不在内存（异常）→ 兜底 'suggest'（半自动 draft pause，安全默认）。
       // mode.pauseStages 决定链段在哪些 checkpoint scheduled pause（auto=[] 连续跑 / suggest=[draft] /
       // readonly=[brief,draft,verdict]）。escalateMode 透传，Step 6 route=escalate 分支消费（auto-trust vs ask）。
-      const policy = deriveCheckpointPolicy(getSession(ctx.sessionId)?.permissionMode ?? 'suggest');
+      // dogfood R2 #107 / R1.1：permissionMode 单读复用——自动建章模式门（auto → direct 全文 /
+      // suggest+readonly → review 骨架）与 shell persistChapterAcceptIfNeeded 的 persistMode 档位映射同源。
+      const sessionPermissionMode = getSession(ctx.sessionId)?.permissionMode ?? 'suggest';
+      const policy = deriveCheckpointPolicy(sessionPermissionMode);
       // dogfood T1 Stage 6（design §4）：链事件转发——ctx.emitChainEvent（streamMessage 装配的 sendEvent
       // 包装）透传给 runChapterChain（chain-delta / chain-node-done 同通道广播）。三次 run 调用共用
       //（首跑 + auto_revise redo + auto-trust revise redo——redo 重跑同样要流）。缺省不开（零回归）。
@@ -2390,21 +2436,80 @@ export const writeChapterTool = defineTool({
         ...(emitChainEvent ? { emitChainEvent } : {}),
       });
 
-      // BMad CR-T1-056：per-project 活动链守卫拒绝（workflow.ts runChapterChain 入口闸——同项目已有
-      // 活动链：单轮并行双 write_chapter / 上一条链 paused 滞留期间新链）。机器可读前缀 mirror D4
-      // project_run_active 语义（leader 据工具结果自察，下轮告知用户）。早退：busy 无链产物——不进
-      // auto_revise 循环与 post-settle（arc audit / lint ledger），也**不发链哨兵**（另一条链的
-      // 链卡/流不得被本次拒绝误终态化）。
+      // BMad CR-T1-056 + dogfood R2 #105 缝①（R2.1）：per-project 活动链守卫拒绝分派（workflow.ts
+      // runChapterChain 入口闸——同项目已有活动链：单轮并行双 write_chapter / 上一条链 paused 滞留期间
+      // 新链）。机器可读前缀 mirror D4 project_run_active 语义（leader 据工具结果自察，下轮告知用户）。
+      //
+      // **#105 缝①修法（design §2.1）**：守卫本就放行「holder=自己 + resume 入口」（isResumeEntry）——
+      // 此前拦死 leader 只因 write_chapter 重入从不带 resume 选项，与挂起指引「决断后重调 write_chapter」
+      // 承诺脱节。现按持有者分派：
+      // - 他 session 持有 → 维持 busy 早退（busy 无链产物——不进 auto_revise 循环与 post-settle，也
+      //   **不发链哨兵**——另一条链的链卡/流不得被本次拒绝误终态化）。
+      // - 自家租约（heldBy === ctx.sessionId，即本会话 paused 链滞留）→ 按分派规则转 resume/fresh：
+      //   ① 本次带 chapterBrief 且与快照 chapter_brief_input.brief 有差异（stableStringify 比对）=
+      //     指引①②「改了任务卡/改设定」语义 → clearChainSnapshot（abort 释放租约）+ 用本次已装配的
+      //     initialArtifacts（含新 brief）fresh 重跑——briefHash 变 → writer-node cardChanged=true → 全量重查。
+      //   ② 无 brief / 无差异 / 拿不到快照 brief = 指引③「维持原案」默认语义 → resume:{fromSnapshot:true}
+      //     裸 continue 重调（**不显式 redo**——挂起态由 workflow continue-belt 自动转 draft-writer 重查 +
+      //     approvedDeviations 绑定（挂起无正文可续，重查重写是唯一合法继续形态）；普通 checkpoint pause
+      //     带草稿续审（不动草稿的自然语义）；显式 redo 对 draft-pause 会丢草稿重写，语义错）。
+      //   残留风险（design §6 权衡）：改设定但未改 brief 的暗变走 resume 拿旧 settings_context——指引
+      //   文案已注明「改了设定请在重调时同步更新任务卡摘要」，不引入设定 diff 探测。
       if (summary.status === 'error' && (summary.errors ?? []).some((e) => e.startsWith(CHAIN_RUN_ACTIVE_ERROR_PREFIX))) {
-        return {
-          title: `write_chapter: ${params.episodeId}`,
-          output: [
-            `status: ${summary.status}`,
-            `errors: ${summary.errors.join('; ')}`,
-            '',
-            '本章未能开始：该项目已有一条活动写章链（正在运行或暂停待审阅）。请先等待其完成，或在工作台审阅面板继续/放弃该链后再重试本章。',
-          ].join('\n'),
-        };
+        const heldBy = parseChainRunActiveHolder(summary.errors);
+        if (heldBy !== ctx.sessionId) {
+          return {
+            title: `write_chapter: ${params.episodeId}`,
+            output: [
+              `status: ${summary.status}`,
+              `errors: ${summary.errors.join('; ')}`,
+              '',
+              '本章未能开始：该项目已有一条活动写章链（正在运行或暂停待审阅）。请先等待其完成，或在工作台审阅面板继续/放弃该链后再重试本章。',
+            ].join('\n'),
+          };
+        }
+
+        // 自家租约 → 分派（快照经 ctx.skillExecutor seam 读，runtime 已实现 getChainSnapshot/
+        // clearChainSnapshot；mock/旧 runtime 缺方法 → 拿不到快照 → 保守走 resume，维持原案默认语义）。
+        const pausedSnapshot = ctx.skillExecutor.getChainSnapshot?.(ctx.sessionId);
+        const snapBrief = briefFromChapterBriefInput(pausedSnapshot);
+        const nextBrief = params.chapterBrief as ChapterBrief | undefined;
+        const briefChanged =
+          nextBrief !== undefined &&
+          snapBrief !== undefined &&
+          stableStringify(nextBrief) !== stableStringify(snapBrief);
+        if (briefChanged) {
+          ctx.skillExecutor.clearChainSnapshot?.(ctx.sessionId);
+          logger.info(
+            { sessionId: ctx.sessionId, episodeId: params.episodeId },
+            'write_chapter: self-held paused chain + changed chapterBrief → abort snapshot + fresh rerun（改卡全量重查）',
+          );
+        } else {
+          logger.info(
+            { sessionId: ctx.sessionId, episodeId: params.episodeId, hasSnapshot: Boolean(pausedSnapshot) },
+            'write_chapter: self-held paused chain + unchanged/no brief → resume continue（维持原案：belt 自动转重查 + approvedDeviations 绑定）',
+          );
+        }
+        summary = await ctx.skillExecutor.runChapterChain(ctx.sessionId, initialArtifacts, {
+          requirement: params.episodeId,
+          abort: ctx.abort,
+          onAccept,
+          mode: policy,
+          ...(briefChanged ? {} : { resume: { fromSnapshot: true } }),
+          ...(emitChainEvent ? { emitChainEvent } : {}),
+        });
+        // 重试后仍 busy（防御性：理论上自家 resume/fresh 入口必放行，此为异常路径兜底）→ 早退 busy 文案。
+        if (summary.status === 'error' && (summary.errors ?? []).some((e) => e.startsWith(CHAIN_RUN_ACTIVE_ERROR_PREFIX))) {
+          return {
+            title: `write_chapter: ${params.episodeId}`,
+            output: [
+              `status: ${summary.status}`,
+              `errors: ${summary.errors.join('; ')}`,
+              '',
+              '本章未能开始：该项目已有一条活动写章链（正在运行或暂停待审阅）。请先等待其完成，或在工作台审阅面板继续/放弃该链后再重试本章。',
+            ].join('\n'),
+          };
+        }
       }
 
       // Story 7.4（design §1.3 候选④）：auto_revise leader 驱动 redo 闭环。
@@ -2702,9 +2807,12 @@ export const writeChapterTool = defineTool({
         // R2-盲2：选项③「维持原案」措辞与系统行为对齐——不改任务卡直接重调 = 已亮牌偏离获批
         // （decision.approvedDeviations 机械绑定），重跑同偏离不再挂起、新偏离照常上报；此前文案
         // 只承诺「重新调查」而系统会因同偏离再挂起（结构性死循环 + 激励写手隐瞒申报）。
+        // dogfood R2 #105 缝①（R2.1）：重调已可行（自家租约自动转 resume/fresh 车道）——①② 的
+        // fresh 车道靠 chapterBrief 差异触发，故补残留风险一句：改设定须同步更新任务卡摘要一并
+        // 传入，否则走 resume 沿用快照上的旧设定上下文（design §6 权衡：不引入设定 diff 探测）。
         lines.push(
           '请核实以上证据后呈给作者决断：① 改任务卡（怎么改）② 改设定（先修档案）③ 维持原案（写手重新调查，已亮牌的偏离按批准方案写）。' +
-          '决断后重调 write_chapter 重写本章：①②改了会自动重新调查；③维持原案也会重新调查，但你未改任务卡即视为已亮牌偏离获批——同一偏离不会再触发挂起（新的偏离仍会照常上报）；工作台可改稿重跑（redo）/ 放弃（abort），不可直接续写。',
+          '决断后重调 write_chapter 重写本章：①②改了会自动重新调查——改了设定请同步更新任务卡（chapterBrief）摘要一并传入，否则重跑会沿用快照上的旧任务卡/设定上下文；③维持原案也会重新调查，但你未改任务卡即视为已亮牌偏离获批——同一偏离不会再触发挂起（新的偏离仍会照常上报）；工作台可改稿重跑（redo）/ 放弃（abort），不可直接续写。',
         );
         lines.push(...(await markSuspendedChapterInBatch(ctx, params.chapterId, suspension)));
       } else if (isPaused) {
@@ -2827,6 +2935,100 @@ export const writeChapterTool = defineTool({
         autoTrustAccepted: autoTrustAction === 'accept',
       });
 
+      // ── dogfood R2 #107 / R1.1：no-chapter 链侧自动建章（首章冷启动修复）──
+      //
+      // novel.chapters 的出生源是 chapters/*.md 磁盘派生（renderer 闭环），首章未建时链 accept 的
+      // chapterId 映射恒 no-chapter → 正文悬空于章档案（dogfood R2 #107 实录）。修法 = 判定过 → 经
+      // `chapter_write` builtin 程序化 execute 建章文件（CR-004 splice 落盘同款通道；shell handler 自带
+      // snapshotToLocalHistory + atomicWrite + **主动 notifyUI** → UI 300ms debounce → derive →
+      // sync-chapters-meta 注册闭环现成，UI/派生/注册三层零改动）。幂等 = 同 stem 同内容 chapter_write
+      // 早退（chapterHandlers existedBefore 分支），重跑安全。
+      //
+      // 判定（design §1.1，planAutoCreateChapter 单源）：skipReason==='no-chapter'（no-draft 无正文 /
+      // no-nowiso 无候选可补，不触发）+ 未显式传 params.chapterId + sort_order 0 命中空位（>1 歧义维持
+      // 现报错）+ R1.1d 落位守卫过（order 有洞/混排不建，防错位章）。paused 不建（readonly verdict
+      // pause 时 onAccept 已跑但终局未至——resume 完成后由 resume 车道补）。
+      //
+      // **模式门（用户拍板 Key Decision 1）**：auto 档（=落盘语义 direct，mirror shell persistMode 档位
+      // 映射）建全文（正文=采信稿）；suggest/readonly（=review）只建**骨架章**（frontmatter+标题、无正文）
+      // ——review「写内容须人批」语义不破，正文仍走候选→PatchReview 人审→acceptChapterCandidateCore
+      // 落盘。candidate.content = **完整文件形态**（frontmatter+标题+正文）：accept 落盘是整体覆盖写，
+      // body-only 候选会把 frontmatter 连 order 一起抹掉 → 派生重排错位。
+      let autoCreatedAccept: ChapterAcceptArtifact | undefined;
+      if (!isPaused && !summary.chapter_accept && acceptSkipReason === 'no-chapter') {
+        const autoPlan = planAutoCreateChapter({
+          episodeId: params.episodeId,
+          ...(episodeOutlines ? { episodeOutlines } : {}),
+          ...(novelChapters ? { novelChapters } : {}),
+          ...(directChapterId ? { directChapterId } : {}),
+          ...(summary.draftTitle !== undefined ? { title: summary.draftTitle } : {}),
+        });
+        if (!autoPlan) {
+          logger.info(
+            { episodeId: params.episodeId, hasDirectChapterId: directChapterId !== undefined },
+            'write_chapter: #107 auto-create not planned（守卫未过/显式 chapterId/episode 缺）→ 维持现状告警',
+          );
+        } else if (summary.draftText === undefined) {
+          // no-chapter 在 buildChapterAccept 里必然有 draft（no-draft 先 skip）——此分支只防 mock /
+          // 旧路径（acceptSkipReason 兜底态）无正文时空建骨架孤儿章。
+          logger.info(
+            { episodeId: params.episodeId, stem: autoPlan.stem },
+            'write_chapter: #107 auto-create skipped — summary 无 draftText（候选无法组装）',
+          );
+        } else {
+          const chapterWrite = registry.get('chapter_write');
+          if (!chapterWrite) {
+            logger.warn(
+              { episodeId: params.episodeId, stem: autoPlan.stem },
+              'write_chapter: #107 auto-create skipped — chapter_write builtin 未注册（registry 空）→ graceful 维持现状告警',
+            );
+          } else {
+            const isDirectLanding = sessionPermissionMode === 'auto';
+            const fullFileContent = autoCreatedChapterFileContent(autoPlan, summary.draftText);
+            try {
+              await chapterWrite.execute(
+                {
+                  chapterId: autoPlan.stem,
+                  content: isDirectLanding ? fullFileContent : autoCreatedChapterFileContent(autoPlan),
+                },
+                { sessionId: ctx.sessionId, projectPath: ctx.projectPath, abort: ctx.abort },
+              );
+              // 候选补产（onAccept 已在链内同步调用过不可重入，入口层手工组装——directChapterId=stem 语义）。
+              // storyDecisions 补产（R1.1c，不静默降级）：buildAcceptStoryDecisions 单源 + summary 的
+              // deviation 投影（summarizeRunSnapshot #107 增补）。runId：onAccept 闭包捕获的链段 runId
+              // （StoryDecision id `accept-<runId>` 与正常路径同构）；闭包未跑（mock/旧路径）→ 兜底。
+              const autoRunId = acceptSkipRunId ?? summary.storySync?.runId ?? 'auto-chapter';
+              const autoStoryDecisions = buildAcceptStoryDecisions({
+                routeDecision: summary.routeDecision,
+                episodeId: params.episodeId,
+                runId: autoRunId,
+                nowISO: new Date().toISOString(),
+              });
+              autoCreatedAccept = {
+                chapterId: autoPlan.stem,
+                candidate: {
+                  title: autoPlan.title,
+                  content: fullFileContent,
+                  ...(summary.draftWordCount !== undefined ? { wordCount: summary.draftWordCount } : {}),
+                },
+                runId: autoRunId,
+                ...(autoStoryDecisions && autoStoryDecisions.length > 0 ? { storyDecisions: autoStoryDecisions } : {}),
+              };
+              logger.info(
+                { episodeId: params.episodeId, stem: autoPlan.stem, episodeIndex: autoPlan.episodeIndex, mode: isDirectLanding ? 'direct' : 'review' },
+                'write_chapter: #107 auto-created chapter file（frontmatter order = 登记载体，磁盘派生注册自动闭环）',
+              );
+            } catch (autoErr) {
+              // graceful：建文件失败不崩 tool——维持现状告警（describeAcceptSkip 文案如实指路手建）。
+              logger.warn(
+                { err: autoErr instanceof Error ? autoErr.message : String(autoErr), episodeId: params.episodeId, stem: autoPlan.stem },
+                'write_chapter: #107 auto-create chapter_write failed → graceful（维持现状告警）',
+              );
+            }
+          }
+        }
+      }
+
       const metadata: Record<string, unknown> = { summary };
       // Story 3.7 #2（design D5）：Reader-Audit findings 结构化透传——tool result metadata 附
       // findings 字段（additive：leader 文字呈现一字不动，上方文案块零改动；UI 侧 AgentMessageItem
@@ -2871,8 +3073,10 @@ export const writeChapterTool = defineTool({
         } else {
           metadata.resumeOptions = ['continue', 'redo', 'abort'];
         }
-      } else if (summary.chapter_accept) {
-        const ca = summary.chapter_accept;
+      } else if (summary.chapter_accept || autoCreatedAccept) {
+        // #107 R1.1：autoCreatedAccept = no-chapter 自动建章后补产的候选（与正常 chapter_accept 同形，
+        // 走同一 field_patch 通道——PatchReview 人审 / meta 收口现成）。
+        const ca = summary.chapter_accept ?? autoCreatedAccept!;
         metadata.type = 'field_patch';
         metadata.field = 'chapter_candidate';
         metadata.action = 'set';
@@ -2882,6 +3086,13 @@ export const writeChapterTool = defineTool({
           candidate: ca.candidate,
           ...(ca.storyDecisions && ca.storyDecisions.length > 0 ? { storyDecisions: ca.storyDecisions } : {}),
         };
+        // #107 R1.4 告知行：自动建章事实透明化（stem + 模式语义——review 骨架待人审 / direct 全文已落）。
+        if (autoCreatedAccept) {
+          lines.push(
+            `已自动建章 chapters/${autoCreatedAccept.chapterId}.md 并经磁盘派生登记（章未注册救场）：` +
+              `${sessionPermissionMode === 'auto' ? 'auto 档正文已随文件直落' : '骨架章——正文随候选在工作台审阅落盘'}。`,
+          );
+        }
         // Story 4.6 / 4.3 Step 6：文案区分（裁决语义 vs 全自动采信 vs 改稿重跑 vs 直接落盘）。
         if (autoTrustAction === 'accept') {
           lines.push(`已生成章节候选（chapter ${ca.chapterId}）——全自动采信裁决器「接受为真相」建议，等待落盘。`);
@@ -3022,7 +3233,8 @@ export const writeChapterTool = defineTool({
         // 呈报走链段 L2 / C1.3 报告面，此处只记账）。paused 不跑（章未结算，mirror arcAudit gate）。
         await writeLintChapterLedger({
           projectPath: ctx.projectPath,
-          chapterId: summary.chapter_accept?.chapterId ?? params.chapterId,
+          // #107 R1.1：自动建章的 lint 账也记到补产 stem（draftText 在即有账可记）。
+          chapterId: summary.chapter_accept?.chapterId ?? autoCreatedAccept?.chapterId ?? params.chapterId,
           text: summary.draftText,
         });
       }

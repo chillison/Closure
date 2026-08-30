@@ -1,4 +1,5 @@
 import type { StoryDecision } from './story-decision';
+import { wouldChapterLandAtOrder, type ChapterOrderingEntry } from './chapter-ordering';
 
 // ── Story 4.1 Step 4：chapter-integration 持久化（CR-15b）共享纯函数 ──
 //
@@ -253,6 +254,261 @@ export function resolveChapterIdForEpisode(
   return matches[0].id;
 }
 
+// ── countChaptersAtSortOrder：0 命中 vs 多命中区分（dogfood R2 #107 / R1.1 入口层判定辅助）──
+
+/**
+ * 数 novel.chapters 中 `sort_order === index` 的章数。
+ *
+ * `resolveChapterIdForEpisode` 把 0 命中（章未注册）与 >1 命中（sort_order 重复歧义）折叠成同一
+ * undefined；#107 自动建章只对 **0 命中** 合法（空位可补；>1 歧义是数据问题，自动建章救不了映射
+ * 歧义，维持现行报错）。入口层（write_chapter / closureChainIpc run+resume 两车道）用本函数区分
+ * 两态，不在各自入口重写 filter 防漂移（一处逻辑三处消费，必须单源——design §1.1 拍板）。
+ *
+ * 配对不变式（chapter-integration.test.ts 锚定）：`countChaptersAtSortOrder(chs, i) === 1` ⟺
+ * `resolveChapterIdForEpisode`（episode.index===i 侧）返回 defined——两者共享同一比较式，测试防漂移。
+ *
+ * 范式判据（ADR-3）：纯计数（数值相等 filter），非语义。
+ */
+export function countChaptersAtSortOrder(
+  novelChapters: ReadonlyArray<ResolvableChapter> | undefined,
+  index: number,
+): number {
+  if (!novelChapters) return 0;
+  return novelChapters.filter((ch) => ch.sort_order === index).length;
+}
+
+// ── #107 R1.1：no-chapter 链侧自动建章（判定 + stem + 文件内容，纯函数单源）──
+//
+// dogfood R2 #107 首章冷启动：novel.chapters 的出生源是 chapters/*.md 磁盘派生（renderer 驱动
+// 闭环），链/UI/agent 三不通——首章未建时链 accept 的 chapterId 映射恒 no-chapter，正文悬空于
+// 章档案。修法 = 链侧 accept 遇 no-chapter 且空位时自动建章文件（把「用户手动建文件」手势
+// 自动化的语义，不走 story_sync_apply——白名单零冲突，PRD R1.3 自动满足）。
+//
+// 判定/stem/内容构造在本文件单源（agent write-chapter no-chapter 消费点 + shell
+// persistChapterAcceptIfNeeded 前置三处消费，防漂移）；建文件动作在各车道自己的通道
+// （agent 经 registry chapter_write builtin → 注入 seam → shell handler；shell 直调
+// chapterWriteHandler——agent 不直写盘的分层纪律不破）。
+
+/** 章标题 → 文件名安全段（Windows 非法字符清洗；中文标题友好——ASCII 白名单折叠会毁掉整题）。 */
+export function sanitizeChapterStemSegment(title: string): string {
+  return title
+    // Windows 文件名非法字符（<>:"/\|?*）+ 控制字符 + 换行 → 剔除（不替换占位符：中文标题可读性优先；
+    // 对照 writer-node archiveDirName 的 `[^a-zA-Z0-9_-]` 折叠——那里的输入是 ASCII episodeId，此处是章节标题）。
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '')
+    // 连续空白折叠 + 去首尾（标题内换行/多空格不应变成文件名里的怪形态）。
+    .replace(/\s+/g, ' ')
+    .trim()
+    // Windows 不允许文件名以点/空格结尾。
+    .replace(/[. ]+$/, '')
+    // 长度上限：深项目路径 + 长标题会顶 Windows MAX_PATH（260）；40 字符对章节标题绰绰有余。
+    .slice(0, 40);
+}
+
+/** planAutoCreateChapter 判定输入（入口层各自从已加载 project 数据 + summary 组装）。 */
+export interface AutoCreateChapterInput {
+  episodeOutlines?: ReadonlyArray<ResolvableEpisode>;
+  novelChapters?: ReadonlyArray<ResolvableChapter>;
+  episodeId: string;
+  /** 用户直传 chapterId（显式指定 = 用户意图，注册缺失属另一问题，不自动建）。 */
+  directChapterId?: string;
+  /** 拟用标题（summary.draftTitle；空/缺省时 stem 与标题都退化为纯「第N章」）。 */
+  title?: string;
+}
+
+/** 自动建章计划（判定全过才返；两车道据此建文件 + 组装补产候选）。 */
+export interface AutoCreateChapterPlan {
+  /**
+   * 章文件名去 .md（= 新章 id = chapter_write 幂等键）。**确定性锚 episode.index**：同章重跑
+   * title 漂移不产第二文件（同 stem 覆盖，chapter_write 同内容早退）。
+   */
+  stem: string;
+  /** episode.index（写入 frontmatter `order:`——登记载体，磁盘派生排序键）。 */
+  episodeIndex: number;
+  /** 章标题（清洗后；输入标题空时退化 `第N章`——文件 `# 标题` 行 + 派生 title 源）。 */
+  title: string;
+}
+
+/**
+ * #107 R1.1 自动建章判定（design §1.1；纯函数）：
+ *
+ * ```
+ * 可自动建 :=
+ *   未显式传 directChapterId                                  // 用户意图，不自动造
+ *   && episode 存在（episodeOutlines.find(id)）
+ *   && countChaptersAtSortOrder(novelChapters, episode.index) === 0   // 0 命中空位；>1 歧义维持现报错
+ *   && wouldChapterLandAtOrder(diskSim, newEntry, episode.index)      // R1.1d 落位守卫
+ * ```
+ *
+ * ⚠️ **diskSim 近似边界（此处即守卫的真实能力边界，如实声明）**：守卫需要「盘派生态」（各章文件的
+ * frontmatter order），但入口层（agent/shell）实际可得的是 novel.chapters 的 yaml 注册态——其
+ * `sort_order` 是**上次派生的落位结果**（排序后位置，chapter-ordering 契约 1）。以 sort_order 作
+ * explicitOrder 近似模拟盘态，**等价条件 = 既有章文件 order 连续密集**（此时文件 order === yaml
+ * 位置）。盘上 order 有洞 / 混排（部分文件无 frontmatter）时，本近似可能放行实际会错位的场景
+ * ——守卫降级为「yaml 态守卫」（位置 0..N-1 全满 + N 空才建），首章（novelChapters 空）零近似
+ * 误差必然正确。入口层无盘读通道（renderer 派生是唯一注册闭环），此残余风险接受并在此记档。
+ *
+ * 范式判据（ADR-3）：全确定性（filter 计数 + 排序模拟 + 字符清洗），非语义。
+ */
+export function planAutoCreateChapter(input: AutoCreateChapterInput): AutoCreateChapterPlan | undefined {
+  // 1. 显式 chapterId 直传 → 不自动建（用户指定目标章，注册缺失属另一问题）。
+  if (input.directChapterId) return undefined;
+  // 2. episode 不存在 → 映射链断，无从判定位。
+  const episode = input.episodeOutlines?.find((ep) => ep.id === input.episodeId);
+  if (!episode) return undefined;
+  // 3. 0 命中才可补位（countChaptersAtSortOrder 单源）；>1 = sort_order 重复歧义（数据问题，
+  //    自动建章救不了映射歧义，维持现行报错）。
+  if (countChaptersAtSortOrder(input.novelChapters, episode.index) !== 0) return undefined;
+
+  const chapterNo = String(episode.index + 1).padStart(2, '0');
+  const titleSegment = sanitizeChapterStemSegment(input.title ?? '');
+  const stem = titleSegment ? `第${chapterNo}章-${titleSegment}` : `第${chapterNo}章`;
+  const title = titleSegment || `第${chapterNo}章`;
+
+  // 4. R1.1d 落位守卫：模拟「现有章集 + 新章（order: episode.index）」过磁盘派生排序，
+  //    新章落位位置须 === episode.index（否则不建，防 order 有洞/混排产错位章）。
+  //    diskSim 构造 = novelChapters 的 (id, sort_order 作 explicitOrder 近似)——边界见上方注释块。
+  const diskSim: ChapterOrderingEntry[] = (input.novelChapters ?? []).map((ch) => ({
+    id: ch.id,
+    fileName: `${ch.id}.md`,
+    explicitOrder: typeof ch.sort_order === 'number' ? ch.sort_order : null,
+  }));
+  const newEntry: ChapterOrderingEntry = { id: stem, fileName: `${stem}.md`, explicitOrder: episode.index };
+  if (!wouldChapterLandAtOrder(diskSim, newEntry, episode.index)) return undefined;
+
+  return { stem, episodeIndex: episode.index, title };
+}
+
+/**
+ * #107 R1.1 自动建章的文件内容（磁盘派生消费契约 chapterDiskDerivation 的对偶生产端）：
+ *
+ * - frontmatter `order: N`（登记载体——派生排序键；R3.4 后编辑器兼容 frontmatter）。
+ * - `# 标题`（派生 title 源；无则 fallback 文件名 stem）。
+ * - body 提供时（direct 车道）正文 = 采信稿全文；缺省（review 车道骨架）无正文——正文走候选
+ *   →PatchReview 人审 → acceptChapterCandidateCore 落盘（review「写内容须人批」语义不破）。
+ *
+ * ⚠️ candidate.content 必须用**同形态完整内容**（含 frontmatter）——accept 落盘
+ * (acceptChapterCandidateCore mdContent=candidate.content 原文直写) 会整体覆盖文件，body-only
+ * 候选会把 frontmatter 连 order 一起抹掉 → 派生重排错位。
+ */
+export function autoCreatedChapterFileContent(plan: AutoCreateChapterPlan, body?: string): string {
+  const header = `---\norder: ${plan.episodeIndex}\n---\n\n# ${plan.title}\n`;
+  return body ? `${header}\n${body}` : header;
+}
+
+// ── preserveChapterFrontmatter：章文件覆写的 frontmatter 保序规则（#107 check 批补缝）──
+
+/**
+ * 章文件 frontmatter 块形状（与 ui `shared/utils/frontmatter.ts` / 派生消费端
+ * `chapterDiskDerivation` 同形状：容忍 BOM / 尾随空白 / CRLF / EOF 收尾）。
+ * 本模块自持正则（shared-contracts 是最底层包，不能 import ui util——形状由
+ * chapter-integration.test.ts 锚定与 ui 侧测试对拍，防漂移）。
+ */
+const CHAPTER_FILE_FRONTMATTER_RE = /^\uFEFF?---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
+
+function leadingFrontmatterBlock(text: string): string | null {
+  return text.match(CHAPTER_FILE_FRONTMATTER_RE)?.[0] ?? null;
+}
+
+/**
+ * 章文件覆写保序规则（#107 invariant 补缝，check 批 2026-08-30）：
+ *
+ * #107 后 frontmatter `order:` 是**每章**的登记载体（磁盘派生排序键）——但既有三条
+ * body-only 覆写路径会在重写已注册章时把 frontmatter 连 order 物理抹掉：
+ *
+ * 1. `acceptChapterCandidate`（standalone，shell direct 车道）——`candidate.content` = draft 正文
+ *    （`buildChapterAccept` 产，无 frontmatter）整体覆盖 `sections[0].content_file`；
+ * 2. `applyFieldPatches` chapter_candidate 分支（PatchReview 人审 accept 车道）——同上；
+ * 3. `chapter_write` handler 的 auto_revise splice / targeted-revision 落盘（body-only 正文）。
+ *
+ * 抹掉的后果：混合态（部分章文件带 order、部分被抹）触发派生排序全局开关
+ * `hasExplicitOrder` → 被抹章垫底 MAX_SAFE_INTEGER → sort_order 错位 → episode↔chapter
+ * 映射断裂（后续 accept 写错章，CR-4.1-06 族）。修法 = 覆写前读旧文件：**旧文件有
+ * frontmatter 且新内容自身无 frontmatter 时，原样回拼旧块**（逐字节保序含 CRLF/BOM）。
+ *
+ * 规则三态（全部显式）：
+ * - 旧文件无 frontmatter（历史 body-only 章 / 新建）→ 新内容原样（零行为变化——
+ *   既有全部测试夹具都是 body-only，本规则对它们是 no-op）；
+ * - 新内容自带 frontmatter（#107 全形态候选 / chapter_write 全形态写入）→ 原样（不双拼）；
+ * - 旧有新无 → 旧块回拼在前。捕获块 = 开 `---` 行至闭 `---` 行的**单个尾换行**（mirror ui
+ *   `splitFrontmatter` 同一形状——其后空行属 body 不属块）；块收 EOF 无换行时补一个行分隔
+ *   （mirror ui `restoreFrontmatter` 的同一规范化），空 body 原样返回。
+ *
+ * 与 R3.4 编辑器回拼红线同 invariant（「保存即丢 order」不得发生），这里是链侧/accept 侧
+ * 的对偶补全。范式判据（ADR-3）：纯机械字符串拼接，非语义。
+ */
+export function preserveChapterFrontmatter(
+  existingContent: string | null | undefined,
+  newContent: string,
+): string {
+  const existingFm = existingContent ? leadingFrontmatterBlock(existingContent) : null;
+  if (!existingFm) return newContent;
+  if (leadingFrontmatterBlock(newContent)) return newContent;
+  // mirror ui frontmatter.ts restoreFrontmatter：空 body 原样返回（不加行分隔）。
+  if (newContent === '') return existingFm;
+  return existingFm.endsWith('\n') ? existingFm + newContent : `${existingFm}\n${newContent}`;
+}
+
+// ── buildAcceptStoryDecisions：accept 登记 StoryDecision 构造单源（#107 R1.1c 提取）──
+
+/**
+ * accept 登记 StoryDecision 的输入 route 判定投影（buildChapterAccept 直读 route_decision
+ * artifact；#107 补产路径读 summary.routeDecision——summarizeRunSnapshot 已投影 deviation）。
+ * 字段 loose typing（unknown）：内部窄化，与提取前 buildChapterAccept 内联比较式逐字一致。
+ */
+export interface AcceptRouteDecisionLike {
+  decision?: unknown;
+  reason?: unknown;
+  deviation?: unknown;
+}
+
+/**
+ * route=accept 且正文偏离计划时登记的 decided StoryDecision（**单源构造器**，dogfood R2 #107
+ * R1.1c 从 buildChapterAccept :429-457 内联提取）。
+ *
+ * 两个消费方必须同构（防双形态漂移）：
+ * 1. `buildChapterAccept`（正常路径——onAccept 链内同步产 chapter_accept.storyDecisions）。
+ * 2. #107 no-chapter 自动建章的入口层补产（agent write-chapter / shell persistChapterAcceptIfNeeded
+ *    ——onAccept 已在链内同步调用过不可重入，入口层据 summary.routeDecision（含 deviation 投影）
+ *    + 补产的 runId/nowISO 重建）。**不静默降级**（用户拍板）：deviation=true 必登记，与正常路径
+ *    落 novel.story_decisions 的记录一字不差。
+ *
+ * 范式判据（ADR-3）：纯机械构造（读 LLM 判定的 deviation boolean 组装记录），不判「偏离好不好」。
+ */
+export function buildAcceptStoryDecisions(input: {
+  routeDecision: AcceptRouteDecisionLike | undefined;
+  episodeId: string;
+  runId: string;
+  nowISO: string;
+}): StoryDecision[] | undefined {
+  const route = input.routeDecision;
+  if (!route || route.deviation !== true) return undefined;
+  const routeReason =
+    typeof route.reason === 'string' && route.reason.length > 0
+      ? route.reason
+      : 'route 判定正文偏离计划，按正文为真相接受';
+  // 2.6 CR-Edge-4：source 按 route decision 值设（不再恒 'accept_as_truth'）--escalate_user
+  // 路径（用户经裁决器建议后 PatchReview accept）登记 'escalate_accepted'，落盘保留 escalation
+  // 上下文（可辨「这条偏离经用户裁决」）。escalate 候选只在用户 accept 时落盘（reject ->
+  // 改稿重跑，decision 随候选丢弃不落地），故 build 时标注安全。
+  const isEscalate = route.decision === 'escalate_user';
+  return [
+    {
+      id: `accept-${input.runId}`,
+      summary: isEscalate
+        ? '正文偏离计划，经灰区裁决后接受为真相（escalate_accepted）'
+        : '正文偏离计划，按正文为真相接受（accept_as_truth）',
+      reason: routeReason,
+      alternatives: [],
+      risk: '后续章节的计划 / 状态须据此偏离校正（正文 = 真相，计划追正文）',
+      status: 'decided',
+      source: isEscalate ? 'escalate_accepted' : 'accept_as_truth',
+      landingState: `已体现在 episode ${input.episodeId} 正文`,
+      relatedEpisodeId: input.episodeId,
+      createdAt: input.nowISO,
+    },
+  ];
+}
+
 // ── resolveEpisodeIdForChapter：chapterId → episodeId（正向链取反，Story 8.7 BMad CR-001）──
 
 /**
@@ -425,36 +681,15 @@ export function buildChapterAccept(
   if (typeof draft.title === 'string') candidate.title = draft.title;
   if (typeof draft.wordCount === 'number') candidate.wordCount = draft.wordCount;
 
-  // 2. route_decision.deviation → decided StoryDecision
+  // 2. route_decision.deviation → decided StoryDecision（#107 R1.1c 提取为 buildAcceptStoryDecisions
+  //    单源——正常路径与 no-chapter 自动建章补产路径同构，防双形态漂移）。
   const route = recordOf(snapshot.artifacts['route_decision']);
-  const deviation = route?.deviation === true;
-  let storyDecisions: StoryDecision[] | undefined;
-  if (deviation) {
-    const routeReason = typeof route?.reason === 'string' && route.reason.length > 0
-      ? route.reason
-      : 'route 判定正文偏离计划，按正文为真相接受';
-    // 2.6 CR-Edge-4：source 按 route decision 值设（不再恒 'accept_as_truth'）--escalate_user
-    // 路径（用户经裁决器建议后 PatchReview accept）登记 'escalate_accepted'，落盘保留 escalation
-    // 上下文（可辨「这条偏离经用户裁决」）。escalate 候选只在用户 accept 时落盘（reject -> 改稿
-    // 重跑，decision 随候选丢弃不落地），故 build 时标注安全。
-    const isEscalate = route?.decision === 'escalate_user';
-    storyDecisions = [
-      {
-        id: `accept-${snapshot.runId}`,
-        summary: isEscalate
-          ? '正文偏离计划，经灰区裁决后接受为真相（escalate_accepted）'
-          : '正文偏离计划，按正文为真相接受（accept_as_truth）',
-        reason: routeReason,
-        alternatives: [],
-        risk: '后续章节的计划 / 状态须据此偏离校正（正文 = 真相，计划追正文）',
-        status: 'decided',
-        source: isEscalate ? 'escalate_accepted' : 'accept_as_truth',
-        landingState: `已体现在 episode ${ctx.episodeId} 正文`,
-        relatedEpisodeId: ctx.episodeId,
-        createdAt: ctx.nowISO,
-      },
-    ];
-  }
+  const storyDecisions = buildAcceptStoryDecisions({
+    routeDecision: route,
+    episodeId: ctx.episodeId,
+    runId: snapshot.runId,
+    nowISO: ctx.nowISO,
+  });
 
   // 3. chapterId 解析（directChapterId 优先 → episode.index → sort_order 唯一命中）
   const chapterId = resolveChapterIdForEpisode(
@@ -488,6 +723,9 @@ export function describeAcceptSkip(reason: ChapterAcceptSkipReason): string {
     case 'no-nowiso':
       return '时间戳缺失（nowISO 未注入），无法登记 StoryDecision';
     case 'no-chapter':
-      return '章未在 project.yaml 注册或映射歧义（novel.chapters 无匹配 episode.index 的 sort_order / 多章同 sort_order），先在工作台建章';
+      // dogfood R2 #107 / R1.4：修后 no-chapter 会先走链侧自动建章（design §1.1 判定过 → 建
+      // chapters/<stem>.md + 补产候选）；本文案仍在场 = 自动建未发生（多章同 sort_order 歧义 /
+      // R1.1d 落位守卫未过 / 显式指定 chapterId / 建文件通道失败），文案如实指路手建。
+      return '章未在 project.yaml 注册或映射歧义，且不满足链侧自动建章条件（多章同 sort_order / 落位守卫未过 / 显式指定了 chapterId）——请先在工作台建章（章节列表空态「新建第一章」或 chapters/ 目录新建 .md 文件）';
   }
 }

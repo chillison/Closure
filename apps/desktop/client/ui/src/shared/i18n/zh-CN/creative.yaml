@@ -366,6 +366,8 @@ novelChapter:
   unknownError: "未知错误"
   emptyList: "当前项目暂无章节。"
   unnamed: "（未命名 {id}）"
+  createFirstChapter: "新建第一章"
+  createFirstFailed: "新建章节失败"
   selectChapter: "请选择一个章节以触发生成。"
   generateChapter: "生成本章（写章链段）"
   generateChapterNoEpisode: "本章未在 episode_outlines 排出，先规划 episode 再生成"

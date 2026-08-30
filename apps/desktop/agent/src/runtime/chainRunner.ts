@@ -8,6 +8,7 @@ import type {
   RunSnapshotSummary,
 } from '../contracts/run';
 import { ChainAbortedError } from '../contracts/run';
+import { logger } from '../logger';
 import type { ArcBeat, EscalateFinding, NovelStorySyncPayload } from '@orison/shared-contracts';
 import { arcBeatSchema, archiveIssueSchema, compileReportSchema, researchSuspensionSchema, storyTimeDriftWarningSchema, REVIEW_ATTRIBUTION_VALUES } from '@orison/shared-contracts';
 
@@ -116,7 +117,7 @@ export async function runChain(opts: RunChainOptions, deps: RunChainDeps): Promi
   // abort 预检（signal 已 abort，如 resume 一个被取消的链段）
   if (deps.signal.aborted) {
     run.status = 'aborted';
-    emitAbortCheckpoint(run, lastCheckpointStage, opts);
+    emitAbortCheckpoint(run, lastCheckpointStage, opts, deps.sessionContext.id);
     throw new ChainAbortedError(run);
   }
 
@@ -129,7 +130,7 @@ export async function runChain(opts: RunChainOptions, deps: RunChainDeps): Promi
     // abort 中途检查（每节点前）
     if (deps.signal.aborted) {
       run.status = 'aborted';
-      emitAbortCheckpoint(run, lastCheckpointStage, opts);
+      emitAbortCheckpoint(run, lastCheckpointStage, opts, deps.sessionContext.id);
       throw new ChainAbortedError(run);
     }
 
@@ -157,7 +158,7 @@ export async function runChain(opts: RunChainOptions, deps: RunChainDeps): Promi
       // onCheckpoint 持久 + ChainAbortedError，与 signal.aborted 预检一致——runChapterChain catch 后返 aborted summary）
       if (isAbortError(err)) {
         run.status = 'aborted';
-        emitAbortCheckpoint(run, lastCheckpointStage, opts);
+        emitAbortCheckpoint(run, lastCheckpointStage, opts, deps.sessionContext.id);
         throw new ChainAbortedError(run);
       }
       const msg = err instanceof Error ? err.message : String(err);
@@ -354,7 +355,7 @@ export function summarizeRunSnapshot(
   pauseHint?: { pausedStage?: CheckpointStage },
 ): RunSnapshotSummary {
   const routeDecision = recordOf(snapshot.artifacts['route_decision']) as
-    | { decision?: string; reason?: string }
+    | { decision?: string; reason?: string; deviation?: boolean }
     | undefined;
   const review = recordOf(snapshot.artifacts['review.latest']);
   const draft = recordOf(snapshot.artifacts['draft.initial']);
@@ -366,7 +367,14 @@ export function summarizeRunSnapshot(
     status: snapshot.status,
     routeDecision:
       routeDecision?.decision !== undefined
-        ? { decision: routeDecision.decision, reason: routeDecision.reason ?? '' }
+        ? {
+            decision: routeDecision.decision,
+            reason: routeDecision.reason ?? '',
+            // dogfood R2 #107 / R1.1c：deviation 投影——no-chapter 自动建章时入口层补产
+            // storyDecisions 需要（buildAcceptStoryDecisions 单源；修前 summary 只有 decision+reason，
+            // 补产只能静默降级不登记——用户拍板不降级）。只在 true 时带（false/缺省省略，零噪音）。
+            ...(routeDecision.deviation === true ? { deviation: true } : {}),
+          }
         : undefined,
     reviewVerdict: typeof review?.verdict === 'string' ? review.verdict : undefined,
     draftTitle: typeof draft?.title === 'string' ? draft.title : undefined,
@@ -610,7 +618,16 @@ function emitAbortCheckpoint(
   run: RunSnapshot,
   lastStage: CheckpointStage | undefined,
   opts: RunChainOptions,
+  sessionId: string,
 ): void {
+  // dogfood R2 #105 R2.5：abort 出口留痕（sessionId + 中断时节点 + 最近 checkpoint stage）——
+  // 修前 abort 路径全线零日志（「中断原因未上日志」诊断盲区）。只记不重试，abort 语义不变。
+  // sessionId = 链段 child session（runChain 作用域唯一 id 源）；projectPath 是跨层日志（workflow
+  // 守卫/收口日志）可对齐的 join key。
+  logger.info(
+    { sessionId, projectPath: run.projectPath, currentNodeId: run.currentNodeId, lastCheckpointStage: lastStage },
+    'chapter chain aborted — emitting checkpoint for resume',
+  );
   if (lastStage && opts.onCheckpoint) {
     void opts.onCheckpoint(lastStage, run);
   }

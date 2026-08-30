@@ -26,6 +26,20 @@ import { activeTaskStorySlug } from './checklist/parse.js';
 export const DRIVE_PORT = 3137;
 export const DEFAULT_TIMEOUT_MS = 10_000;
 
+/**
+ * dogfood R2 #98：Windows Hyper-V 动态保留段可吞默认口（本机 3082-3181 含 3137，
+ * listen EACCES 而非 EADDRINUSE——保留段随重启漂移，e2e 首撞）。ORISON_DRIVE_PORT
+ * env 覆盖（mirror shell 的 ORISON_CDP_PORT 先例），合法 1-65535 才生效。
+ */
+function drivePortFromEnv(): number {
+  const raw = process.env.ORISON_DRIVE_PORT;
+  if (raw && /^\d+$/.test(raw)) {
+    const n = Number(raw);
+    if (n >= 1 && n <= 65535) return n;
+  }
+  return DRIVE_PORT;
+}
+
 // ---------------------------------------------------------------------------
 // Selector resolution (pure / easily unit-testable).
 // ---------------------------------------------------------------------------
@@ -624,7 +638,7 @@ const isMain = (() => {
 })();
 
 if (isMain) {
-  startDriveServer().catch((e) => {
+  startDriveServer(drivePortFromEnv()).catch((e) => {
     console.error('drive server failed to start:', e);
     process.exit(1);
   });

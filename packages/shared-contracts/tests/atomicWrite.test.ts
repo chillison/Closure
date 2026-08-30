@@ -29,7 +29,7 @@ const TEST_DIR = path.join(process.cwd(), 'tests', '.tmp-atomic-write');
 
 const tmpLeftovers = () => readdirSync(TEST_DIR).filter((name) => name.includes('.tmp-'));
 
-describe('atomicWriteFileSync — rename 瞬态错重试（dogfood R2 #85）', () => {
+describe('atomicWriteFileSync — rename 瞬态错重试（dogfood R2 #85/#106）', () => {
   beforeEach(() => {
     renameState.failures.length = 0;
     renameState.calls = 0;
@@ -72,8 +72,19 @@ describe('atomicWriteFileSync — rename 瞬态错重试（dogfood R2 #85）', (
     expect(renameState.calls).toBe(2);
   });
 
-  it('EPERM 三次全败：抛原错（保旧文件 + 清 tmp），不再做第 4 次尝试', () => {
-    renameState.failures.push('EPERM', 'EPERM', 'EPERM');
+  it('#106 EPERM ×4 后第 5 次过：外部持柄 >200ms（旧预算耗尽点之后）仍跨过，落盘成功', () => {
+    renameState.failures.push('EPERM', 'EPERM', 'EPERM', 'EPERM');
+    const target = path.join(TEST_DIR, 'project.yaml');
+
+    atomicWriteFileSync(target, 'version: 3', 'utf-8');
+
+    expect(readFileSync(target, 'utf-8')).toBe('version: 3');
+    expect(renameState.calls).toBe(5);
+    expect(tmpLeftovers()).toEqual([]);
+  });
+
+  it('EPERM 五次全败（预算耗尽）：抛原错（保旧文件 + 清 tmp），不再做第 6 次尝试', () => {
+    renameState.failures.push('EPERM', 'EPERM', 'EPERM', 'EPERM', 'EPERM');
     const target = path.join(TEST_DIR, 'project.yaml');
     writeFileSync(target, 'old content', 'utf-8');
 
@@ -81,7 +92,7 @@ describe('atomicWriteFileSync — rename 瞬态错重试（dogfood R2 #85）', (
       expect.objectContaining({ code: 'EPERM' }),
     );
 
-    expect(renameState.calls).toBe(3);
+    expect(renameState.calls).toBe(5);
     expect(readFileSync(target, 'utf-8')).toBe('old content');
     expect(tmpLeftovers()).toEqual([]);
   });

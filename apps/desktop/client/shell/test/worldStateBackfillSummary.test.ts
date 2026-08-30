@@ -30,6 +30,18 @@ vi.mock('electron', () => ({
   },
 }));
 
+// dogfood #104-b：importOriginal 保留真 materialize 实现 → 真 hook 兜底 resolveEmbeddingModel
+// → defaultEmbedBatch 真打 embed 端点。mock 模型解析层（逐字 mirror
+// chapterSummaryHookWiring.test.ts:22-29）：null 短路 embed 块，FTS-only 降级语义不变。
+vi.mock('../main/ipc/modelGatewayIpc', () => ({
+  resolveEmbeddingModel: () => null,
+  resolveRerankModel: () => null,
+  resolveSummaryModel: () => null,
+  resolveModel: () => {
+    throw new Error('resolveModel should not be called');
+  },
+}));
+
 // hoisted mock 状态（vi.mock factory 提升后仍可经闭包引用）。
 const { loadProject, materializeCore, mockState } = vi.hoisted(() => {
   const loadProject = vi.fn();

@@ -223,6 +223,58 @@ describe('ChainRunCard — 中断/失败态与 paused 精简', () => {
   });
 });
 
+// ════════════════════════════════════════════════════════════════════════════
+// dogfood R2 #105 缝③（2026-08-30）：占位符文案按 run.status 分流——aborted/error 态的
+// 「正在进行：{node}」与头部「已中断/失败」tag 同卡矛盾（loading 三点已分 status，文案漏了
+// 同款门）。
+// ════════════════════════════════════════════════════════════════════════════
+describe('R2.3 #105 缝③ 终态占位符文案分流', () => {
+  it('aborted + JSON 节点中断（无已流正文）→ 占位符「已中断于：{node}」非「正在进行」+ 无三点', () => {
+    render(
+      <ChainRunCard
+        run={baseRun({
+          status: 'aborted',
+          completedNodes: [],
+          currentNodeId: 'brief-compiler-node',
+        })}
+      />,
+    );
+    expect(screen.getByText('Interrupted at: brief-compiler')).toBeTruthy();
+    expect(screen.queryByText(/Working:/)).toBeNull();
+    // loading 三点只属 running——终态不再假活。
+    expect(document.querySelectorAll('.chain-run-card-placeholder .agent-loading-dot').length).toBe(0);
+  });
+
+  it('error + 失败节点 → 占位符「失败于：{node}」', () => {
+    render(
+      <ChainRunCard
+        run={baseRun({
+          status: 'error',
+          currentNodeId: 'multi-review-agent',
+          errorNodeId: 'multi-review-agent',
+        })}
+      />,
+    );
+    expect(screen.getByText('Failed at: multi-review')).toBeTruthy();
+    expect(screen.queryByText(/Working:/)).toBeNull();
+  });
+
+  it('error + currentNodeId 空 → 兜底 errorNodeId（哨兵前最后一帧 node-done 未必到达）', () => {
+    render(
+      <ChainRunCard run={baseRun({ status: 'error', currentNodeId: null, errorNodeId: 'lint-node' })} />,
+    );
+    expect(screen.getByText('Failed at: lint')).toBeTruthy();
+  });
+
+  it('running 照旧「正在进行：{node}」+ 三点 loading（分流不误伤运行态）', () => {
+    render(
+      <ChainRunCard run={baseRun({ status: 'running', currentNodeId: 'lint-node' })} />,
+    );
+    expect(screen.getByText('Working: lint')).toBeTruthy();
+    expect(document.querySelectorAll('.chain-run-card-placeholder .agent-loading-dot').length).toBe(3);
+  });
+});
+
 describe('AgentMessages — 链卡尾部挂载门', () => {
   it('当前会话链 run 非 completed → 尾部挂卡；completed → 卸载（审阅流程接管）', () => {
     const { rerender } = render(

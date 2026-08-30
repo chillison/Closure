@@ -64,7 +64,7 @@ describe('user preferences IPC round-trip', () => {
       editorLineHeight: 2.0,
       wallpaperUrl: 'orison-file:///C:/Users/t/AppData/Roaming/Closure/wallpaper/bg.png',
       wallpaperOpacity: 0.6,
-      wallpaperFrost: true,
+      wallpaperFrostBlur: 20,
       // R8 全局界面缩放。
       interfaceScale: 1.15,
     };
@@ -86,10 +86,10 @@ describe('user preferences IPC round-trip', () => {
     expect(read.locale).toBe('zh-CN');
     expect(read.readingFontWeight).toBe(500);
     expect(read.readingFontScale).toBe(1.15);
-    // 08-25 全窗口背景：URL + 透明度 roundtrip。08-26 磨砂开关同。
+    // 08-25 全窗口背景：URL + 透明度 roundtrip。08-29 磨砂滑杆化：强度数值同。
     expect(read.wallpaperUrl).toBe('orison-file:///C:/Users/t/AppData/Roaming/Closure/wallpaper/bg.png');
     expect(read.wallpaperOpacity).toBe(0.6);
-    expect(read.wallpaperFrost).toBe(true);
+    expect(read.wallpaperFrostBlur).toBe(20);
     // R8 界面缩放 roundtrip。
     expect(read.interfaceScale).toBe(1.15);
   });
@@ -128,8 +128,8 @@ describe('user preferences IPC round-trip', () => {
     expect(cleared.wallpaperUrl).toBeUndefined();
     // 无 wallpaperOpacity 键的存量文件 → 默认 1。
     expect(cleared.wallpaperOpacity).toBe(1);
-    // 08-26 磨砂：无键存量文件 → 默认关（老配置零迁移）。
-    expect(cleared.wallpaperFrost).toBe(false);
+    // 08-29 磨砂：无新键存量文件 → 默认 0（老配置零迁移；旧布尔键折算见 wallpaperIpc.test）。
+    expect(cleared.wallpaperFrostBlur).toBe(0);
     // R8 界面缩放：无键存量文件 → 默认 1（不缩放）。
     expect(cleared.interfaceScale).toBe(1);
   });

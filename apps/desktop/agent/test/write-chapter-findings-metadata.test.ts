@@ -190,7 +190,8 @@ describe('write_chapter Story 3.7 findings metadata 透传', () => {
     `  · [${FINDINGS[0].severity}] "${FINDINGS[0].quote}"（${FINDINGS[0].location}）—— ${FINDINGS[0].explanation}`,
     '',
     '【灰区上发】裁决器初审暂不可用（parse 失败/超时）——未自动采信，请你裁决。',
-    '灰区裁决：但无章节候选（章未在 project.yaml 注册或映射歧义（novel.chapters 无匹配 episode.index 的 sort_order / 多章同 sort_order），先在工作台建章）——无法裁决落盘。',
+    // dogfood R2 #107 / R1.4：describeAcceptSkip no-chapter 文案更新（自动建章未发生的原因说明）。
+    '灰区裁决：但无章节候选（章未在 project.yaml 注册或映射歧义，且不满足链侧自动建章条件（多章同 sort_order / 落位守卫未过 / 显式指定了 chapterId）——请先在工作台建章（章节列表空态「新建第一章」或 chapters/ 目录新建 .md 文件））——无法裁决落盘。',
   ].join('\n');
 
   // ─── a) auto_revise surface ───

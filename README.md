@@ -266,3 +266,15 @@ Windows、macOS（Intel 与 Apple Silicon）和 Linux。
 - Bug 报告请附上复现步骤和系统信息
 - Feature 建议请先开 Issue 讨论
 - 安全问题请走私密披露，见 [SECURITY.md](SECURITY.md)
+
+### 原生模块与 ABI
+
+项目依赖 better-sqlite3 原生模块，它必须针对**当前运行时**编译：运行应用（`pnpm dev`）需要 Electron 的 ABI，运行测试（`pnpm test`）需要 Node 的 ABI——两者互斥，切换用途或切换 Node 版本后必须重编：
+
+```bash
+pnpm rebuild:native              # 按 Electron ABI 重建（运行应用 / pnpm dev 之前）
+pnpm rebuild -r better-sqlite3   # 按 Node ABI 重建（运行测试之前；CI 会自动执行）
+```
+
+- 切换 Node 版本后，先按目标用途重编，再跑对应命令。
+- 测试输出里数据库相关套件**整族 skip** 是 ABI 不匹配的信号（不是测试坏了）——先重编再排查。

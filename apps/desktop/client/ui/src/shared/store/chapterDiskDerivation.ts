@@ -1,6 +1,7 @@
-import type { FileTreeEntry } from '@orison/shared-contracts';
+import { sortChapterOrderingEntries, type FileTreeEntry } from '@orison/shared-contracts';
 import type { ChapterStatus, NovelChapterMeta, SectionMeta } from './novelChapterSlice';
 import { normalizePath } from '../utils/paths';
+import { getFrontmatterInner, stripFrontmatter } from '../utils/frontmatter';
 
 type DiskChapter = {
   id: string;
@@ -12,7 +13,6 @@ type DiskChapter = {
 };
 
 const MARKDOWN_EXT = /\.md$/i;
-const FRONTMATTER_RE = /^---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/;
 const HEADING_RE = /^#\s+(.+?)\s*#*\s*$/m;
 const ORDER_RE = /^order:\s*([0-9]+)\s*$/m;
 
@@ -64,7 +64,7 @@ export async function deriveChaptersFromDisk(
     return chapterFromDiskFile(file.fileName, file.contentFile, content);
   }));
 
-  return mergeDiskAndStoredChapters(sortDiskChapters(diskChapters), existingChapters);
+  return mergeDiskAndStoredChapters(sortChapterOrderingEntries(diskChapters), existingChapters);
 }
 
 function collectChapterFiles(entries: FileTreeEntry[]): Array<{ fileName: string; contentFile: string }> {
@@ -99,18 +99,10 @@ function chapterFromDiskFile(fileName: string, contentFile: string, content: str
   };
 }
 
-function sortDiskChapters(chapters: DiskChapter[]): DiskChapter[] {
-  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-  const hasExplicitOrder = chapters.some((chapter) => chapter.explicitOrder !== null);
-  return [...chapters].sort((a, b) => {
-    if (hasExplicitOrder) {
-      const orderA = a.explicitOrder ?? Number.MAX_SAFE_INTEGER;
-      const orderB = b.explicitOrder ?? Number.MAX_SAFE_INTEGER;
-      if (orderA !== orderB) return orderA - orderB;
-    }
-    return collator.compare(a.fileName, b.fileName);
-  });
-}
+// 磁盘派生排序规则的单源已提取至 shared-contracts `chapter-ordering.ts`（dogfood #107 / R1.1：
+// agent/shell 侧自动建章的落位守卫须与 renderer 实际派生同一套规则，两份实现必漂移）。原私有
+// sortDiskChapters 逐字迁移，行为零变化；排序语义（sort_order=排序后位置 / hasExplicitOrder
+// 全局开关 / 缺序垫底 MAX_SAFE_INTEGER / 同分 collator 决胜）见该文件头契约。
 
 function mergeDiskAndStoredChapters(
   diskChapters: DiskChapter[],
@@ -146,12 +138,10 @@ function normalizeStatus(status: ChapterStatus | undefined): ChapterStatus {
   return status ?? 'draft';
 }
 
-function stripFrontmatter(text: string): string {
-  return text.replace(FRONTMATTER_RE, '');
-}
-
+// Front-matter shape lives in shared/utils/frontmatter (single source with the
+// markdown editor's strip/re-attach, dogfood #109).
 function parseFrontmatterOrder(text: string): number | null {
-  const frontmatter = text.match(FRONTMATTER_RE)?.[1];
+  const frontmatter = getFrontmatterInner(text);
   if (!frontmatter) return null;
   const raw = frontmatter.match(ORDER_RE)?.[1];
   if (!raw) return null;

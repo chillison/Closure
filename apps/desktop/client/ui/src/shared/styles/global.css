@@ -34,6 +34,8 @@
 @import "../../features/agent-panel/agent-panel.css";
 @import "../../features/agent-panel/style-input-dialog.css";
 @import "../../features/structure/structure.css";
+@import "../../features/world-state/world-state.css";
+@import "../../features/setting/setting.css";
 
 /* ── Reset ── */
 #root {
@@ -64,15 +66,12 @@ body {
   background-repeat: no-repeat;
 }
 
-/* ── 08-26 dogfood 拍板：可选磨砂层 ──
+/* ── 08-29 滑杆化：可调磨砂（0–50px，0 = 关）──
  * blur 打在壁纸层自身（不是逐面板 backdrop-filter——大面积 blur 逐面算开销大，
- * 且各面已有透明度梯度）。scale 1.05 过扫：blur 会把层外虚空采样进边缘，不过扫
- * 四周会有一圈发虚的暗边。固定半径 20px（用户要的是「可选开关」不是旋钮）；
- * 与 opacity 独立正交——先调不透明度再磨砂，或反之，均合法。 */
-.app-wallpaper--frost {
-  filter: blur(20px);
-  transform: scale(1.05);
-}
+ * 且各面已有透明度梯度），强度由 App.tsx 内联 filter 施加 + 过扫 scale(1 + N/400)
+ * （N=20 时 =1.05，与旧固定磨砂严格一致；过扫防 blur 把层外虚空采样进边缘出
+ * 暗圈）。旧 `.app-wallpaper--frost` 固定类已退役——强度连续可调，类切换无法
+ * 表达；与 opacity 独立正交——先调不透明度再磨砂，或反之，均合法。 */
 
 /* With a wallpaper set, EVERY surface becomes translucent so the wallpaper
  * shows through app-wide — panels differ ONLY by opacity (三层梯度：大面板

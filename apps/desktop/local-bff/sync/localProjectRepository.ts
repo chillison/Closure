@@ -3,7 +3,7 @@ import path from 'node:path';
 import type { z } from 'zod';
 import { patchOperationSchema, projectDocumentSchema, transformForeshadowToPromise, markStaleFields } from '@orison/shared-contracts';
 import type { ProjectFieldPatch, CreativeFieldKey, ForeshadowMigrationInput } from '@orison/shared-contracts';
-import { acceptChapterCandidateCore, type ChapterIntegrationProject } from '@orison/shared-contracts';
+import { acceptChapterCandidateCore, preserveChapterFrontmatter, type ChapterIntegrationProject } from '@orison/shared-contracts';
 import {
   applyDecisionActions,
   storyDecisionActionSchema,
@@ -602,7 +602,13 @@ export function applyFieldPatchesWithSkipped(
           if (!existsSync(mdDir)) {
             mkdirSync(mdDir, { recursive: true });
           }
-          atomicWriteFileSync(mdPath, result.mdContent, 'utf8');
+          // #107 check 批补缝：candidate.content 是 draft 正文（无 frontmatter）——整体覆盖会把
+          // 已注册章文件的 frontmatter `order:`（登记载体）物理抹掉 → 派生重排错位（CR-4.1-06
+          // 族）。旧文件有 frontmatter 且新内容无 → 原样回拼（body-only 旧文件零行为变化）。
+          // 规则单源见 shared-contracts preserveChapterFrontmatter（mirror novelProjectRepository
+          // acceptChapterCandidate 同款）。
+          const existingMd = existsSync(mdPath) ? readFileSync(mdPath, 'utf-8') : null;
+          atomicWriteFileSync(mdPath, preserveChapterFrontmatter(existingMd, result.mdContent), 'utf8');
 
           // core structuredClone 了 next 并 mutate；把 novel（含 chapter meta + story_decisions）投回 working doc。
           // meta 不抄（core 不 bump；loop-end 统一 bump），避免覆盖 next 其他 patch 的 meta 状态。

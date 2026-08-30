@@ -1,0 +1,420 @@
+/* ── CardForm（设定卡表单，task 08-30 A2 波；CR P16 头注失实修正）──
+ * 主题 token 化（tokens.css 生成 token，明暗自动）；类前缀 card-form-。
+ * 文件所有权实况：setting.css（页面壳）经 global.css @import 集中装载；本文件由
+ * CardForm.tsx 直接 import（组件级样式，随组件加载）——两文件并行存在是定稿形态，
+ * 并非待合并的过渡态。 */
+
+.card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── 卡头 ── */
+.card-form-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.card-form-name {
+  font-size: 15px;
+  font-weight: 600;
+  width: 220px;
+}
+
+.card-form-id {
+  color: var(--on-surface-variant);
+  font-size: 11px;
+  font-family: Consolas, monospace;
+}
+
+.card-form-type-badge {
+  font-size: 11px;
+  border-radius: 4px;
+  padding: 1px 8px;
+  border: 1px solid var(--accent);
+  background: var(--accent-soft);
+  color: var(--on-surface);
+}
+
+.card-form-status {
+  background: var(--input-bg, var(--surface-container));
+  border: 1px solid var(--border-default);
+  color: var(--on-surface);
+  border-radius: 6px;
+  padding: 4px 8px;
+}
+
+.card-form-tier {
+  display: inline-flex;
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-left: auto;
+}
+
+.card-form-tier-btn {
+  padding: 4px 10px;
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.card-form-tier-btn + .card-form-tier-btn {
+  border-left: 1px solid var(--border-subtle);
+}
+
+.card-form-tier-btn.is-active {
+  background: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+
+.card-form-tier-btn.is-unset {
+  font-style: italic;
+}
+
+.card-form-tier-default {
+  opacity: 0.75;
+  font-weight: 400;
+  margin-left: 4px;
+  font-size: 11px;
+}
+
+/* ── 输入件通用 ── */
+.card-form-input,
+.card-form-textarea {
+  width: 100%;
+  background: var(--input-bg, var(--surface-container));
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--on-surface);
+  padding: 5px 8px;
+  font: inherit;
+}
+
+.card-form-textarea {
+  min-height: 52px;
+  resize: vertical;
+}
+
+.card-form-input:disabled,
+.card-form-textarea:disabled,
+.card-form-select-input:disabled,
+.card-form-kv-key:disabled,
+.card-form-kv-value:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.card-form-number {
+  max-width: 140px;
+}
+
+/* ── 分区 ── */
+.card-form-sect {
+  display: flex;
+  flex-direction: column;
+}
+
+.card-form-sect-header {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  padding: 2px 0 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--accent-strong, var(--accent));
+  cursor: pointer;
+}
+
+.card-form-sect:not(.is-main) .card-form-sect-header {
+  color: var(--on-surface-variant);
+}
+
+/* 折叠指示箭头（次显组默认合） */
+.card-form-sect:not(.is-main) .card-form-sect-header::after {
+  content: ' ▸';
+  opacity: 0.6;
+}
+
+.card-form-sect:not(.is-main) .card-form-sect-header.is-open::after {
+  content: ' ▾';
+}
+
+.card-form-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+  padding-bottom: 4px;
+}
+
+.card-form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.card-form-field-label {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+}
+
+/* secrets 双栏（表面 | 真相 并排——信息差域强调） */
+.card-form-sect-secrets .card-form-fields {
+  grid-template-columns: 1fr 1fr;
+}
+
+/* 单字段组（path === key）：无字段标签，控件占满 */
+.card-form-fields.is-single {
+  grid-template-columns: 1fr;
+}
+
+/* ── chips ── */
+.card-form-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  min-height: 28px;
+}
+
+.card-form-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--surface-container-high, var(--surface-container));
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  padding: 1px 4px 1px 9px;
+  font-size: 12px;
+}
+
+.card-form-chip-remove {
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: 0 5px;
+  line-height: 1.4;
+}
+
+.card-form-chip-remove:hover:not(:disabled) {
+  color: var(--error);
+}
+
+.card-form-chip-input {
+  background: transparent;
+  border: 1px dashed var(--border-default);
+  border-radius: 999px;
+  color: var(--on-surface);
+  padding: 2px 10px;
+  font-size: 12px;
+  min-width: 110px;
+}
+
+/* ── 词表快选（select/chips 共用）── */
+.card-form-select {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.card-form-quickpick {
+  font-size: 11px;
+}
+
+.card-form-quickpick-summary {
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  user-select: none;
+}
+
+.card-form-quickpick-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 4px;
+}
+
+.card-form-quickpick-item {
+  background: var(--surface-container-high, var(--surface-container));
+  border: 1px solid var(--border-default);
+  border-radius: 999px;
+  color: var(--on-surface);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 1px 9px;
+}
+
+.card-form-quickpick-item:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+/* ── details kv 表 ── */
+.card-form-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.card-form-kv-row {
+  display: grid;
+  grid-template-columns: minmax(110px, 180px) 1fr 24px;
+  gap: 6px;
+  align-items: center;
+}
+
+.card-form-kv-key,
+.card-form-kv-value {
+  background: var(--input-bg, var(--surface-container));
+  border: 1px solid var(--border-default);
+  border-radius: 6px;
+  color: var(--on-surface);
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 12px;
+  min-width: 0;
+}
+
+/* 重复键行标记（CR P9②：trim 后同键后行——首行生效，此行不落盘） */
+.card-form-kv-key.is-dup {
+  border-color: var(--error);
+}
+
+.card-form-kv-delete {
+  border: none;
+  background: transparent;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  padding: 0;
+}
+
+.card-form-kv-delete:hover:not(:disabled) {
+  color: var(--error);
+}
+
+.card-form-kv-add {
+  align-self: flex-start;
+  border: 1px dashed var(--border-default);
+  background: transparent;
+  border-radius: 6px;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 3px 10px;
+}
+
+.card-form-kv-add:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--on-surface);
+}
+
+/* ── object 数组占位 ── */
+.card-form-sect-skipnote .card-form-sect-header {
+  cursor: default;
+  color: var(--warning);
+}
+
+/* ── 卡内关系只读摘要（CR P7：KR-010 双源后置——只呈现不编辑）── */
+.card-form-sect-relationships .card-form-sect-header {
+  cursor: default;
+  color: var(--on-surface-variant);
+}
+
+.card-form-rel-count {
+  margin-left: 4px;
+  font-weight: 400;
+  opacity: 0.65;
+}
+
+.card-form-rel-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.card-form-rel-item {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 12px;
+  min-width: 0;
+}
+
+.card-form-rel-target {
+  font-weight: 600;
+  color: var(--on-surface);
+  overflow-wrap: anywhere;
+}
+
+.card-form-rel-type {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  border: 1px solid var(--border-subtle);
+  border-radius: 4px;
+  padding: 0 5px;
+}
+
+.card-form-rel-label {
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  overflow-wrap: anywhere;
+}
+
+.card-form-rel-hint {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+}
+
+.card-form-skipnote-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--on-surface-variant);
+}
+
+.card-form-skipnote-list .card-form-field-label {
+  margin-right: 6px;
+}
+
+/* ── 底部删除 ── */
+.card-form-foot {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.card-form-delete {
+  background: transparent;
+  border: 1px solid var(--error);
+  border-radius: 6px;
+  color: var(--error);
+  cursor: pointer;
+  font-size: 12px;
+  padding: 5px 14px;
+}
+
+.card-form-delete:hover {
+  background: var(--error-bg);
+}

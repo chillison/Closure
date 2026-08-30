@@ -45,6 +45,9 @@ type TestState = ChainBufferState & {
   setPausedReview: () => void;
   setPendingPatch: () => void;
   fieldMetadata: Record<string, unknown>;
+  /** dogfood R2 #105 假中断守卫：resume 在途判据（chapterReviewSlice 面——dispatcher 结构读）。 */
+  reviewResuming: boolean;
+  pausedReviewBySession: Record<string, unknown>;
 };
 
 const useTestStore = create<TestState>()((set) => ({
@@ -66,6 +69,8 @@ const useTestStore = create<TestState>()((set) => ({
   setPausedReview: () => {},
   setPendingPatch: () => {},
   fieldMetadata: {},
+  reviewResuming: false,
+  pausedReviewBySession: {},
 }));
 
 function run(sid = 'sess-a'): ChainRunState | undefined {
@@ -96,6 +101,8 @@ beforeEach(() => {
     agentError: null,
     agentRunStates: {},
     chainRunBySession: {},
+    reviewResuming: false,
+    pausedReviewBySession: {},
   });
 });
 
@@ -251,6 +258,40 @@ describe('handleAgentStreamEvent — chain 事件分发（dispatcher 集成）',
     // leader run 结束而链无终态帧 → 兜底中断。
     handleAgentStreamEvent(useTestStore, ev({ type: 'done', data: { status: 'aborted' } }));
     expect(run()?.status).toBe('aborted');
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// dogfood R2 #105 假中断根治（2026-08-30）：resume 链跑在 leader turn 生命周期外——done 兜底
+// 前置守卫（reviewResuming + 该会话 pausedReview = 在途 resume IPC）命中时不 finalize 不删缓冲。
+// ════════════════════════════════════════════════════════════════════════════
+describe('dogfood R2 #105 假中断根治（done 兜底守卫——缓冲不删）', () => {
+  it('resume 在途 → leader turn done 不误标 aborted 不删缓冲：后续 flush 窗照写 streamText', () => {
+    applyChainDelta(useTestStore, 'sess-a', chainDelta({ delta: '正文' }));
+    // resume IPC 在途（ChapterReviewPanel 三动作已发出、长跑 IPC 未返回）。
+    useTestStore.setState({
+      reviewResuming: true,
+      pausedReviewBySession: { 'sess-a': { type: 'chapter_review', stage: 'draft' } },
+    });
+
+    // leader turn 结束（resume 跑在 turn 外——done 不构成链被掐证据）。
+    handleAgentStreamEvent(useTestStore, { type: 'done', data: { status: 'completed' }, sessionId: 'sess-a', projectPath: '/proj-a' });
+
+    // 链不被误终态化（finalize 会标 aborted + force flush + 删缓冲——三者都没发生）。
+    expect(run()?.status).toBe('running');
+    // 缓冲未删：flush 窗到 → streamText 照写（增量续流能力保留）。
+    vi.advanceTimersByTime(250);
+    expect(run()?.streamText).toBe('正文');
+    expect(run()?.streaming).toBe(true);
+  });
+
+  it('resume 不在途 → done 兜底照旧（force flush + 删缓冲 + 标 aborted——既有语义不回归）', () => {
+    applyChainDelta(useTestStore, 'sess-a', chainDelta({ delta: '正文' }));
+
+    handleAgentStreamEvent(useTestStore, { type: 'done', data: { status: 'completed' }, sessionId: 'sess-a', projectPath: '/proj-a' });
+
+    expect(run()?.status).toBe('aborted');
+    expect(run()?.streamText).toBe('正文'); // force flush 兜住尾巴
   });
 });
 

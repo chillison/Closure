@@ -6,6 +6,7 @@ import { registerProjectReset } from './resetRegistry';
 import { useToastStore } from './toastStore';
 import { getSessionProject } from './agentEvents';
 import { parseChainBusyError, showChainRunBusyToast, showRunBusyToast } from './projectRunBusy';
+import { translate } from '../i18n/useI18n';
 
 // ── Types ──
 
@@ -142,6 +143,23 @@ function metadataFromPausedSummary(summary: RunChapterChainSummary): ChapterRevi
   return meta;
 }
 
+/**
+ * dogfood R2 #105 缓①（2026-08-30）：resume 被动中断（continue/redo 返 aborted/error / IPC throw）
+ * 的告知 toast。审阅卡按「原样保留」哲学不清场（mirror busy 分支 CR-T1-027）——文案注明重跑
+ * 起点为上次审阅快照：保留的载荷是上一 pause 的旧数据（draft 可能落后于中断时已流出的文本，
+ * 重试 continue/redo 从该快照续跑）。纯 store 模块不能调 useI18n hook——translate 非 hook 译者
+ *（agentEvents #18-B 同款读法）。
+ */
+function showReviewInterruptedToast(locale: string, reason?: string): void {
+  useToastStore.getState().showToast(
+    reason
+      ? translate(locale, 'agent.reviewInterruptedKeptWithReason', { reason })
+      : translate(locale, 'agent.reviewInterruptedKept'),
+    'warning',
+    6000,
+  );
+}
+
 export const createChapterReviewSlice: StateCreator<Deps, [], [], ChapterReviewSlice> = (set, get) => {
   // 项目级状态：切项目必须清——否则上个项目 paused 的 review 泄漏到新项目，三动作会调错项目的
   // resume IPC（写错项目章节，同 agentDiffSlice pendingDiffs 项目隔离硬约束）。[[state-management]]
@@ -168,8 +186,13 @@ export const createChapterReviewSlice: StateCreator<Deps, [], [], ChapterReviewS
   /**
    * 三动作共享驱动：调 closure:resume-chapter-chain IPC，据返回 summary 和解 pausedReview。
    * - paused → 更新 pausedReview（下一 checkpoint）。
-   * - 其他（completed/aborted/error）→ 清 pausedReview（panel 卸载）。
-   * - IPC throw / summary.status='error' → 清 pausedReview + toast 报错（不留死面板）。
+   * - completed → 清 pausedReview（panel 卸载，#93 envelope 路由收尾）。
+   * - aborted/error（continue/redo）→ **保留 pausedReview** + toast 告知（dogfood R2 #105 缓①，
+   *   2026-08-30——被动中断/失败清场会把三动作入口一起清掉，用户只剩链卡重试；chainSnapshot
+   *   只在 abort IPC / deleteSession 清，被动中断后滞留 → continue/redo 可再续）。
+   * - aborted/error（action=abort，用户主动放弃）→ 清 pausedReview（用户已做完决策）。
+   * - busy 拒绝 → pausedReview 原样保留 + busy toast（CR-T1-027）。
+   * - IPC throw → 同款按 action 分流（continue/redo 保留可重试；abort 清场）。
    *
    * chapterId 透传：从当前 pausedReview 取（IPC resume 不复写；leader write_chapter 初次 pause 时
    * 由 params.chapterId 写入 metadata）。无 chapterId 时 IPC 接受缺省（runChapterChain resume 据
@@ -256,6 +279,27 @@ export const createChapterReviewSlice: StateCreator<Deps, [], [], ChapterReviewS
               onJump: (sid) => { void get().switchAgentSession(sid); },
             });
           }
+          return;
+        }
+        // ── dogfood R2 #105 缓①（2026-08-30）：终态和解按「中断是否用户主动」分流 ──
+        //
+        // continue/redo 返 aborted/error = 链被动中断/失败（流被掐 / 链段跑崩）——不是用户决策。
+        // 旧实现一律 setPaused(null) 把审阅卡连同三动作入口一起清掉（用户只剩链卡重试钮，
+        // resume 能力丢失）。mirror busy 分支（:244-259）的「原样保留」哲学：pausedReview 不动
+        // + reviewResuming 复位 + toast 告知。已核实 chainSnapshot 只在 abort IPC / deleteSession
+        // 清——被动中断后滞留，continue/redo 可从 snapshot 校验路径（closureChainIpc resume
+        // handler）再续。保留的载荷是上一 pause 的旧快照（draft 可能落后于中断时已流出的文本，
+        // toast 文案注明「重跑起点」语义）。abort（用户主动放弃）→ 维持 setPaused(null)。
+        if (
+          (action === 'continue' || action === 'redo')
+          && (summary.status === 'aborted' || summary.status === 'error')
+        ) {
+          set({ reviewResuming: false });
+          const locale = (get() as unknown as { resolvedLocale?: string }).resolvedLocale ?? 'zh-CN';
+          showReviewInterruptedToast(
+            locale,
+            summary.status === 'error' && summary.errors.length > 0 ? summary.errors.join('; ') : undefined,
+          );
           return;
         }
         setPaused(null);
@@ -362,6 +406,14 @@ export const createChapterReviewSlice: StateCreator<Deps, [], [], ChapterReviewS
         return;
       }
       const msg = err instanceof Error ? err.message : String(err);
+      // dogfood R2 #105 缓①：catch 路径同款分流——continue/redo 的 IPC throw（网关掐流 / IPC
+      // 下线）不是用户决策，保留面板可重试；abort（用户主动放弃）维持清场 + 既有失败 toast。
+      if (action === 'continue' || action === 'redo') {
+        set({ reviewResuming: false });
+        const locale = (get() as unknown as { resolvedLocale?: string }).resolvedLocale ?? 'zh-CN';
+        showReviewInterruptedToast(locale, msg);
+        return;
+      }
       setPaused(null);
       set({ reviewResuming: false });
       useToastStore.getState().showToast(`链段续跑失败: ${msg}`, 'error');

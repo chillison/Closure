@@ -637,6 +637,8 @@ export function listWorldSlices(
     type?: string;
     withPatches?: boolean;
     at?: number;
+    /** BMad CR #1+#200：storyTime **精确**匹配（面板 L2 slice-detail 按时点收窄——只拉该时点 slices+patches）。`at` 是 `<=` 累计截断，二者语义不同可并用。 */
+    storyTime?: number;
     axis?: string;
     episodeId?: string;
   } = {},
@@ -647,6 +649,10 @@ export function listWorldSlices(
   if (opts.at !== undefined) {
     conditions.push('s.story_time <= ?');
     params.push(opts.at);
+  }
+  if (opts.storyTime !== undefined) {
+    conditions.push('s.story_time = ?');
+    params.push(opts.storyTime);
   }
   if (opts.episodeId) {
     // Story 8.1：episode_id 列优先（新写入显式落列）；存量行 NULL → slice_id LIKE '<episodeId>:%' 解析
@@ -1448,6 +1454,107 @@ export function listLastPatchFacts(
     subjectId: row.subject_id as string,
     storyTime: row.story_time as number,
     sliceId: row.slice_id as string,
+  }));
+}
+
+// ── 世界状态面板读面聚合（dogfood R2 #92 · BMad CR #1+#200/#13）──
+//
+// 面板 L1/L2 的活动计数（每主体 patchCount/lastStoryTime/axes、每 storyTime 锚点 subjectCount/
+// patchCount/axisCounts）在 db 层 GROUP BY 聚合产出——**不实例化 patch 行**（替代旧 worldIpc
+// `listWorldSlices({withPatches:true})` 全量拉取内存现算，CR #1+#200）。行数 = subject 数 /
+// 有 patch 的 storyTime 数（**零 patch slice 天然无行**——锚点不产出、不抬 latestT，CR #13；
+// 与「patch 表无 story_time 列、归一化在 slice」的 §1.1 数据模型一致：聚合 JOIN slice 取
+// story_time 分组）。
+
+/** `listWorldSubjectActivityStats` 单行：每主体全史活动聚合（SubjectRow.patchCount/lastStoryTime/axes 契约源）。 */
+export interface WorldSubjectActivityStats {
+  subjectId: string;
+  /** 该主体累计 patch 数（全史口径）。 */
+  patchCount: number;
+  /** 首个 patch 的 storyTime（未登记主体的 entity 哨兵 firstSeenStoryTime 源）。 */
+  firstStoryTime: number;
+  /** 最后一次变化的 storyTime（MAX；值等价 listLastPatchFacts 的 argmax 行——本查询不取 tie-break 行本身）。 */
+  lastStoryTime: number;
+  /** 该主体涉足的轴（distinct，无序无过滤——canonical 轴序/未知轴过滤归 worldIpc 消费侧）。 */
+  axes: string[];
+}
+
+/**
+ * 每主体一行活动聚合（GROUP BY subject_id）：patchCount / firstStoryTime / lastStoryTime / axes。
+ * story_time 列 NOT NULL（schema）——MIN/MAX 无 NULL 歧义。
+ */
+export function listWorldSubjectActivityStats(projectId: string): WorldSubjectActivityStats[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT p.subject_id AS subject_id,
+              COUNT(*) AS patch_count,
+              MIN(s.story_time) AS first_story_time,
+              MAX(s.story_time) AS last_story_time,
+              GROUP_CONCAT(DISTINCT p.axis) AS axes
+       FROM closure_world_patch p
+       JOIN closure_world_slice s ON s.id = p.slice_id
+       WHERE p.project_id = ?
+       GROUP BY p.subject_id
+       ORDER BY p.subject_id ASC`,
+    )
+    .all(projectId) as AnyRow[];
+  return rows.map((row) => ({
+    subjectId: row.subject_id as string,
+    patchCount: row.patch_count as number,
+    firstStoryTime: row.first_story_time as number,
+    lastStoryTime: row.last_story_time as number,
+    // GROUP_CONCAT(DISTINCT) 逗号拼接（轴名约定 ASCII word 无逗号；有 patch 行轴列恒非 NULL）。
+    axes: ((row.axes as string | null) ?? '').split(',').filter((a) => a.length > 0),
+  }));
+}
+
+/** `listWorldAnchorStats` 单行：每 storyTime 场锚点的活动计数（axisCounts 五键 total record，缺轴计 0）。 */
+export interface WorldAnchorStats {
+  /** storyTime 场锚点（升序返回——锚点行数据层升序契约）。 */
+  t: number;
+  subjectCount: number;
+  patchCount: number;
+  /** 轴→patch 数（五键 total record——缺轴计 0；未知轴只进 patchCount 不进五键，db 轴漂移防御）。 */
+  axisCounts: Record<WorldPatchAxis, number>;
+}
+
+/**
+ * 每 storyTime 一行锚点聚合（GROUP BY s.story_time）：subjectCount / patchCount / axisCounts。
+ * 分组键 = JOIN 后的 patch 行——**零 patch 的 storyTime 无行**（CR #13：不产出空锚点、不抬
+ * latestT）。五轴 CASE 计数列集 mirror worldPatchAxisSchema enum（增轴时此处与契约
+ * worldAxisCountShape 同步——satisfies 强制全键在契约侧已守）。
+ */
+export function listWorldAnchorStats(projectId: string): WorldAnchorStats[] {
+  const db = getDb();
+  const rows = db
+    .prepare(
+      `SELECT s.story_time AS t,
+              COUNT(DISTINCT p.subject_id) AS subject_count,
+              COUNT(*) AS patch_count,
+              SUM(CASE WHEN p.axis = 'physical' THEN 1 ELSE 0 END) AS physical_count,
+              SUM(CASE WHEN p.axis = 'cognitive' THEN 1 ELSE 0 END) AS cognitive_count,
+              SUM(CASE WHEN p.axis = 'emotional' THEN 1 ELSE 0 END) AS emotional_count,
+              SUM(CASE WHEN p.axis = 'relational' THEN 1 ELSE 0 END) AS relational_count,
+              SUM(CASE WHEN p.axis = 'factional' THEN 1 ELSE 0 END) AS factional_count
+       FROM closure_world_patch p
+       JOIN closure_world_slice s ON s.id = p.slice_id
+       WHERE p.project_id = ?
+       GROUP BY s.story_time
+       ORDER BY s.story_time ASC`,
+    )
+    .all(projectId) as AnyRow[];
+  return rows.map((row) => ({
+    t: row.t as number,
+    subjectCount: row.subject_count as number,
+    patchCount: row.patch_count as number,
+    axisCounts: {
+      physical: row.physical_count as number,
+      cognitive: row.cognitive_count as number,
+      emotional: row.emotional_count as number,
+      relational: row.relational_count as number,
+      factional: row.factional_count as number,
+    },
   }));
 }
 

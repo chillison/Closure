@@ -57,3 +57,4 @@ docs/参考资料（不要git）/
 
 # 测试运行 cwd 残留（rm-residue-registry 登记的已知形态）
 apps/**/test-tmp-*/
+.gstack/

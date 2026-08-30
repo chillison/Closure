@@ -897,16 +897,35 @@ describe('write_chapter tool chapter_accept metadata（4.1 Step 4 / CR-15b）', 
   });
 
   // ════════════════════════════════════════════════════════════════════════════
-  // BMad CR-T1-056：per-project 活动链守卫 busy（workflow runChapterChain 入口闸拒绝）→
-  // write_chapter 早退（不进 auto_revise 循环 / post-settle）+ 不发链哨兵（另一条链不得被
-  // 本次拒绝误终态化）。
+  // BMad CR-T1-056 + dogfood R2 #105 缝①（R2.1）：per-project 活动链守卫 busy（workflow
+  // runChapterChain 入口闸拒绝）的分派——
+  // - 他 session 持有 → 早退提示（不进 auto_revise 循环 / post-settle）+ 不发链哨兵（另一条链
+  //   不得被本次拒绝误终态化）；
+  // - 自家租约（heldBy === ctx.sessionId）→ 按 chapterBrief 差异分派：有差异 → clearChainSnapshot +
+  //   fresh；无差异/拿不到快照 → resume:{fromSnapshot:true} 裸 continue（维持原案，挂起 belt 自动
+  //   转重查 + approvedDeviations 绑定）。
   // ════════════════════════════════════════════════════════════════════════════
 
-  it('CR-T1-056：busy summary（chain_run_active 前缀）→ 早退提示 + 无 chapter_accept metadata + 零链事件', async () => {
+  /** resume/fresh 重调成功后的终局 summary（chapterId=ch_001 对齐 writeReadyProject fixture）。 */
+  const SUMMARY_RETRY_OK: RunSnapshotSummary = {
+    status: 'completed',
+    routeDecision: { decision: 'accept_as_truth', reason: '正文升级' },
+    reviewVerdict: 'pass',
+    draftTitle: '第二章 B 城',
+    draftWordCount: 2800,
+    errors: [],
+    chapter_accept: {
+      chapterId: 'ch_001',
+      candidate: { title: '第二章 B 城', content: '正文…', wordCount: 2800 },
+      runId: 'run_mock_retry',
+    },
+  };
+
+  it('CR-T1-056：busy summary（chain_run_active，他 session 持有）→ 早退提示 + 无 chapter_accept metadata + 零链事件', async () => {
     writeReadyProject();
     runChapterChain.mockResolvedValue({
       status: 'error',
-      errors: ['chain_run_active|heldBy=leader-session-1'],
+      errors: ['chain_run_active|heldBy=another-leader-9'],
     });
     const { writeChapterTool } = await import('../src/tool/write-chapter');
 
@@ -918,10 +937,140 @@ describe('write_chapter tool chapter_accept metadata（4.1 Step 4 / CR-15b）', 
 
     expect(runChapterChain).toHaveBeenCalledTimes(1);
     // 早退：busy 机器可读前缀 + 人读文案（leader 下轮自察告知用户）。
-    expect(result.output).toContain('chain_run_active|heldBy=leader-session-1');
+    expect(result.output).toContain('chain_run_active|heldBy=another-leader-9');
     expect(result.output).toContain('该项目已有一条活动写章链');
     // 无链产物——不落 chapter_candidate field_patch、不发任何链哨兵（另一条活动链不受干扰）。
     expect(result.metadata?.type).toBeUndefined();
     expect(chainEvents).toHaveLength(0);
+  });
+
+  it('#105 R2.1①：自家租约 + brief 与快照一致（维持原案）→ resume 裸 continue 重调（不 clear 不 redo）', async () => {
+    writeReadyProject();
+    // 首调 busy（自家持有）→ 重调成功（SUMMARY_OK）。
+    runChapterChain
+      .mockResolvedValueOnce({
+        status: 'error',
+        errors: ['chain_run_active|heldBy=leader-session-1'],
+      })
+      .mockResolvedValue(SUMMARY_RETRY_OK);
+    const getChainSnapshot = vi.fn().mockReturnValue({
+      runId: 'run_paused',
+      status: 'paused',
+      currentNodeId: 'draft-writer-agent',
+      projectPath,
+      completedNodes: ['brief-compiler-node'],
+      pendingNodes: [],
+      // 与本次 params.chapterBrief 同内容（key 序故意不同——验 stableStringify 稳定比对）。
+      artifacts: {
+        chapter_brief_input: { brief: { tone: '紧张', goal: 'REACH_B_CITY' }, episodeId: 'ep1' },
+      },
+      review: null,
+      archive: null,
+      delivery: null,
+      feedback: null,
+    });
+    const clearChainSnapshot = vi.fn();
+    ctx.skillExecutor = {
+      ...ctx.skillExecutor,
+      runChapterChain,
+      getChainSnapshot,
+      clearChainSnapshot,
+    } as typeof ctx.skillExecutor;
+    const { writeChapterTool } = await import('../src/tool/write-chapter');
+
+    const chainEvents: Array<{ type: string; data: Record<string, unknown> }> = [];
+    const result = await writeChapterTool.execute(
+      { episodeId: 'ep1', chapterBrief: { goal: 'REACH_B_CITY', tone: '紧张' } },
+      { ...ctx, emitChainEvent: (e: { type: string; data: Record<string, unknown> }) => chainEvents.push(e) },
+    );
+
+    // 重调发生：首调 busy + resume 重调 = 2 次。
+    expect(runChapterChain).toHaveBeenCalledTimes(2);
+    // 第二次调用带 resume:{fromSnapshot:true} 裸 continue（不显式 redo——挂起 belt 自动转重查）。
+    const [, , retryOptions] = runChapterChain.mock.calls[1];
+    expect(retryOptions.resume).toEqual({ fromSnapshot: true });
+    expect(retryOptions.redo).toBeUndefined();
+    expect(retryOptions.requirement).toBe('ep1');
+    // 维持原案不清快照（snapshot 是 resume 数据源）。
+    expect(clearChainSnapshot).not.toHaveBeenCalled();
+    expect(getChainSnapshot).toHaveBeenCalledWith('leader-session-1');
+    // 重调成功 → 正常走完 tool（summary 透传 + chapter_accept metadata 照产）。
+    expect(result.metadata?.type).toBe('field_patch');
+    expect((result.metadata?.data as { chapterId: string }).chapterId).toBe('ch_001');
+  });
+
+  it('#105 R2.1②：自家租约 + brief 与快照有差异（改卡）→ clearChainSnapshot + fresh 重调（无 resume）', async () => {
+    writeReadyProject();
+    runChapterChain
+      .mockResolvedValueOnce({
+        status: 'error',
+        errors: ['chain_run_active|heldBy=leader-session-1'],
+      })
+      .mockResolvedValue(SUMMARY_RETRY_OK);
+    const getChainSnapshot = vi.fn().mockReturnValue({
+      runId: 'run_paused',
+      status: 'paused',
+      currentNodeId: 'draft-writer-agent',
+      projectPath,
+      completedNodes: ['brief-compiler-node'],
+      pendingNodes: [],
+      // 旧 brief（goal 不同）→ 差异命中 fresh 车道。
+      artifacts: {
+        chapter_brief_input: { episodeId: 'ep1', brief: { goal: 'OLD_GOAL_SUSPENDED' } },
+      },
+      review: null,
+      archive: null,
+      delivery: null,
+      feedback: null,
+    });
+    const clearChainSnapshot = vi.fn().mockReturnValue(true);
+    ctx.skillExecutor = {
+      ...ctx.skillExecutor,
+      runChapterChain,
+      getChainSnapshot,
+      clearChainSnapshot,
+    } as typeof ctx.skillExecutor;
+    const { writeChapterTool } = await import('../src/tool/write-chapter');
+
+    const result = await writeChapterTool.execute(
+      { episodeId: 'ep1', chapterBrief: { goal: 'REACH_B_CITY', tone: '紧张' } },
+      ctx,
+    );
+
+    expect(runChapterChain).toHaveBeenCalledTimes(2);
+    // 改卡车道：先弃快照（释放租约）再 fresh 重调（不带 resume）。
+    expect(clearChainSnapshot).toHaveBeenCalledTimes(1);
+    expect(clearChainSnapshot).toHaveBeenCalledWith('leader-session-1');
+    const [, retryArtifacts, retryOptions] = runChapterChain.mock.calls[1];
+    expect(retryOptions.resume).toBeUndefined();
+    // fresh 重调用本次装配的 initialArtifacts（含新 brief——briefHash 变 → cardChanged → 全量重查）。
+    expect(retryArtifacts['chapter_brief_input']).toEqual({
+      episodeId: 'ep1',
+      brief: { goal: 'REACH_B_CITY', tone: '紧张' },
+    });
+    expect(result.metadata?.type).toBe('field_patch');
+  });
+
+  it('#105 R2.1③：自家租约 + 拿不到快照（seam 缺方法/无快照）→ 保守走 resume（维持原案默认语义）', async () => {
+    writeReadyProject();
+    runChapterChain
+      .mockResolvedValueOnce({
+        status: 'error',
+        errors: ['chain_run_active|heldBy=leader-session-1'],
+      })
+      .mockResolvedValue(SUMMARY_RETRY_OK);
+    // 不给 getChainSnapshot/clearChainSnapshot（mock skillExecutor 缺 seam 方法）。
+    const { writeChapterTool } = await import('../src/tool/write-chapter');
+
+    const result = await writeChapterTool.execute(
+      { episodeId: 'ep1', chapterBrief: { goal: 'REACH_B_CITY', tone: '紧张' } },
+      ctx,
+    );
+
+    expect(runChapterChain).toHaveBeenCalledTimes(2);
+    const [, , retryOptions] = runChapterChain.mock.calls[1];
+    // 拿不到快照 brief → 不判差异 → 保守 resume（不 clear——无从 clear）。
+    expect(retryOptions.resume).toEqual({ fromSnapshot: true });
+    expect(result.metadata?.type).toBe('field_patch');
   });
 });

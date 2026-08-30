@@ -4,6 +4,7 @@ import { loadProject, saveProject } from './localProjectRepository';
 import { atomicWriteFileSync } from '@orison/shared-contracts/fs/atomicWrite';
 import {
   acceptChapterCandidateCore,
+  preserveChapterFrontmatter,
   type ChapterCandidate,
   type ChapterIntegrationProject,
   type StoryDecision,
@@ -87,7 +88,12 @@ export function acceptChapterCandidate(
   if (!existsSync(mdDir)) {
     mkdirSync(mdDir, { recursive: true });
   }
-  atomicWriteFileSync(mdPath, result.mdContent, 'utf8');
+  // #107 check 批补缝：candidate.content 是 draft 正文（无 frontmatter）——整体覆盖会把
+  // 已注册章文件的 frontmatter `order:`（登记载体）物理抹掉 → 派生重排错位。旧文件有
+  // frontmatter 且新内容无 → 原样回拼（body-only 旧文件零行为变化）。规则单源见
+  // shared-contracts preserveChapterFrontmatter。
+  const existingMd = existsSync(mdPath) ? readFileSync(mdPath, 'utf-8') : null;
+  atomicWriteFileSync(mdPath, preserveChapterFrontmatter(existingMd, result.mdContent), 'utf8');
 
   // 持久化 project.yaml（章节元数据 + story_decisions 已由 core mutate；调用方 bump meta 版本）。
   const updated = result.updatedProject as unknown as ChapterIntegrationProject;

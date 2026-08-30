@@ -27,6 +27,8 @@ import { createSettingMdPatchSlice, type SettingMdPatchSlice } from './settingMd
 import { createAuthorProfilePatchSlice, type AuthorProfilePatchSlice } from './authorProfilePatchSlice';
 import { createLintSlice, type LintSlice } from './lintSlice';
 import { createStyleInputSlice, type StyleInputSlice } from './styleInputSlice';
+import { createWorldStateSlice, type WorldStateSlice } from './worldStateSlice';
+import { createSettingSlice, type SettingSlice } from './settingSlice';
 import { installProjectSubscription } from './projectSubscription';
 import { initAgentEvents } from './agentEvents';
 
@@ -60,7 +62,9 @@ type AppState = ProjectSlice &
   SettingMdPatchSlice &
   AuthorProfilePatchSlice &
   LintSlice &
-  StyleInputSlice;
+  StyleInputSlice &
+  WorldStateSlice &
+  SettingSlice;
 
 export const useAppStore = create<AppState>()((...a) => ({
   ...createProjectSlice(...a),
@@ -91,6 +95,8 @@ export const useAppStore = create<AppState>()((...a) => ({
   ...createAuthorProfilePatchSlice(...a),
   ...createLintSlice(...a),
   ...createStyleInputSlice(...a),
+  ...createWorldStateSlice(...a),
+  ...createSettingSlice(...a),
 }));
 
 installProjectSubscription(useAppStore);

@@ -1,0 +1,90 @@
+# 世界状态面板（dogfood R2 #92，task 08-29-world-state-panel S3-S6）。
+# 文案中文化纪律（prd「文案与 i18n」，用户点名）：英文术语不露出——
+# as-of → 回放/切线语义、patch → 变更、slice/anchor → 时点、subject → 主体、
+# reduce → 快照。代码标识符/契约字段名不受限，但 UI 文案零英文术语
+# （op 枚举 replace/increment/remove/append 按 mockup 原样保留——契约枚举非文案）。
+worldState:
+  title: "世界状态"
+  noProject: "打开项目以查看世界状态。"
+  searchPlaceholder: "搜索主体…"
+  noMatch: "无匹配主体"
+  # 主体选择区（可折叠分组）
+  subjectsSection: "主体"
+  subjectCount: "{count} 个主体"
+  # 活跃主体条（最近时点在场的主体 chips）
+  activeStripLabel: "最近在场 / 活跃"
+  # 锚点行活动摘要（N 主体 · M 变更）
+  anchorActivity: "{subjects} 个主体 · {patches} 项变更"
+  # 主体行「最后 t=N」（最后一次变化的 storyTime）
+  lastChangeAt: "最后 t={t}"
+  # 登记未写主体（patchCount=0——reset 保身份清切面的存量主体常态）
+  neverWritten: "登记未写"
+  # 头部总计数
+  totalCounts: "{subjects} 个主体 · {patches} 项变更 · {anchors} 个时点"
+  # 空态（latestT=null：尚无任何提取数据）
+  emptyTitle: "尚未从正文提取世界状态"
+  emptyDescription: "完成一章写作后，世界状态会自动产生并出现在这里。"
+  loading: "加载世界状态…"
+  errorTitle: "世界状态加载失败"
+  retry: "重试"
+  # 写章链世界提取运行中（overview.extracting 信号，#82 相位可见性）
+  extracting: "世界提取中…"
+  refresh: "刷新"
+  # ── L2/L3 面包屑与导航 ──
+  crumbsWorld: "世界"
+  backToOverview: "‹ 总览"
+  # ── 轴过滤 chips（L2/L3 共用；计数来自数据，缺轴 0 灰显）──
+  axesFilterLabel: "按轴过滤"
+  # ── L2 时点切片 ──
+  sceneTitle: "场景「{title}」"
+  sliceSummary: "{subjects} 个主体 · {patches} 项变更"
+  sliceNoChanges: "该时点没有变更。"
+  axisFilteredEmpty: "当前轴过滤下没有可显示的变更。"
+  groupPatchesCount: "{count} 项变更"
+  enterSubject: "点进主体 ›"
+  # ── L3 主体脊柱 ──
+  replayTargetNow: "回放：现在"
+  replayTargetAt: "回放：{target}"
+  replayTargetLabel: "{label}（t={t}）"
+  replayTargetBare: "t={t}"
+  replayHint: "点下方锚点圆点切换回放时点"
+  replayBackHint: "点击回到现在"
+  cutHere: "切线到此"
+  cutHereAt: "切线到 t={t}"
+  snapshotTitle: "此刻快照"
+  snapshotScopeLatest: "最新状态"
+  snapshotScopeAt: "t={t} 时状态"
+  snapshotCount: "{count} 项"
+  snapshotDrillHint: "点键查看该数据的全部变更"
+  snapshotEmpty: "这个时点还没有任何状态（早于全部变更）。"
+  pathDrillLabel: "路径钻取："
+  pathDrillHint: "只看这项数据的全部变更"
+  clearPathFilter: "✕ 清除"
+  laterFolded: "▲ {count} 条更晚的变更在回放之后（点击回到现在）"
+  subjectNoChanges: "该主体还没有任何变更记录。"
+  jumpToScene: "跳场景"
+  jumpToSceneNoChapter: "找不到该场景对应的章节"
+  # reduce issues 行内徽标（broken-relative / invalid-op 的中文化）
+  issueLabels:
+    broken-relative: "基准缺失"
+    invalid-op: "操作无效"
+  # 分层对象已知键的层名小标（objective/reader_perceived/vad；开放字典未知键回落原键）
+  valueLayers:
+    objective: "客观"
+    reader_perceived: "读者感知"
+    vad: "情绪投影"
+  # 主体开放 type 的展示名（未知 type 回落原字符串；entity = merge 兜底登记的裸引用主体）
+  typeLabels:
+    character: "角色"
+    group: "群体"
+    item: "实体 / 物"
+    faction: "势力"
+    quest: "任务"
+    entity: "未登记主体"
+  # 五轴展示名（轴点/轴过滤 chips 用）
+  axisLabels:
+    physical: "物理"
+    cognitive: "认知"
+    emotional: "情绪"
+    relational: "关系"
+    factional: "势力"

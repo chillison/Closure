@@ -67,6 +67,9 @@ type TestState = AgentDispatchState & {
   pendingAttachments: unknown[];
   newAgentSession: () => Promise<void>;
   switchAgentSession: (sessionId: string) => Promise<void>;
+  /** dogfood R2 #105 假中断守卫：resume 在途判据（chapterReviewSlice 面——dispatcher 结构读）。 */
+  reviewResuming: boolean;
+  pausedReviewBySession: Record<string, unknown>;
 };
 
 // 最小可跑 store：真 agentSessionSlice 的 run 态 + 视图字段，diff/patch/review 槽用结构面
@@ -112,6 +115,8 @@ const useTestStore = create<TestState & { agentRunStates: TestState['agentRunSta
   setPendingPatch: (sessionId, patch) => { patchWrites.push({ sid: sessionId, value: patch }); },
   fieldMetadata: {},
   resolvedLocale: 'zh-CN',
+  reviewResuming: false,
+  pausedReviewBySession: {},
   clearSessionPending: vi.fn(),
   clearPausedReviewFor: vi.fn(),
   clearPendingPatchFor: vi.fn(),
@@ -149,6 +154,8 @@ beforeEach(() => {
     chainRunBySession: {},
     chainRunAnchorByProject: {},
     resolvedLocale: 'zh-CN',
+    reviewResuming: false,
+    pausedReviewBySession: {},
   });
 });
 
@@ -612,6 +619,67 @@ describe('CR-T1-048 项目级链锚（decision 2A：dogfood stub 会话的链卡
     expect(useTestStore.getState().chainRunAnchorByProject?.['/proj-a']).toBeUndefined();
     // 非盘符路径不归大小写（normalizeProjectPathForCompare 仅盘符小写）——键保原样。
     expect(useTestStore.getState().chainRunAnchorByProject?.['/proj-B']).toBe('stub-other');
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// dogfood R2 #105 假中断根治（2026-08-30）：resume 链事件按同一 leader sessionId 广播、跑在
+// leader turn 生命周期外——leader turn 结束（done）不构成「链被掐」证据。在途 resume IPC 判据
+// （reviewResuming + 该会话 pausedReview 键）命中 → done 兜底不 finalize（不误标 aborted 不删
+// 缓冲）不归位 run 态；未命中 → 兜底行为照旧。
+// ═══════════════════════════════════════════════════════════════════════════
+describe('dogfood R2 #105 假中断根治（done 兜底前置守卫）', () => {
+  /** 起一条在跑链（resume 车道事件形态——chain-delta + node-done 置 running）。 */
+  function startRunningChain(sid = 'sess-a') {
+    handleAgentStreamEvent(useTestStore, ev({
+      type: 'chain-delta',
+      data: { nodeId: 'brief-compiler-node', role: 'brief-compiler-node', phase: 'compiling', messageId: 'm1', delta: 'x', seq: 0 },
+    }, sid, '/proj-a'));
+    handleAgentStreamEvent(useTestStore, ev({
+      type: 'chain-node-done',
+      data: { nodeId: 'brief-compiler-node', status: 'done' },
+    }, sid, '/proj-a'));
+  }
+
+  it('resume IPC 在途（reviewResuming + 该会话 pausedReview 在）→ leader turn done 不误标 aborted、run 态不清', () => {
+    startRunningChain('sess-a');
+    expect(useTestStore.getState().agentRunStates['sess-a']?.phase).toBe('running');
+    // resume IPC 在途（ChapterReviewPanel 三动作已发出、长跑 IPC 未返回）。
+    useTestStore.setState({
+      reviewResuming: true,
+      pausedReviewBySession: { 'sess-a': { type: 'chapter_review', stage: 'draft' } },
+    });
+
+    // leader turn 结束（resume 跑在 turn 外——done 不构成链被掐证据）。
+    handleAgentStreamEvent(useTestStore, ev({ type: 'done', data: { status: 'completed' } }, 'sess-a', '/proj-a'));
+
+    // 链不被误终态化（终态由哨兵帧 / resume summary 和解定）+ run 态维持 running。
+    expect(useTestStore.getState().chainRunBySession['sess-a']?.status).toBe('running');
+    expect(useTestStore.getState().agentRunStates['sess-a']?.phase).toBe('running');
+  });
+
+  it('resume 不在途（reviewResuming=false）→ done 兜底照旧：链 running 标 aborted + run 态归 idle', () => {
+    startRunningChain('sess-a');
+    handleAgentStreamEvent(useTestStore, ev({ type: 'done', data: { status: 'completed' } }, 'sess-a', '/proj-a'));
+    expect(useTestStore.getState().chainRunBySession['sess-a']?.status).toBe('aborted');
+    expect(useTestStore.getState().agentRunStates['sess-a']?.phase).toBe('idle');
+  });
+
+  it('reviewResuming 在途但该会话无 pausedReview 键（双条件防残值误放行）→ 兜底照旧', () => {
+    startRunningChain('sess-a');
+    useTestStore.setState({ reviewResuming: true, pausedReviewBySession: { 'sess-other': { type: 'chapter_review' } } });
+    handleAgentStreamEvent(useTestStore, ev({ type: 'done', data: { status: 'completed' } }, 'sess-a', '/proj-a'));
+    expect(useTestStore.getState().chainRunBySession['sess-a']?.status).toBe('aborted');
+  });
+
+  it('pausedReview 在但 reviewResuming=false（IPC 已返回）→ 兜底照旧（守卫只在真在途窗口放行）', () => {
+    startRunningChain('sess-a');
+    useTestStore.setState({
+      reviewResuming: false,
+      pausedReviewBySession: { 'sess-a': { type: 'chapter_review', stage: 'draft' } },
+    });
+    handleAgentStreamEvent(useTestStore, ev({ type: 'done', data: { status: 'completed' } }, 'sess-a', '/proj-a'));
+    expect(useTestStore.getState().chainRunBySession['sess-a']?.status).toBe('aborted');
   });
 });
 

@@ -52,6 +52,7 @@ import {
   reduceWorldSubject,
   resolveWorldSubjectIdentity,
 } from '../../db/worldStateRepository';
+import { sendWorldChanged } from '../worldNotify';
 // CR-8（8.1 修复批）：materialize 组装核心自本文件下潜 db/worldStateMaterialize——原放 handler 文件
 // 导致 db 层 worldStateBackfill 反向 import ipc 层（分层倒置）。函数签名零变。
 import { materializeChapterSummaryCore } from '../../db/worldStateMaterialize';
@@ -260,6 +261,17 @@ function writeWorldHandler(toolId: string, source: 'derived' | 'amendment'): Too
         );
       }
       insertWorldSlice(projectId, parsed.slice, identity.patches, identity.subjects, source);
+      // dogfood R2 #92：world:changed 事件发射（事务提交后——insertWorldSlice 同步单事务，返回即已落；
+      // 写失败路径在上面的 catch，不达此处）。kind 按 source 分流（derived=slice-written /
+      // amendment），subjectIds 取**身份解析后**的 canonical 主体集（受影响面——#91 归并后的真实
+      // 主体，非请求原样变体）。best-effort：sendWorldChanged never throws，不阻写路径。
+      const affectedSubjectIds = [...new Set(identity.patches.map((p) => p.subjectId))];
+      sendWorldChanged({
+        projectId,
+        kind: source === 'derived' ? 'slice-written' : 'amendment',
+        sliceT: parsed.slice.storyTime,
+        subjectIds: affectedSubjectIds.length > 0 ? affectedSubjectIds : undefined,
+      });
       const verb = source === 'derived' ? '派生' : '修补';
       return {
         title: `${toolId}: ${parsed.slice.id}`,

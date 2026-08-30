@@ -11,7 +11,11 @@ nav:
   imageGen: "Image Gen"
   assets: "Assets"
   timeline: "Timeline"
+  # World state panel (dogfood R2 #92): read surface of the world event system.
+  world: "World"
   structure: "Structure"
+  # Setting page (08-30 asset cards visualization): browse/edit 8 card types + setting docs entry.
+  setting: "Codex"
   explorer: "Explorer"
   search: "Search"
   settings: "Settings"

@@ -16,12 +16,17 @@ import { randomUUID } from 'node:crypto';
  * ENOENT/EACCES 等其余错误码是真错（路径不存在/权限问题），重试无益且
  * 掩盖问题，直抛原错。
  *
- * 延迟量级 50ms/150ms（两次退避共 200ms，含首次共至多 3 次尝试）：
- * 足以跨过绝大多数扫描器持柄窗口，对写盘路径的用户体感无感。此前的
- * attempt*10ms 自旋（总 100ms）在实录中不够用。
+ * 延迟量级 50/150/300/500ms（四级退避共 ~1s，含首次共至多 5 次尝试）：
+ * #85 时的 [50,150]（200ms/3 试）已跨过绝大多数扫描器持柄窗口，但 08-30
+ * 实录（#106）出现 >200ms 的外部持柄——预算耗尽抛原错后，上游
+ * sync-chapters-meta 链只 toast 无重试，真丢一次章元数据同步。加码到
+ * ~1s/5 试；竞态顶满时主线程 sleepSync 最坏 1s 有界阻塞，是「本来要丢
+ * 数据」场景下正确的代价交换（1s 仍不够时递进项=IPC 层整步退避，见
+ * dogfood R2 修复批 design §3.3）。更早的 attempt*10ms 自旋（总 100ms）
+ * 在 #85 实录中已证明不够用。
  */
 const RENAME_TRANSIENT_CODES: ReadonlySet<string> = new Set(['EPERM', 'EBUSY']);
-const RENAME_RETRY_DELAYS_MS: readonly number[] = [50, 150];
+const RENAME_RETRY_DELAYS_MS: readonly number[] = [50, 150, 300, 500];
 
 /** 同步短睡。atomicWriteFileSync 是同步函数（全库调用点皆同步，签名零变化），
  * 重试等待必须同步——Atomics.wait 是 Node/Electron 主进程里唯一不烧 CPU 的

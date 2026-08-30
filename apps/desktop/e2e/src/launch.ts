@@ -25,17 +25,11 @@ const here = dirname(fileURLToPath(import.meta.url));
 // src/launch.ts -> src -> e2e -> desktop -> apps -> repo root (4 levels up)
 const REPO_ROOT = resolve(here, '..', '..', '..', '..');
 
+/** Absolute path to the shell package root (package.json `main` = dist/main/index.cjs). */
+export const SHELL_APP_DIR = resolve(REPO_ROOT, 'apps', 'desktop', 'client', 'shell');
+
 /** Absolute path to the shell's built main entry (package.json `main`). */
-export const SHELL_MAIN_PATH = resolve(
-  REPO_ROOT,
-  'apps',
-  'desktop',
-  'client',
-  'shell',
-  'dist',
-  'main',
-  'index.cjs',
-);
+export const SHELL_MAIN_PATH = resolve(SHELL_APP_DIR, 'dist', 'main', 'index.cjs');
 
 /**
  * Absolute path to the Electron binary. `require('electron')` (the npm package)
@@ -73,14 +67,16 @@ export async function launchApp(): Promise<LaunchedApp> {
     );
   }
 
-  // NOTE: `headless` is intentionally NOT passed. Playwright's
-  // `electron.launch` API has no headless option - Electron always renders its
-  // own windows, and the app's `BrowserWindow({ show: true })` (the default)
-  // keeps the window visible. This satisfies硬约束 2 (window visible so the
-  // user can fill the API key in model-settings).
+  // dogfood R2 #99：启动目标 = shell 目录（package.json `main` 指向构建产物），而非
+  // index.cjs 文件本身。直跑脚本文件落入 Electron default_app 语义：app.name 变
+  // "Electron"、userData = %APPDATA%\Electron（空壳 profile）、getAppPath()=dist/main——
+  // 用户 profile 级配置（窗口记忆/壁纸/渲染层 localStorage）全部丢失，与 dev
+  // (`electron .`) / 打包形态的应用身份不一致。传目录则与 dev 同名同 profile。
+  // `headless` 有意不传（Playwright electron.launch 也无此选项）：BrowserWindow
+  // show:true 默认可见，满足硬约束 2（model-settings 手填 key）。
   const app = await electron.launch({
     executablePath: ELECTRON_BINARY_PATH,
-    args: [SHELL_MAIN_PATH],
+    args: [SHELL_APP_DIR],
     env: { ...process.env, E2E_MODE: '1' },
   });
 

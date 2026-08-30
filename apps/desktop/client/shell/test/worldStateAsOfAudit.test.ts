@@ -42,6 +42,18 @@ vi.mock('electron', () => ({
   },
 }));
 
+// dogfood #104-b：真跑 materializeChapterSummaryCore 会兜底到 resolveEmbeddingModel →
+// defaultEmbedBatch 真打 embed 端点（401 实录）。mock 模型解析层（逐字 mirror
+// chapterSummaryHookWiring.test.ts:22-29）：null 短路 embed 块，FTS-only 降级语义不变。
+vi.mock('../main/ipc/modelGatewayIpc', () => ({
+  resolveEmbeddingModel: () => null,
+  resolveRerankModel: () => null,
+  resolveSummaryModel: () => null,
+  resolveModel: () => {
+    throw new Error('resolveModel should not be called');
+  },
+}));
+
 const { loadProject } = vi.hoisted(() => ({ loadProject: vi.fn() }));
 vi.mock('@orison/desktop-local-bff', () => ({ loadProject }));
 

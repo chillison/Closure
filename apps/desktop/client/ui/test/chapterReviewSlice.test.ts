@@ -162,13 +162,18 @@ describe('chapterReviewSlice — reviewContinue', () => {
     expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
   });
 
-  it('aborted summary → 清 pausedReview', async () => {
+  it('aborted summary（continue 被动中断）→ 保留 pausedReview + 中断 toast（R2 #105 缓①）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted' }));
 
     await useTestStore.getState().reviewContinue();
 
-    expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
+    // 被动中断不清场（chainSnapshot 滞留可再续）——mirror busy 分支「原样保留」哲学。
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
+    expect(useTestStore.getState().reviewResuming).toBe(false);
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    // toast 文案注明重跑起点语义（保留载荷 = 上次审阅快照）。
+    expect(String(toastSpy.mock.calls[0][0])).toContain('snapshot from your last review');
   });
 
   it('paused summary → 更新 pausedReview 渲染下一 checkpoint 载荷（chapterId 保留透传）', async () => {
@@ -188,7 +193,7 @@ describe('chapterReviewSlice — reviewContinue', () => {
     expect(next?.resumeOptions).toEqual(['continue', 'redo', 'abort']);
   });
 
-  it('error summary → 清 pausedReview（不静默，不抛）', async () => {
+  it('error summary（continue 链段跑崩）→ 保留 pausedReview + toast 透传原因（R2 #105 缓①，不静默不抛）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     apiMocks.resumeChapterChain.mockResolvedValue(
       makeSummary({ status: 'error', errors: ['loadProject failed: boom'] }),
@@ -196,18 +201,22 @@ describe('chapterReviewSlice — reviewContinue', () => {
 
     await useTestStore.getState().reviewContinue();
 
-    expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
     expect(useTestStore.getState().reviewResuming).toBe(false);
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('loadProject failed: boom');
   });
 
-  it('IPC throw → 清 pausedReview + 不抛（graceful，留死面板是 bug）', async () => {
+  it('IPC throw（continue）→ 保留 pausedReview + 中断 toast（不抛，R2 #105 缓①）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     apiMocks.resumeChapterChain.mockRejectedValue(new Error('IPC 下线'));
 
     await expect(useTestStore.getState().reviewContinue()).resolves.toBeUndefined();
 
-    expect((useTestStore.getState().pausedReviewBySession[useTestStore.getState().agentSessionId ?? ''] ?? null)).toBeNull();
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
     expect(useTestStore.getState().reviewResuming).toBe(false);
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('IPC 下线');
   });
 
   it('无 project / sessionId → no-op（不调 IPC）', async () => {
@@ -728,14 +737,17 @@ describe('chapterReviewSlice — #93 P0-2/P0-3 resume 终态 chapter_accept enve
     expect(toastText).toContain('请在对话中裁决处理');
   });
 
-  it('aborted → 无 envelope 路由零动作（弃链段无候选可审）', async () => {
+  it('aborted（continue 被动中断）→ 不 stage envelope + 面板保留 + 中断 toast（弃链段无候选可审，不静默）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted' }));
 
     await useTestStore.getState().reviewContinue();
 
     expect(pendingPatchSpy).not.toHaveBeenCalled();
-    expect(toastSpy).not.toHaveBeenCalled();
+    // R2 #105 缓①：被动中断保留面板（旧实现清场 + 零告知）。
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('kept');
   });
 });
 
@@ -889,7 +901,7 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
     expect(switchAgentSessionSpy).not.toHaveBeenCalled();
   });
 
-  it('非 busy error（无前缀）→ 既有行为不变：清 pausedReview + 通用失败 toast', async () => {
+  it('非 busy error（无前缀）→ 不走 busy 路径：被动中断分流保留面板 + 中断 toast 透传原因（无跳转钮）', async () => {
     useTestStore.getState().setPausedReview('session-1', draftMeta);
     apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
       status: 'error',
@@ -898,8 +910,85 @@ describe('chapterReviewSlice — CR-T1-027 busy 拒绝（机器串解析）', ()
 
     await useTestStore.getState().reviewContinue();
 
-    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeUndefined();
+    // R2 #105 缓①改语义：非 busy 的 error 同为被动失败——面板保留，但 toast 是中断告知
+    //（含原因）非 busy 跳转形态。
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
     expect(toastSpy).toHaveBeenCalledTimes(1);
     expect(String(toastSpy.mock.calls[0][0])).toContain('boom');
+    expect(toastSpy.mock.calls[0][3]).toBeUndefined(); // 非 busy——无跳转动作钮
+  });
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// dogfood R2 #105 缓①（2026-08-30）：resume 终态和解按「中断是否用户主动」分流——
+// continue/redo 返 aborted/error（被动中断/失败）保留 pausedReview（mirror busy 分支「原样
+// 保留」哲学）+ reviewResuming 复位 + toast；abort（用户主动放弃）维持清场。catch 路径同款。
+// ═══════════════════════════════════════════════════════════════════════════
+describe('chapterReviewSlice — #105 缓① 被动中断保留审阅卡（action 分流）', () => {
+  it('redo 返 aborted → 保留 pausedReview + 中断 toast（redo 同享分流，非 continue 专属）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted' }));
+
+    await useTestStore.getState().reviewRedo('改开头');
+
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
+    expect(useTestStore.getState().reviewResuming).toBe(false);
+    expect(toastSpy).toHaveBeenCalledTimes(1);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('interrupted');
+  });
+
+  it('redo 返 error（带 errors）→ 保留 + toast 含原因（WithReason 键）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({
+      status: 'error',
+      errors: ['zen gateway timeout'],
+    }));
+
+    await useTestStore.getState().reviewRedo();
+
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeDefined();
+    expect(String(toastSpy.mock.calls[0][0])).toContain('zen gateway timeout');
+  });
+
+  it('abort 返 aborted → 维持清场（用户主动放弃——决策已做完，不留面板）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted' }));
+
+    await useTestStore.getState().reviewAbort();
+
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeUndefined();
+    expect(useTestStore.getState().reviewResuming).toBe(false);
+  });
+
+  it('continue 返 completed → 照旧清场（完成非中断，分流不误伤 happy path）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'completed' }));
+
+    await useTestStore.getState().reviewContinue();
+
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeUndefined();
+  });
+
+  it('IPC throw（abort）→ 维持清场 + 既有失败 toast（catch 路径 abort 分流）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockRejectedValue(new Error('IPC 下线'));
+
+    await useTestStore.getState().reviewAbort();
+
+    expect(useTestStore.getState().pausedReviewBySession['session-1']).toBeUndefined();
+    expect(useTestStore.getState().reviewResuming).toBe(false);
+    expect(String(toastSpy.mock.calls[0][0])).toContain('IPC 下线');
+  });
+
+  it('aborted 无 errors → toast 用无原因键（不透出空括号机器串）', async () => {
+    useTestStore.getState().setPausedReview('session-1', draftMeta);
+    apiMocks.resumeChapterChain.mockResolvedValue(makeSummary({ status: 'aborted', errors: [] }));
+
+    await useTestStore.getState().reviewContinue();
+
+    const text = String(toastSpy.mock.calls[0][0]);
+    expect(text).not.toContain('{reason}');
+    expect(text).not.toContain('（）');
+    expect(text).not.toContain('()');
   });
 });

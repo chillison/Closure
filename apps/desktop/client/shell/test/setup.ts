@@ -20,6 +20,37 @@ import { afterAll } from 'vitest';
 import v8 from 'node:v8';
 import vm from 'node:vm';
 
+// better-sqlite3 加载探针（dogfood R2 #101②）：Electron ABI 构建的 binding 在
+// plain-Node vitest 下加载失败 → shell 的真 db 测试套件整族 skip——此前这个
+// skip 完全静默，撞 ABI 的开发者无从知道「为什么全 skip」。此横幅只 warn 不
+// fail：plain-Node 全 skip 是既定合法形态（Electron 真跑法另立，见
+// spec/core/testing-discipline.md），skip 语义不变。错误文本原样带出：加载错误
+// 自带双方 NODE_MODULE_VERSION 号（二进制按 X 编译 / 当前运行时要 Y），无需
+// 也不建 Electron↔ABI 映射表（硬编码表每升 Electron 就烂）。⚠ 输出走
+// process.stderr.write 而非 console.warn：vitest 4 默认 silent:'passed-only'
+// 会把 console.* 拦截吞进通过的测试，横幅就看不见了（探针=可见性，绕开拦截）。
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const Database = require('better-sqlite3');
+  new Database(':memory:').close();
+} catch (err) {
+  // 去重：vitest 4 threads 池 + isolation 给每个测试文件独立 worker（实测
+  // worker id 1..N，无跨文件进程内状态），裸打会每文件一条横幅（本机全量
+  // ~120 条刷屏）。只让 worker 1 打 + env 标记兜底 worker 复用形态；env 无
+  // VITEST_WORKER_ID 时退化为纯 env 标记（宁可重复刷屏，不可横幅静默死）。
+  const workerId = process.env.VITEST_WORKER_ID;
+  const isFirstWorker = workerId === undefined || workerId === '1';
+  if (isFirstWorker && !process.env.ORISON_SQLITE3_ABI_PROBE_WARNED) {
+    process.env.ORISON_SQLITE3_ABI_PROBE_WARNED = '1';
+    process.stderr.write(
+      '\n⚠ better-sqlite3 在当前运行时加载失败——shell 的真 db 测试套件将整族 skip。\n' +
+        `  错误：${err instanceof Error ? err.message : err}\n` +
+        '  跑测试用 node ABI：pnpm rebuild -r better-sqlite3\n' +
+        '  跑应用用 Electron ABI：pnpm rebuild:native\n',
+    );
+  }
+}
+
 try {
   v8.setFlagsFromString('--expose_gc');
   (globalThis as { gc?: () => void }).gc = vm.runInNewContext('gc') as () => void;

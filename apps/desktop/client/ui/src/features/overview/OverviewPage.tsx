@@ -42,11 +42,25 @@ export function OverviewPage() {
   const showToast = useToastStore((s) => s.showToast);
   const setActivePage = useAppStore((s) => s.setActivePage);
   const setActiveSidebarPanel = useAppStore((s) => s.setActiveSidebarPanel);
+  // 设定页跳转闭环（B 波 polish，task 08-30；CR P12/P20 修订）：统计条人物/地点数可点 →
+  // 设定页（PatchReviewPanel toast→setActivePage 跳转先例同款通道；setSettingTypeFilter
+  // 预选类型——slice 未水合先读回持久化基线再叠加，不覆盖既有视图态，CR P2①）。
+  const setSettingTypeFilter = useAppStore((s) => s.setSettingTypeFilter);
 
   const outline = useAppStore((s) => s.creativeFields.outline) as OutlineV2 | undefined;
   const worldSetting = useAppStore((s) => s.creativeFields.world_setting) as WorldSetting | undefined;
   const assetCards = useAppStore((s) => s.creativeFields.asset_cards) as AssetCard[] | undefined;
   const creativeBrief = useAppStore((s) => s.creativeFields.creative_brief) as CreativeBrief | undefined;
+
+  const jumpToSettingCards = (type: 'character' | 'location') => {
+    // CR P20：预选前查该类型真实卡数——地点数是两源合计（asset_cards 优先，无 location 卡
+    // 时全量来自 legacy world_setting.locations 回退——统计有数但设定页没有该类卡）。此时
+    // 预选会经 effectiveTypeFilter 死过滤回落 'all'＝静默错位（点「地点 5」落全卡列表）；
+    // 无卡不预选，显式落 'all'。
+    const hasCards = (assetCards ?? []).some((c) => c.type === type);
+    setSettingTypeFilter(hasCards ? type : 'all');
+    setActivePage('setting');
+  };
 
   // Story 2.5：inline 编辑 genre_tags / world_constitution 走 creativeFieldsSlice.updateField
   // （mirror 既有 creative field 编辑流：set field → version bump → syncField IPC → project.yaml）。
@@ -248,7 +262,14 @@ export function OverviewPage() {
     .filter((c) => c.type === 'rule')
     .map((c) => c.name);
   const legacyRules = worldSetting?.rules ?? [];
-  const ruleLabels = assetRuleNames.length > 0 ? assetRuleNames : legacyRules;
+  // dogfood R2 #102：world_constitution 是不少项目唯一有数据的世界观载体（本项目 5 条，
+  // 同页下方就有 constitution 编辑器）——era/rules/locations 全空时摘要回退到
+  // constitution 前几条，而非误显「暂未设定世界观」。
+  const worldConstitution = worldSetting?.world_constitution ?? [];
+  const ruleLabels =
+    assetRuleNames.length > 0 ? assetRuleNames
+      : legacyRules.length > 0 ? legacyRules
+        : worldConstitution;
   const era = worldSetting?.era;
   const hasWorldSummary = Boolean(era) || ruleLabels.length > 0 || locationNames.length > 0;
 
@@ -320,7 +341,7 @@ export function OverviewPage() {
 
   const genreTags = creativeBrief?.genre_tags ?? [];
   const commitments = creativeBrief?.commitments ?? [];
-  const worldConstitution = worldSetting?.world_constitution ?? [];
+  // worldConstitution 已在摘要派生区声明（dogfood R2 #102 摘要回退消费）。
 
   const addGenreTag = (tag: string) => {
     const trimmed = tag.trim();
@@ -555,12 +576,38 @@ export function OverviewPage() {
           <span className="overview-stat-value">{totalWords.toLocaleString()}</span>
           <span className="overview-stat-label">{t('overview.words')}</span>
         </div>
-        <div className="overview-stat">
+        <div
+          className="overview-stat overview-stat--link"
+          role="button"
+          tabIndex={0}
+          title={t('nav.setting')}
+          data-overview-jump="character"
+          onClick={() => jumpToSettingCards('character')}
+          onKeyDown={(e) => {
+            // div[role=button] 键盘语义补全（CR P12）：Space 默认滚动页面必须 preventDefault；
+            // 长按 repeat 连跳一并拦（Enter 同路径）。
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            if (!e.repeat) jumpToSettingCards('character');
+          }}
+        >
           <span className="material-symbols-outlined">person</span>
           <span className="overview-stat-value">{characterCount}</span>
           <span className="overview-stat-label">{t('overview.characters')}</span>
         </div>
-        <div className="overview-stat">
+        <div
+          className="overview-stat overview-stat--link"
+          role="button"
+          tabIndex={0}
+          title={t('nav.setting')}
+          data-overview-jump="location"
+          onClick={() => jumpToSettingCards('location')}
+          onKeyDown={(e) => {
+            if (e.key !== 'Enter' && e.key !== ' ') return;
+            e.preventDefault();
+            if (!e.repeat) jumpToSettingCards('location');
+          }}
+        >
           <span className="material-symbols-outlined">location_on</span>
           <span className="overview-stat-value">{locationCount}</span>
           <span className="overview-stat-label">{t('overview.locations')}</span>

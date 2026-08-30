@@ -29,6 +29,15 @@ import type { BalancedAskCategory, ParticipationGear } from './contracts/batch-r
 import type { AcceptSettingMdInput, AcceptSettingMdResult } from './contracts/setting-md-edit';
 import type { ApplyAuthorProfileNoteInput, ApplyAuthorProfileNoteResult } from './contracts/author-profile';
 import type { LintClassifyResult, LintFixPatch, LintFullReport } from './contracts/lint';
+import type {
+  WorldChangedEvent,
+  WorldOverview,
+  WorldOverviewRequest,
+  WorldSliceDetail,
+  WorldSliceDetailRequest,
+  WorldSubjectDetail,
+  WorldSubjectDetailRequest,
+} from './contracts/world-panel';
 
 export const desktopIpcSchema = z.object({
   channel: z.enum([
@@ -114,6 +123,9 @@ export const desktopIpcSchema = z.object({
     'asset:update',
     'asset:delete',
     'asset:import-files',
+    'world:overview',
+    'world:slice-detail',
+    'world:subject-detail',
     'agent:create-session',
     'agent:get-session',
     'agent:set-session-mode',
@@ -363,7 +375,17 @@ export type CompileRevisionIntentResult = {
  */
 export type RunChapterChainSummary = {
   status: string;
-  routeDecision?: { decision: string; reason: string };
+  routeDecision?: {
+    decision: string;
+    reason: string;
+    /**
+     * dogfood R2 #107 / R1.1c：route 判正文偏离计划（deviation=true）时投影——#107 no-chapter
+     * 自动建章的入口层补产 storyDecisions 数据源（buildAcceptStoryDecisions 单源消费）。
+     * 只在 true 时出现（false/缺省省略——route 非 accept 终态本就无此语义）。additive optional
+     * （零 migration）。镜像 agent RunSnapshotSummary.routeDecision.deviation（两处平行 type 同步）。
+     */
+    deviation?: true;
+  };
   reviewVerdict?: string;
   draftTitle?: string;
   draftWordCount?: number;
@@ -513,11 +535,14 @@ export type UserPreferencesConfig = {
   /** Wallpaper image opacity 0.1–1.0 (default 1). 10% floor keeps it visible. */
   wallpaperOpacity?: number;
   /**
-   * Optional frosted-glass treatment for the wallpaper layer (default false):
-   * blurs the image so busy backgrounds stop fighting foreground text. Purely
-   * cosmetic — no effect when no wallpaper is set.
+   * Frosted-glass blur radius for the wallpaper layer, in px (0–50 integer,
+   * default 0 = off). Blurs the image itself so busy backgrounds stop fighting
+   * foreground text. Purely cosmetic — no effect when no wallpaper is set.
+   * Legacy boolean `wallpaperFrost` (08-26 fixed-20px toggle) normalizes on the
+   * shell read path — true → 20, false/missing/garbage → 0 — and the write path
+   * only ever persists this numeric key (zero migration for old disk files).
    */
-  wallpaperFrost?: boolean;
+  wallpaperFrostBlur?: number;
 
   // ── Context compaction (conversation window) ──
   /**
@@ -575,7 +600,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferencesConfig = {
   wordCountGoal: 0,
   editorLineHeight: 1.75,
   wallpaperOpacity: 1,
-  wallpaperFrost: false,
+  wallpaperFrostBlur: 0,
   contextCompaction: { redlinePercent: 95 },
   interfaceScale: INTERFACE_SCALE_DEFAULT,
 };
@@ -945,6 +970,30 @@ export type OrisonDesktopApi = {
    * single source of truth). Pure config resolution, no network request.
    */
   lintModelProbe(): Promise<LintModelProbeResult>;
+  /**
+   * dogfood R2 #92：世界状态面板读面——L1 世界总览（design v2 三级缩放）。主体轻量投影（每主体
+   * 一行最后变化）+ storyTime 场锚点聚合行；写章链世界提取运行中附带 extracting 态。载荷契约
+   * 单源 contracts/world-panel.ts。
+   */
+  worldOverview(input: WorldOverviewRequest): Promise<WorldOverview>;
+  /**
+   * L2 时点详情：该 storyTime 全部变更跨主体分组（anchor 聚合行 + per-subject 组，组内 patches
+   * 可展开 value）。
+   */
+  worldSliceDetail(input: WorldSliceDetailRequest): Promise<WorldSliceDetail>;
+  /**
+   * L3 主体详情：仅全史 patches（BMad CR #4 砍除 shell 侧 reduce/reduced/issues 载荷与 `at` 参数）
+   * ——as-of 切线快照/折叠由 UI 本地纯函数重算（数据已在手零 IPC）。
+   */
+  worldSubjectDetail(input: WorldSubjectDetailRequest): Promise<WorldSubjectDetail>;
+  /**
+   * 订阅 `world:changed` 推送事件（world 数据三写入口——写章链 slice 落表 / backfill reset /
+   * amendment——事务提交后 best-effort 发射）。返回退订函数，只移除本监听器（mirror
+   * onUpdateEvent / onToolEvent 形态）。
+   */
+  onWorldChanged(callback: (event: WorldChangedEvent) => void): () => void;
+  /** 显式退订单个监听器（removeListener 本监听器，绝不 removeAllListeners）。 */
+  offWorldChanged(callback: (event: WorldChangedEvent) => void): void;
   runStorySync(payload: RunStorySyncPayload): Promise<RunStorySyncResult>;
   loadUserPreferences(): Promise<UserPreferencesConfig>;
   saveUserPreferences(config: UserPreferencesConfig): Promise<void>;

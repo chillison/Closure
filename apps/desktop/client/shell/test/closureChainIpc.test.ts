@@ -13,7 +13,7 @@ import { allowPath } from '../main/ipc/pathGuard';
 
 const TEST_DIR = path.join(process.cwd(), 'test-tmp-closure-chain-ipc');
 
-const { handle, runChapterChain, runAgentWithExplicitSystem, createSession, loadProject, acceptChapterCandidate, onFieldEdited, clearChainSnapshot, getChainSnapshot, getSession, acquireProjectRun, releaseProjectRun, releaseLease, error: logError, info: logInfo, warn: logWarn, notifyLeaderChainCompleted, runtimeShape } = vi.hoisted(() => ({
+const { handle, runChapterChain, runAgentWithExplicitSystem, createSession, loadProject, acceptChapterCandidate, onFieldEdited, clearChainSnapshot, getChainSnapshot, getSession, acquireProjectRun, releaseProjectRun, releaseLease, error: logError, info: logInfo, warn: logWarn, notifyLeaderChainCompleted, chapterWriteHandler, runtimeShape } = vi.hoisted(() => ({
   handle: vi.fn(),
   runChapterChain: vi.fn(),
   runAgentWithExplicitSystem: vi.fn(),
@@ -26,6 +26,9 @@ const { handle, runChapterChain, runAgentWithExplicitSystem, createSession, load
   getSession: vi.fn(),
   // dogfood R2 #93 追加拍板：resume completed 终态的 leader 回注调用（fire-and-forget 断言面）。
   notifyLeaderChainCompleted: vi.fn(),
+  // dogfood R2 #107 / R1.1：persistChapterAcceptIfNeeded 自动建章直调的 chapter_write handler
+  // （partial mock——同模块其余 handler 保持真实现，防 toolExecution 等同图消费方断链）。
+  chapterWriteHandler: vi.fn(),
   // dogfood T1-S3 D4 闸 + CR 批3：默认放行（{ok:true, release}——handle 式），闸自身的
   // 行为在 projectRunGate.test.ts 单测；此处 mock 只为让 handler 的 import 可解析 +
   // 用例可覆写拒发/断言 finally 经 handle 释放（CR-T1-020 唯一租约 id / CR-T1-021 句柄）。
@@ -75,6 +78,14 @@ vi.mock('../main/ipc/agentIpc', () => ({
 // mock local-bff loadProject + acceptChapterCandidate（4.1 Step 4：IPC 入口持久化经此调；dynamic import）
 // + onFieldEdited（Story 2.2 CR-08-16-201：resume 终态 story-sync 消费经 storySyncApplyHandler auto 档调用）
 vi.mock('@orison/desktop-local-bff', () => ({ loadProject, acceptChapterCandidate, onFieldEdited }));
+
+// dogfood R2 #107 / R1.1：persistChapterAcceptIfNeeded 自动建章直调的 chapter_write handler——partial
+// mock（importOriginal 保留同模块其余导出，防同图消费方断链；真 handler 会 touch db + BrowserWindow，
+// 测试里不可直跑）。
+vi.mock('../main/ipc/toolHandlers/chapterHandlers', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../main/ipc/toolHandlers/chapterHandlers')>();
+  return { ...actual, chapterWriteHandler };
+});
 
 vi.mock('../main/logger', () => ({
   getLogger: () => ({ error: logError, info: logInfo, warn: logWarn, debug: vi.fn() }),
@@ -1883,5 +1894,317 @@ describe('closure:run-chapter-chain style_context 注入（风格卡 CR-026）',
     const [, artifacts] = runChapterChain.mock.calls[0];
     expect('style_context' in artifacts).toBe(false);
     expect('style_context_brief' in artifacts).toBe(false);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// dogfood R2 #107 / R1.1：no-chapter 链侧自动建章（run/resume 两车道 + 模式门 + direct 容忍注册滞后）。
+//
+// novel.chapters 出生源 = chapters/*.md 磁盘派生（renderer 闭环）——首章未建时链 accept 的
+// chapterId 映射恒 no-chapter。修法 = persistChapterAcceptIfNeeded 前置判定（planAutoCreateChapter
+// 单源）→ 经 chapterWriteHandler（partial mock）建文件 + 补产 chapter_accept envelope：
+// - run 车道（恒 direct，#93 拍板）→ 全文（frontmatter order + 标题 + 正文=采信稿）；
+// - resume 车道 review 档（suggest/readonly leader）→ 骨架（无正文——正文走 envelope 人审）；
+// - direct 建后 acceptChapterCandidate 因注册滞后 throw → 容忍（文件即落点，chapterPersisted=true）。
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('closure-chain-ipc #107 no-chapter 自动建章（R1.1 两车道）', () => {
+  /** #107 fixture：DOC_FIXTURE + episode_outlines + 空 novel.chapters（首章冷启动形态）。 */
+  const DOC_NO_CHAPTER = {
+    ...DOC_FIXTURE,
+    episode_outlines: [{ id: 'ep1', index: 0, title: '开篇' }],
+    novel: { chapters: [] },
+  };
+
+  const DRAFT_TITLE = '挖出来的是什么';
+  const DRAFT_TEXT = '正文内容……（采信稿全文）';
+  const STEM = `第01章-${DRAFT_TITLE}`;
+  const FULL_FILE = `---\norder: 0\n---\n\n# ${DRAFT_TITLE}\n\n${DRAFT_TEXT}`;
+  const SKELETON_FILE = `---\norder: 0\n---\n\n# ${DRAFT_TITLE}\n`;
+
+  /** runChapterChain mock：调 options.onAccept（novel.chapters 空 → no-chapter skip，闭包捕获）+ 返无 chapter_accept 的 summary。 */
+  function mockChainNoChapterSkip(): void {
+    runChapterChain.mockImplementation(async (
+      _sid: string,
+      _arts: unknown,
+      opts: { onAccept?: (snap: { runId: string; artifacts: Record<string, unknown> }, c: { nowISO: string }) => unknown },
+    ) => {
+      opts.onAccept?.(
+        {
+          runId: 'run_107_shell',
+          artifacts: {
+            'draft.initial': { title: DRAFT_TITLE, text: DRAFT_TEXT, wordCount: 2876 },
+            'route_decision': { decision: 'accept_as_truth', reason: '正文升级', deviation: true },
+          },
+        },
+        { nowISO: '2026-08-30T00:00:00.000Z' },
+      );
+      return {
+        status: 'completed',
+        routeDecision: { decision: 'accept_as_truth', reason: '正文升级', deviation: true },
+        draftTitle: DRAFT_TITLE,
+        draftWordCount: 2876,
+        draftText: DRAFT_TEXT,
+        errors: [],
+        // chapter_accept 缺省（onAccept skip 了 no-chapter）。
+      };
+    });
+  }
+
+  beforeEach(() => {
+    handle.mockReset();
+    runChapterChain.mockReset();
+    runAgentWithExplicitSystem.mockReset();
+    createSession.mockReset();
+    loadProject.mockReset();
+    acceptChapterCandidate.mockReset();
+    acceptChapterCandidate.mockImplementation(() => undefined);
+    onFieldEdited.mockReset();
+    onFieldEdited.mockReturnValue({ syncEvent: {}, staleFields: [] });
+    clearChainSnapshot.mockReset();
+    getChainSnapshot.mockReset();
+    getSession.mockReset();
+    getSession.mockReturnValue(undefined);
+    logError.mockReset();
+    logInfo.mockReset();
+    logWarn.mockReset();
+    chapterWriteHandler.mockReset();
+    chapterWriteHandler.mockResolvedValue({ title: 'chapter_write', output: 'written' });
+    createSession.mockReturnValue({ id: 'stub-parent-session-1' });
+    runAgentWithExplicitSystem.mockResolvedValue({ content: '' });
+    notifyLeaderChainCompleted.mockReset();
+    acquireProjectRun.mockClear();
+    acquireProjectRun.mockImplementation(() => ({ ok: true, release: releaseLease }));
+    releaseLease.mockClear();
+    allowPath(TEST_DIR);
+  });
+
+  function chainHandler() {
+    registerClosureChainIpc();
+    const call = handle.mock.calls.find(([channel]) => channel === 'closure:run-chapter-chain');
+    expect(call).toBeTruthy();
+    return call![1] as (e: unknown, input: Record<string, unknown>) => Promise<unknown>;
+  }
+
+  function resumeHandler() {
+    registerClosureChainIpc();
+    const call = handle.mock.calls.find(([channel]) => channel === 'closure:resume-chapter-chain');
+    expect(call).toBeTruthy();
+    return call![1] as (e: unknown, input: Record<string, unknown>) => Promise<unknown>;
+  }
+
+  it('run 车道 direct：no-chapter + 空位 → chapterWriteHandler 建全文 + envelope 补产（含 storyDecisions）+ 落盘成功', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    mockChainNoChapterSkip();
+    const handler = chainHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, episodeId: 'ep1', chapterBrief: { goal: 'g' } }) as {
+      chapter_accept?: { chapterId: string; runId: string; candidate: { content: string; storyDecisions?: unknown[] } & Record<string, unknown>; storyDecisions?: unknown[] };
+      chapterPersisted?: true;
+      errors: string[];
+    };
+
+    // 建文件：direct 全文形态（frontmatter order + 标题 + 正文）。
+    expect(chapterWriteHandler).toHaveBeenCalledTimes(1);
+    const writeCtx = chapterWriteHandler.mock.calls[0][0] as { params: { chapterId: string; content: string }; projectDir: string };
+    expect(writeCtx.params.chapterId).toBe(STEM);
+    expect(writeCtx.params.content).toBe(FULL_FILE);
+    expect(writeCtx.projectDir).toBe(TEST_DIR);
+
+    // envelope 补产：chapterId=stem + runId=闭包捕获链段 runId + 完整文件形态 candidate + storyDecisions。
+    expect(summary.chapter_accept).toBeDefined();
+    expect(summary.chapter_accept!.chapterId).toBe(STEM);
+    expect(summary.chapter_accept!.runId).toBe('run_107_shell');
+    expect((summary.chapter_accept!.candidate as { content: string }).content).toBe(FULL_FILE);
+    expect(summary.chapter_accept!.storyDecisions).toHaveLength(1);
+    expect((summary.chapter_accept!.storyDecisions![0] as { id: string }).id).toBe('accept-run_107_shell');
+
+    // 落盘成功路径（acceptChapterCandidate mock 成功）→ chapterPersisted + 无 error。
+    expect(acceptChapterCandidate).toHaveBeenCalledWith(
+      TEST_DIR,
+      STEM,
+      'run_107_shell',
+      expect.objectContaining({ title: DRAFT_TITLE, content: FULL_FILE }),
+      expect.anything(),
+    );
+    expect(summary.chapterPersisted).toBe(true);
+    expect(summary.errors).toHaveLength(0);
+  });
+
+  it('run 车道 direct：acceptChapterCandidate 因注册滞后 throw → 容忍（文件即落点，无 error，chapterPersisted=true）', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    mockChainNoChapterSkip();
+    acceptChapterCandidate.mockImplementation(() => {
+      throw new Error('chapter not found: 第01章-挖出来的是什么（注册未至——renderer 派生 300ms debounce）');
+    });
+    const handler = chainHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, episodeId: 'ep1', chapterBrief: { goal: 'g' } }) as {
+      chapterPersisted?: true;
+      errors: string[];
+    };
+
+    // 文件已建（全文）——meta 持久化 throw 被容忍，不进 errors。
+    expect(chapterWriteHandler).toHaveBeenCalledTimes(1);
+    expect(acceptChapterCandidate).toHaveBeenCalledTimes(1);
+    expect(summary.errors).toHaveLength(0);
+    expect(summary.errors.join('\n')).not.toContain('chapter persist failed');
+    // 文件即落点语义：UI 据此免二次 stage。
+    expect(summary.chapterPersisted).toBe(true);
+  });
+
+  it('resume 车道 review（suggest leader 会话）：骨架形态 + envelope 返 UI 人审（不调 acceptChapterCandidate）', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    mockChainNoChapterSkip();
+    getChainSnapshot.mockReturnValue({
+      completedNodes: [],
+      artifacts: { chapter_brief_input: { episodeId: 'ep1', brief: { goal: 'g' } } },
+    });
+    // suggest leader 会话（非 stub）→ persistMode review。
+    getSession.mockReturnValue({ permissionMode: 'suggest', agentName: 'leader-agent' });
+    const handler = resumeHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, sessionId: 'leader-sess-1', action: 'continue' }) as {
+      chapter_accept?: { chapterId: string; candidate: { content: string } };
+      chapterPersisted?: true;
+      errors: string[];
+    };
+
+    // 建文件：review 骨架形态（frontmatter + 标题、无正文——「写内容须人批」不破）。
+    expect(chapterWriteHandler).toHaveBeenCalledTimes(1);
+    const writeCtx = chapterWriteHandler.mock.calls[0][0] as { params: { chapterId: string; content: string } };
+    expect(writeCtx.params.chapterId).toBe(STEM);
+    expect(writeCtx.params.content).toBe(SKELETON_FILE);
+
+    // envelope 留 summary 返 UI（candidate = 完整文件形态，人审 accept 落盘时保 frontmatter）。
+    expect(summary.chapter_accept).toBeDefined();
+    expect(summary.chapter_accept!.chapterId).toBe(STEM);
+    expect(summary.chapter_accept!.candidate.content).toBe(FULL_FILE);
+    // review 档不直落。
+    expect(acceptChapterCandidate).not.toHaveBeenCalled();
+    expect(summary.chapterPersisted).toBeUndefined();
+    expect(summary.errors).toHaveLength(0);
+  });
+
+  it('resume 车道 direct（auto 档 leader）：全文形态 + 落盘', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    mockChainNoChapterSkip();
+    getChainSnapshot.mockReturnValue({
+      completedNodes: [],
+      artifacts: { chapter_brief_input: { episodeId: 'ep1', brief: { goal: 'g' } } },
+    });
+    getSession.mockReturnValue({ permissionMode: 'auto', agentName: 'leader-agent' });
+    const handler = resumeHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, sessionId: 'leader-sess-2', action: 'continue' }) as { chapterPersisted?: true };
+
+    const writeCtx = chapterWriteHandler.mock.calls[0][0] as { params: { content: string } };
+    expect(writeCtx.params.content).toBe(FULL_FILE);
+    expect(summary.chapterPersisted).toBe(true);
+  });
+
+  it('守卫不过（novel.chapters sort_order 有洞）→ 不自动建 + 维持现状告警（describeAcceptSkip 文案）', async () => {
+    loadProject.mockReturnValue({
+      ...DOC_NO_CHAPTER,
+      scene_graph: {
+        nodes: [
+          { id: 's1', episodeId: 'ep1', storyTime: 0, presentationOrder: { chapter: 0, pos: 0 } },
+          { id: 's2', episodeId: 'ep2', storyTime: 1, presentationOrder: { chapter: 1, pos: 0 } },
+        ],
+        edges: [],
+        lines: [],
+      },
+      episode_outlines: [
+        { id: 'ep1', index: 0 },
+        { id: 'ep2', index: 1 },
+      ],
+      novel: { chapters: [{ id: 'ch_jump', sort_order: 2 }] },
+    });
+    // 目标 ep2（index 1）：diskSim [order 2] + new order:1 → 排序 [1,2] → 落位 0 ≠ 1 → 守卫拒。
+    runChapterChain.mockImplementation(async (
+      _sid: string,
+      _arts: unknown,
+      opts: { onAccept?: (snap: { runId: string; artifacts: Record<string, unknown> }, c: { nowISO: string }) => unknown },
+    ) => {
+      opts.onAccept?.(
+        {
+          runId: 'run_guard',
+          artifacts: {
+            'draft.initial': { title: DRAFT_TITLE, text: DRAFT_TEXT },
+            'route_decision': { decision: 'accept_as_truth', reason: '通过' },
+          },
+        },
+        { nowISO: '2026-08-30T00:00:00.000Z' },
+      );
+      return {
+        status: 'completed',
+        routeDecision: { decision: 'accept_as_truth', reason: '通过' },
+        draftTitle: DRAFT_TITLE,
+        draftText: DRAFT_TEXT,
+        errors: [],
+      };
+    });
+    const handler = chainHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, episodeId: 'ep2', chapterBrief: { goal: 'g' } }) as {
+      chapter_accept?: unknown;
+      chapterPersisted?: true;
+      errors: string[];
+    };
+
+    expect(chapterWriteHandler).not.toHaveBeenCalled();
+    expect(summary.chapter_accept).toBeUndefined();
+    expect(summary.chapterPersisted).toBeUndefined();
+    // 维持现状告警：accept 未持久化 + describeAcceptSkip 新文案（说明为何没自动建）。
+    expect(summary.errors.join('\n')).toContain('accept 未持久化');
+    expect(summary.errors.join('\n')).toContain('落位守卫');
+  });
+
+  it('无 draftText（no-draft skip）→ 不自动建（无候选可组装，零回归）', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    runChapterChain.mockImplementation(async (
+      _sid: string,
+      _arts: unknown,
+      opts: { onAccept?: (snap: { runId: string; artifacts: Record<string, unknown> }, c: { nowISO: string }) => unknown },
+    ) => {
+      opts.onAccept?.(
+        {
+          runId: 'run_nodraft',
+          artifacts: {
+            // draft.initial 缺 → onAccept 返 no-draft skip。
+            'route_decision': { decision: 'accept_as_truth', reason: '通过' },
+          },
+        },
+        { nowISO: '2026-08-30T00:00:00.000Z' },
+      );
+      return {
+        status: 'completed',
+        routeDecision: { decision: 'accept_as_truth', reason: '通过' },
+        errors: [],
+      };
+    });
+    const handler = chainHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, episodeId: 'ep1', chapterBrief: { goal: 'g' } }) as { errors: string[] };
+
+    expect(chapterWriteHandler).not.toHaveBeenCalled();
+    expect(summary.errors.join('\n')).toContain('draft 产出为空');
+  });
+
+  it('建文件通道失败 → graceful（不 fail run，维持现状告警）', async () => {
+    loadProject.mockReturnValue(DOC_NO_CHAPTER);
+    mockChainNoChapterSkip();
+    chapterWriteHandler.mockRejectedValue(new Error('EPERM: disk full'));
+    const handler = chainHandler();
+
+    const summary = await handler({}, { projectPath: TEST_DIR, episodeId: 'ep1', chapterBrief: { goal: 'g' } }) as {
+      chapter_accept?: unknown;
+      errors: string[];
+    };
+
+    expect(chapterWriteHandler).toHaveBeenCalledTimes(1);
+    expect(summary.chapter_accept).toBeUndefined();
+    // run 本身不 fail（graceful）——告警走既有 describeAcceptSkip 通道。
+    expect(summary.errors.join('\n')).toContain('accept 未持久化');
   });
 });

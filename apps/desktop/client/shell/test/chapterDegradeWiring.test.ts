@@ -1,4 +1,4 @@
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { rmBestEffort } from './rmBestEffort';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -101,5 +101,68 @@ describe('章落盘点 → mention 降档 hook 接线（Story 8.7 BMad CR-001）
       params: { chapterId: '序章', content: '楔子' },
     });
     expect(titled.output).toContain('第 序章 章');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #107 check 批补缝：chapter_write body-only 覆写保序——#107 后章文件 frontmatter `order:`
+// 是磁盘派生排序键（登记载体），而 body-only 写入方（auto_revise splice / targeted-revision
+// 正文）整体覆盖会把已注册章的 order 物理删掉 → 派生重排错位。修法 = 旧文件有 frontmatter 且
+// 新内容无 → 旧块回拼（shared-contracts preserveChapterFrontmatter；与 local-bff accept 两写点
+// 同一 invariant）。历史 body-only 章零行为变化。
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('chapter_write 覆写保序（#107 check 批）', () => {
+  const chapterPath = () => path.join(TMP, 'chapters', '第01章-旧章.md');
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    rmBestEffort(TMP);
+    mkdirSync(path.join(TMP, 'chapters'), { recursive: true });
+  });
+  afterEach(() => {
+    rmBestEffort(TMP);
+  });
+
+  it('旧文件带 frontmatter + body-only 新内容 → order 保留（正文替换，不早退）', async () => {
+    writeFileSync(chapterPath(), '---\norder: 0\n---\n\n# 旧章\n\n旧正文。', 'utf8');
+    const res = await chapterWriteHandler({
+      ...ctx(),
+      params: { chapterId: '第01章-旧章', content: '# 新标题\n\n改稿正文。' },
+    });
+    expect(res.output).toContain('已写入并保存');
+    expect(readFileSync(chapterPath(), 'utf8')).toBe('---\norder: 0\n---\n# 新标题\n\n改稿正文。');
+  });
+
+  it('全形态内容（自带 frontmatter，#107 自动建章同款）→ 原样写入不双拼', async () => {
+    writeFileSync(chapterPath(), '---\norder: 0\n---\n\n# 旧章\n\n旧正文。', 'utf8');
+    const fullForm = '---\norder: 0\n---\n\n# 新章\n\n新正文。';
+    await chapterWriteHandler({ ...ctx(), params: { chapterId: '第01章-旧章', content: fullForm } });
+    expect(readFileSync(chapterPath(), 'utf8')).toBe(fullForm);
+  });
+
+  it('body-only 重写后再以「同 body」重写 → 幂等早退（effective 与盘上一致）', async () => {
+    writeFileSync(chapterPath(), '---\norder: 0\n---\n\n# 旧章\n\n旧正文。', 'utf8');
+    await chapterWriteHandler({
+      ...ctx(),
+      params: { chapterId: '第01章-旧章', content: '# 新标题\n\n改稿正文。' },
+    });
+    expect(degradeMentionLedgerForChapterFile).toHaveBeenCalledTimes(1);
+    // 同 body-only 内容重写：回拼后与盘上 effective 相同 → up-to-date 早退（不再触发降档）。
+    const again = await chapterWriteHandler({
+      ...ctx(),
+      params: { chapterId: '第01章-旧章', content: '# 新标题\n\n改稿正文。' },
+    });
+    expect(again.output).toContain('内容已是最新');
+    expect(degradeMentionLedgerForChapterFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('历史 body-only 章（无 frontmatter）→ 零行为变化（原样写入）', async () => {
+    writeFileSync(chapterPath(), '# 旧章\n\n旧正文。', 'utf8');
+    await chapterWriteHandler({
+      ...ctx(),
+      params: { chapterId: '第01章-旧章', content: '# 新标题\n\n新正文。' },
+    });
+    expect(readFileSync(chapterPath(), 'utf8')).toBe('# 新标题\n\n新正文。');
   });
 });

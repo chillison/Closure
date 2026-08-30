@@ -204,3 +204,66 @@ describe('novel project repository', () => {
     ).toThrow(/not found/);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// #107 check 批补缝：accept 覆写保序——candidate.content 是 draft 正文（无 frontmatter），
+// 整体覆盖会把已注册章文件的 frontmatter `order:`（#107 登记载体）物理抹掉 → 派生重排错位。
+// 修法 = 旧文件有 frontmatter 且新内容无 → 旧块回拼（shared-contracts
+// preserveChapterFrontmatter 单源）。历史 body-only 章（无 frontmatter）零行为变化。
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('acceptChapterCandidate 覆写保序（#107 check 批）', () => {
+  afterEach(() => {
+    if (existsSync(TEST_PROJECT_DIR)) {
+      rmSync(TEST_PROJECT_DIR, { recursive: true, force: true });
+    }
+  });
+
+  function seedProjectWithChapterFile(mdContent: string): void {
+    const project = createEmptyProjectDocument('FM Preserve Test');
+    const withNovel = {
+      ...project,
+      novel: {
+        chapters: [
+          {
+            id: '第01章-旧章',
+            title: '旧章',
+            sort_order: 0,
+            sections: [{ id: 's1', sort_order: 0, content_file: 'chapters/第01章-旧章.md' }],
+            status: 'draft',
+          },
+        ],
+      },
+    };
+    saveProject(TEST_PROJECT_DIR, withNovel as any);
+    const mdDir = path.join(TEST_PROJECT_DIR, 'chapters');
+    if (!existsSync(mdDir)) mkdirSync(mdDir, { recursive: true });
+    writeFileSync(path.join(mdDir, '第01章-旧章.md'), mdContent, 'utf8');
+  }
+
+  it('旧文件带 frontmatter order + body-only 候选 → 覆写后 order 保留（正文替换）', () => {
+    seedProjectWithChapterFile('---\norder: 0\n---\n\n# 旧章\n\n旧正文。');
+    acceptChapterCandidate(TEST_PROJECT_DIR, '第01章-旧章', 'run_fm1', {
+      content: '# 新标题\n\n新正文。',
+    });
+    const md = readFileSync(path.join(TEST_PROJECT_DIR, 'chapters/第01章-旧章.md'), 'utf8');
+    expect(md).toBe('---\norder: 0\n---\n# 新标题\n\n新正文。');
+  });
+
+  it('候选自带 frontmatter（#107 全形态）→ 原样写入，不双拼', () => {
+    seedProjectWithChapterFile('---\norder: 0\n---\n\n# 旧章\n\n旧正文。');
+    const fullForm = '---\norder: 0\n---\n\n# 新章\n\n新正文。';
+    acceptChapterCandidate(TEST_PROJECT_DIR, '第01章-旧章', 'run_fm2', { content: fullForm });
+    const md = readFileSync(path.join(TEST_PROJECT_DIR, 'chapters/第01章-旧章.md'), 'utf8');
+    expect(md).toBe(fullForm);
+  });
+
+  it('历史 body-only 章文件（无 frontmatter）→ 候选原样写入（零行为变化）', () => {
+    seedProjectWithChapterFile('# 旧章\n\n旧正文。');
+    acceptChapterCandidate(TEST_PROJECT_DIR, '第01章-旧章', 'run_fm3', {
+      content: '# 新标题\n\n新正文。',
+    });
+    const md = readFileSync(path.join(TEST_PROJECT_DIR, 'chapters/第01章-旧章.md'), 'utf8');
+    expect(md).toBe('# 新标题\n\n新正文。');
+  });
+});

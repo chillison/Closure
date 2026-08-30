@@ -1,4 +1,5 @@
 import { listWorldSlices, resetWorldState } from './worldStateRepository';
+import { sendWorldChanged } from '../ipc/worldNotify';
 // materialize 组装函数 + episode 归类器自 worldStateMaterialize 复用（CR-8，8.1 修复批：该核心已从
 // ipc/toolHandlers/worldStateHandlers 下潜到 db 层——本模块不再反向 import ipc 层；Step 3 特意导出的
 // 复用点不变，本模块只做「归类 + 逐 episode 容错循环」，不复制任何汇编逻辑）。
@@ -60,6 +61,13 @@ export function resetWorldStateForBackfill(projectId: string): void {
     'resetWorldStateForBackfill: clearing derived + amendment (subjects preserved) before full backfill',
   );
   resetWorldState(projectId);
+  // dogfood R2 #92：world:changed 发射（reset 事务提交后——resetWorldState 同步事务，返回即已清）。
+  // 发射埋**函数内**而非调用点：本函数是 resetWorldState 的唯一生产 caller 且 Phase 2 接线未定
+  // （触发入口未来才挂），埋函数内保证任何未来调用点自动带通知（#77「改了但 UI 不知道」防线）。
+  // kind='backfill'（contract worldChangedKindSchema 注释绑定：全量重提取 reset；'reset' 留给未来
+  // 非 backfill 语义的 reset 调用来源）。不带 sliceT/subjectIds（全量清空——L2/L3 保守全重拉）。
+  // best-effort：sendWorldChanged never throws。
+  sendWorldChanged({ projectId, kind: 'backfill' });
 }
 
 // ── Story 8.1（Step 6）：ChapterStateSummary 重建 pass（design §8「backfill 扩展」）──

@@ -297,7 +297,19 @@ export const CHAIN_RUN_ACTIVE_ERROR_PREFIX = 'chain_run_active';
  */
 export interface RunSnapshotSummary {
   status: string;
-  routeDecision?: { decision: string; reason: string };
+  routeDecision?: {
+    decision: string;
+    reason: string;
+    /**
+     * dogfood R2 #107 / R1.1c：route 判正文偏离计划（deviation=true）时投影（源 route_decision
+     * artifact 的 deviation boolean）。#107 no-chapter 自动建章时入口层（write_chapter /
+     * closureChainIpc）补产 storyDecisions 的数据源（buildAcceptStoryDecisions 单源消费）——修前
+     * summary 只有 decision+reason，补产只能静默降级不登记（用户拍板不降级）。只在 true 时出现
+     * （false/缺省省略）。additive optional（零 migration）。镜像 shared ipc.ts
+     * RunChapterChainSummary.routeDecision.deviation（两处平行 type 同步，B01 纪律）。
+     */
+    deviation?: true;
+  };
   reviewVerdict?: string;
   draftTitle?: string;
   draftWordCount?: number;

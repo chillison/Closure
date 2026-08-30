@@ -400,6 +400,10 @@ export function registerAgentIpc(getWin: () => BrowserWindow | null) {
   });
 
   ipcMain.handle('agent:abort-run', async (_event, sessionId: string) => {
+    // dogfood R2 #105 R2.5：用户显式中断（UI 停止钮）入口留痕——修前服务端 abort 路径全线零日志，
+    // 「链为何中断」无从诊断。此行是区分「用户主动停」vs「链被动被掐」的关键证据（只记一行，
+    // 其余不动）。
+    logger.info({ sessionId }, 'agent:abort-run requested (UI stop)');
     // Abort the IPC-level controllers too, so streamMessage is interrupted even
     // outside the runtime's own run window (defense-in-depth on top of abortRun).
     // CR-T1-022：Set 形态——同 session 重叠 invoke 的全部 controller 一并 abort。

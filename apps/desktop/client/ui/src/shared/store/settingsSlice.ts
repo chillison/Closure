@@ -25,7 +25,7 @@ function clampRedlinePercent(value: number): number {
 /** 全窗口壁纸：空串 = 无壁纸（契约单源缺省 1）。 */
 const DEFAULT_WALLPAPER_URL = '';
 const DEFAULT_WALLPAPER_OPACITY = DEFAULT_USER_PREFERENCES.wallpaperOpacity ?? 1;
-const DEFAULT_WALLPAPER_FROST = DEFAULT_USER_PREFERENCES.wallpaperFrost ?? false;
+const DEFAULT_WALLPAPER_FROST_BLUR = DEFAULT_USER_PREFERENCES.wallpaperFrostBlur ?? 0;
 
 /**
  * R8 全局界面缩放（structure-rebuild）：本 slice 只负责「持久化 + 展示当前档」，
@@ -39,6 +39,12 @@ const DEFAULT_INTERFACE_SCALE = DEFAULT_USER_PREFERENCES.interfaceScale ?? 1;
 function clampWallpaperOpacity(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_WALLPAPER_OPACITY;
   return Math.min(1, Math.max(0.1, value));
+}
+
+/** 磨砂半径 0–50 整数之外的值（手改盘文件等）钳回界内；非法值回默认 0（= 关）。 */
+function clampWallpaperFrostBlur(value: number): number {
+  if (!Number.isFinite(value)) return DEFAULT_WALLPAPER_FROST_BLUR;
+  return Math.min(50, Math.max(0, Math.round(value)));
 }
 
 export type SettingsSlice = {
@@ -96,9 +102,9 @@ export type SettingsSlice = {
   /** Wallpaper image opacity 0.1–1. */
   wallpaperOpacity: number;
   setWallpaperOpacity: (value: number) => void;
-  /** Optional frosted-glass blur on the wallpaper layer (08-26 dogfood 拍板). */
-  wallpaperFrost: boolean;
-  setWallpaperFrost: (value: boolean) => void;
+  /** Optional frosted-glass blur on the wallpaper layer, 0–50px (0 = off; 08-29 滑杆化). */
+  wallpaperFrostBlur: number;
+  setWallpaperFrostBlur: (value: number) => void;
 
   // ── Global interface scale（08-26 structure-rebuild R8）──
   /**
@@ -193,7 +199,7 @@ function buildPrefs(get: () => SettingsSlice, overrides: Partial<UserPreferences
     // 覆盖写都必须携带它，漏了会把他处保存把红线静默抹掉（sidecar 四处同步面同款坑）。
     contextCompaction: { redlinePercent: s.contextRedlinePercent },
     wallpaperOpacity: s.wallpaperOpacity,
-    wallpaperFrost: s.wallpaperFrost,
+    wallpaperFrostBlur: s.wallpaperFrostBlur,
     interfaceScale: s.interfaceScale,
   };
   if (s.readingFontFamily) base.readingFontFamily = s.readingFontFamily;
@@ -230,10 +236,12 @@ export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSl
       const wallpaperOpacity = clampWallpaperOpacity(
         config.wallpaperOpacity ?? DEFAULT_WALLPAPER_OPACITY,
       );
-      const wallpaperFrost =
-        typeof config.wallpaperFrost === 'boolean' ? config.wallpaperFrost : DEFAULT_WALLPAPER_FROST;
       // R8：水合时防御性再钳（盘文件可被手改；shell 读路径已钳一次，双保险与红线同款）。
       const interfaceScale = clampInterfaceScale(config.interfaceScale ?? DEFAULT_INTERFACE_SCALE);
+      // 磨砂同款双保险：旧布尔键折算归一在 shell 读路径单点完成，这里只防手改新键。
+      const wallpaperFrostBlur = clampWallpaperFrostBlur(
+        config.wallpaperFrostBlur ?? DEFAULT_WALLPAPER_FROST_BLUR,
+      );
       applyTheme(theme);
       applyReadingFont(readingFontFamily, readingFontWeight, readingFontScale);
       applyEditorLineHeight(editorLineHeight);
@@ -264,7 +272,7 @@ export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSl
         ),
         wallpaperUrl,
         wallpaperOpacity,
-        wallpaperFrost,
+        wallpaperFrostBlur,
         interfaceScale,
       } as Partial<SettingsSlice> & { autoSaveEnabled: boolean });
     } catch {
@@ -380,10 +388,11 @@ export const createSettingsSlice: StateCreator<SettingsSlice, [], [], SettingsSl
     set({ wallpaperOpacity: next });
     saveUserPreferencesSnapshot(buildPrefs(get, { wallpaperOpacity: next }));
   },
-  wallpaperFrost: DEFAULT_WALLPAPER_FROST,
-  setWallpaperFrost(value) {
-    set({ wallpaperFrost: value });
-    saveUserPreferencesSnapshot(buildPrefs(get, { wallpaperFrost: value }));
+  wallpaperFrostBlur: DEFAULT_WALLPAPER_FROST_BLUR,
+  setWallpaperFrostBlur(value) {
+    const next = clampWallpaperFrostBlur(value);
+    set({ wallpaperFrostBlur: next });
+    saveUserPreferencesSnapshot(buildPrefs(get, { wallpaperFrostBlur: next }));
   },
 
   // ── Global interface scale（R8）：setter 即存快照（本 slice 既有模式）。施加在 shell

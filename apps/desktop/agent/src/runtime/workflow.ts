@@ -1255,6 +1255,9 @@ export function createWorkflowRuntime(options: WorkflowRuntimeOptions = {}): Wor
         role: 'chapter-chain',
         prompt: '',
         complete: async ({ session: childSession }) => {
+          // dogfood R2 #105 R2.5：chain 提到 try 外声明——catch 块（ChainAbortedError 收口）也要读它
+          // 解析 abort stage（try 块内 const 对 catch 不可见）。未及装配（装配前 throw）→ undefined。
+          let chainNodes: ReturnType<typeof createChapterChainNodes> | undefined;
           try {
             // Story 4.3 Step 2：chain 提 const——paused 时 runChapterChain 据 currentNodeId 经 chain 解析
             // pausedStage（resolveCheckpointStage）传 summarize 作 pauseHint（summarize 无 chain 上下文）。
@@ -1269,7 +1272,7 @@ export function createWorkflowRuntime(options: WorkflowRuntimeOptions = {}): Wor
             // dogfood R2 #7：链车道 generate 包装注入 lane:'background'——写手两阶段 / 核实子循环 /
             // 单发节点全部经此 wrapper（240s 首事件窗 + 有界回退；opts 由各节点自带，仅补车道）。
             // CR-44：sessionId 供悬空 toolCall stub 的 debug 日志溯源。
-            const chainNodes = createChapterChainNodes(
+            chainNodes = createChapterChainNodes(
               (msgs, sys, tls, abortSignal, opts) => generateImpl(msgs, sys, tls, abortSignal, { ...opts, lane: 'background', sessionId: childSession.id }),
               (slot) => resolveTaskModel(slot),
               childSession,
@@ -1425,6 +1428,20 @@ export function createWorkflowRuntime(options: WorkflowRuntimeOptions = {}): Wor
           } catch (err) {
             // abort → runChain 抛 ChainAbortedError（携 snapshot）；summarize 给 status='aborted' summary
             if (err instanceof ChainAbortedError) {
+              // dogfood R2 #105 R2.5：链被掐的服务端收口日志（修前全线零日志——「中断原因未上日志」
+              // 诊断盲区）。stage 经 chain 解析 currentNodeId（mirror pauseHint 单源）；signal.reason
+              // 可得时带上（runState.abortRun 的 DOMException / 外部 abort controller 自定义 reason）。
+              logger.warn(
+                {
+                  sessionId: parentSessionId,
+                  currentNodeId: err.snapshot.currentNodeId,
+                  ...(chainNodes && err.snapshot.currentNodeId
+                    ? { stage: resolveCheckpointStage(chainNodes, err.snapshot.currentNodeId) }
+                    : {}),
+                  ...(signal.reason !== undefined ? { reason: String(signal.reason) } : {}),
+                },
+                'chapter chain aborted',
+              );
               // dogfood T1 Stage 6：abort 也发终态帧（UI 链卡标「已中断」，已流出文本保留——半 JSON
               // 不落盘（r1 坑），UI 缓冲侧标注中断）。
               onNodeDone?.(CHAIN_RUN_SENTINEL_NODE_ID, err.snapshot.status);

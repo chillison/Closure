@@ -851,6 +851,13 @@
   border-color: var(--outline-variant);
   box-shadow: var(--shadow-soft);
 }
+/* 可点统计块（设定页跳转入口，task 08-30 B 波）——分明显可点态 */
+.overview-stat--link {
+  cursor: pointer;
+}
+.overview-stat--link:hover {
+  border-color: var(--accent);
+}
 .overview-stat .material-symbols-outlined {
   font-size: 24px;
   color: var(--accent);

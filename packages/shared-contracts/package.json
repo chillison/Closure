@@ -15,6 +15,11 @@
       "types": "./src/fs/atomicWrite.ts",
       "import": "./src/fs/atomicWrite.ts",
       "default": "./src/fs/atomicWrite.ts"
+    },
+    "./contracts/channels": {
+      "types": "./src/contracts/channels.ts",
+      "import": "./src/contracts/channels.ts",
+      "default": "./src/contracts/channels.ts"
     }
   },
   "scripts": {

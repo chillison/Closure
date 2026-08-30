@@ -266,3 +266,15 @@ Issues and Pull Requests are welcome. Please read the [Contributing Guide](CONTR
 - Bug reports: please include reproduction steps and system info
 - Feature suggestions: please open an issue for discussion first
 - Security issues: please use private disclosure — see [SECURITY.md](SECURITY.md)
+
+### Native modules & ABI
+
+The project depends on the better-sqlite3 native module, which must be compiled against the **current runtime**: running the app (`pnpm dev`) needs Electron's ABI, while running tests (`pnpm test`) needs Node's ABI — the two are mutually exclusive, so rebuild after switching purposes or switching Node versions:
+
+```bash
+pnpm rebuild:native              # rebuild against the Electron ABI (before running the app / pnpm dev)
+pnpm rebuild -r better-sqlite3   # rebuild against the Node ABI (before running tests; CI does this automatically)
+```
+
+- After switching Node versions, rebuild for the target runtime before running the corresponding command.
+- Database-related test suites **skipping as a whole family** in test output signals an ABI mismatch (not broken tests) — rebuild first, then investigate.

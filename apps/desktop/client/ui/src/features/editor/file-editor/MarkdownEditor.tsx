@@ -5,6 +5,7 @@ import { TiptapEditor, type SelectionInfo } from '../TiptapEditor';
 import { DocOutline } from '../DocOutline';
 import { EditorStatusBar } from './EditorStatusBar';
 import { useI18n } from '../../../shared/i18n/useI18n';
+import { getFrontmatterBlock, restoreFrontmatter, stripFrontmatter } from '../../../shared/utils/frontmatter';
 import type { FileTab } from '../../../shared/store/fileTabsSlice';
 import type { SelectionAttachment } from '../../../shared/types/attachment';
 import { randomUUID } from '../../../shared/util/id';
@@ -29,8 +30,16 @@ export function MarkdownEditor({ file }: { file: FileTab }) {
   const savedRef = useRef(file.savedContent);
   // Latest markdown the editor holds: seeded with the mounted content, then
   // kept in sync via onChange. Lets us tell a user's own save apart from an
-  // external reload/patch when `savedContent` changes.
+  // external reload/patch when `savedContent` changes. Holds the FULL text
+  // (front-matter included) so it stays comparable against `savedContent`.
   const contentRef = useRef(file.content);
+  // Leading front-matter block of the bound file (dogfood #109): stripped
+  // before the body reaches TipTap (marked would silently drop it) and
+  // re-attached byte-exact on every write-back — editing a chapter file must
+  // never delete its `order:` line. Re-captured from the incoming content
+  // whenever the TiptapEditor instance reseeds below (mount / tab switch /
+  // external reload).
+  const frontmatterRef = useRef<string | null>(getFrontmatterBlock(file.content));
 
   useEffect(() => {
     // MarkdownEditor is reused across tab switches (the parent sets no React
@@ -40,6 +49,7 @@ export function MarkdownEditor({ file }: { file: FileTab }) {
       fileIdRef.current = file.id;
       savedRef.current = file.savedContent;
       contentRef.current = file.content;
+      frontmatterRef.current = getFrontmatterBlock(file.content);
       return;
     }
     if (file.savedContent === savedRef.current) return;
@@ -51,14 +61,21 @@ export function MarkdownEditor({ file }: { file: FileTab }) {
     //     does not have -> bump revision to remount and reflect the change.
     if (file.savedContent !== contentRef.current) {
       contentRef.current = file.content;
+      frontmatterRef.current = getFrontmatterBlock(file.content);
       setRevision((r) => r + 1);
     }
   }, [file.id, file.savedContent, file.content]);
 
   const handleChange = useCallback(
     (markdown: string) => {
-      contentRef.current = markdown;
-      updateFileContent(file.path, markdown);
+      // `markdown` is the body-only serialization TipTap emits — re-attach the
+      // captured front-matter before it enters the tab/store. This is the ONLY
+      // write path for rich-editor edits (keystroke debounce, blur, unmount and
+      // the save-time flush all funnel through TiptapEditor's onChange), so the
+      // autoSave chain can never persist a chapter without its front-matter.
+      const full = restoreFrontmatter(frontmatterRef.current, markdown);
+      contentRef.current = full;
+      updateFileContent(file.path, full);
     },
     [file.path, updateFileContent],
   );
@@ -109,7 +126,7 @@ export function MarkdownEditor({ file }: { file: FileTab }) {
       <DocOutline content={file.content} onJump={handleJumpToLine} />
       <TiptapEditor
         key={`${file.id}:${revision}`}
-        content={file.content}
+        content={stripFrontmatter(file.content)}
         format="markdown"
         placeholder="Start writing..."
         onChange={handleChange}

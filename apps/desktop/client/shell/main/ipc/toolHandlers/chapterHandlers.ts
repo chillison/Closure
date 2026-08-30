@@ -8,7 +8,7 @@ import { notifyUI } from '../toolNotify';
 import { snapshotToLocalHistory } from '../../fs/localHistory';
 import type { ToolHandler } from './types';
 import { atomicWriteFileSync } from '@orison/shared-contracts/fs/atomicWrite';
-import { resolveChapterIdForEpisode } from '@orison/shared-contracts';
+import { preserveChapterFrontmatter, resolveChapterIdForEpisode } from '@orison/shared-contracts';
 import { getProject } from '../../db/projectRepository';
 import { listChapterSummaries } from '../../db/worldStateRepository';
 import { readChapterSource } from '../../db/chapterChunkIndexer';
@@ -202,10 +202,18 @@ export const chapterWriteHandler: ToolHandler = async ({ params, projectDir }) =
   const existedBefore = existsSync(filePath);
   const previousContent = existedBefore ? readFileSync(filePath, 'utf-8') : null;
 
+  // #107 check 批补缝（dogfood R2）：body-only 覆写不得抹掉登记载体 frontmatter——#107 后
+  // 章文件 frontmatter `order:` 是磁盘派生排序键，而本 handler 的 body-only 写入方
+  // （auto_revise splice / targeted-revision 正文）整体覆盖会把已注册章的 order 物理删掉 →
+  // 派生重排错位。旧文件有 frontmatter 且新内容无 → 原样回拼（全形态写入——#107 自动建章——
+  // 自带 frontmatter 不受影响；body-only 旧文件零行为变化）。规则单源见 shared-contracts
+  // preserveChapterFrontmatter（与 local-bff accept 两写点同一 invariant：「保存即丢 order」不得发生）。
+  const effectiveContent = preserveChapterFrontmatter(previousContent, content);
+
   if (existedBefore) {
     const existing = previousContent as string;
-    if (existing === content) {
-      const wordCount = content.replace(/\s+/g, '').length;
+    if (existing === effectiveContent) {
+      const wordCount = effectiveContent.replace(/\s+/g, '').length;
       return {
         title: `chapter_write: ${chapterId}`,
         output: `第 ${chapterOrdinalLabel(chapterId)} 章内容已是最新（约 ${wordCount} 字），无需改动——可以继续下一章了。`,
@@ -215,8 +223,8 @@ export const chapterWriteHandler: ToolHandler = async ({ params, projectDir }) =
   }
 
   // Agent chapter rewrites are the highest-risk overwrite path — snapshot first.
-  snapshotToLocalHistory(projectDir, filePath, content);
-  atomicWriteFileSync(filePath, content, 'utf-8');
+  snapshotToLocalHistory(projectDir, filePath, effectiveContent);
+  atomicWriteFileSync(filePath, effectiveContent, 'utf-8');
   // Notify both chapter-level listeners (word count) and file-level listeners
   // (open-tab reload). Without file:changed, an editor showing this chapter
   // won't refresh until manually closed and reopened (issue #4). Path is
@@ -227,7 +235,7 @@ export const chapterWriteHandler: ToolHandler = async ({ params, projectDir }) =
   // design §2.3；永不抛不阻写盘——账失败可下次重收）。幂等：链内 targeted-revision 已降档的章
   // （7.4 splice 落盘经此）再触发为 no-op。
   await degradeMentionLedgerForChapterFile(projectDir, chapterId);
-  const wordCount = content.replace(/\s+/g, '').length;
+  const wordCount = effectiveContent.replace(/\s+/g, '').length;
   return {
     title: `chapter_write: ${chapterId}`,
     output: `第 ${chapterOrdinalLabel(chapterId)} 章已写入并保存（约 ${wordCount} 字），可以继续下一章了。`,

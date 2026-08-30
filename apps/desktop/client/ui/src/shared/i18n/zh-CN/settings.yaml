@@ -81,8 +81,7 @@ settings:
   backgroundChoose: "选择图片"
   backgroundReset: "恢复默认"
   backgroundOpacity: "不透明度"
-  backgroundFrost: "背景磨砂"
-  backgroundFrostHint: "模糊背景图，让前景文字更清晰"
+  backgroundFrost: "磨砂强度"
   # ── R8 全局界面缩放（08-26 structure-rebuild）──
   interfaceScale: "界面缩放"
   interfaceScaleDesc: "整体缩放应用界面（含全部页面与文字），改动即时生效。"

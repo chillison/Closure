@@ -682,6 +682,61 @@ describe('local project repository helpers', () => {
     expect(updated.meta.version).toBe(2);
   });
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // #107 check 批补缝：chapter_candidate accept 覆写保序——candidate.content 是 draft
+  // 正文（无 frontmatter），整体覆盖会把已注册章文件的 frontmatter `order:`（#107 登记载体）
+  // 物理抹掉 → 派生重排错位。修法 = 旧文件有 frontmatter 且新内容无 → 旧块回拼
+  // （shared-contracts preserveChapterFrontmatter，mirror novelProjectRepository 同款）。
+  // ───────────────────────────────────────────────────────────────────────────
+
+  it('#107 check 批：chapter_candidate 覆写带 frontmatter 的已注册章 → order 保留（正文替换）', () => {
+    const project = createEmptyProjectDocument('FM Preserve Patch');
+    const withNovel = {
+      ...project,
+      novel: {
+        chapters: [
+          {
+            id: '第01章-旧章',
+            title: '旧章',
+            sort_order: 0,
+            sections: [{ id: 's1', sort_order: 0, content_file: 'chapters/第01章-旧章.md' }],
+            status: 'draft',
+          },
+        ],
+      },
+    };
+    saveProject(TEST_PROJECT_DIR, withNovel as any);
+    const mdDir = path.join(TEST_PROJECT_DIR, 'chapters');
+    if (!existsSync(mdDir)) mkdirSync(mdDir, { recursive: true });
+    writeFileSync(path.join(mdDir, '第01章-旧章.md'), '---\norder: 0\n---\n\n# 旧章\n\n旧正文。', 'utf8');
+
+    const chapterPatch = {
+      runId: 'run_fm_patch',
+      createdAt: new Date().toISOString(),
+      patches: [
+        {
+          field: 'chapter_candidate' as any,
+          action: 'set' as const,
+          data: {
+            chapterId: '第01章-旧章',
+            runId: 'run_fm_patch',
+            candidate: { title: '新章', content: '# 新标题\n\n新正文。' },
+          },
+          fieldVersion: 1,
+          generatedBy: 'draft-writer-agent',
+        },
+      ],
+    };
+
+    applyFieldPatches(TEST_PROJECT_DIR, chapterPatch);
+
+    const md = readFileSync(path.join(TEST_PROJECT_DIR, 'chapters/第01章-旧章.md'), 'utf8');
+    expect(md).toBe('---\norder: 0\n---\n# 新标题\n\n新正文。');
+    // 章节元数据照常更新（保序不改变 accept 语义）。
+    const updated = loadProject(TEST_PROJECT_DIR)!;
+    expect(updated.novel!.chapters[0].title).toBe('新章');
+  });
+
   it('4.1 Step 4：chapter_candidate 补丁带 storyDecisions → 追加到 novel.story_decisions（经 core）', () => {
     const project = createEmptyProjectDocument('Chapter Candidate StoryDecisions');
     const withNovel = {

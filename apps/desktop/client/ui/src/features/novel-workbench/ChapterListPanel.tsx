@@ -2,7 +2,10 @@ import { type DragEvent, useCallback, useRef, useState } from 'react';
 import { useShallow } from 'zustand/react/shallow';
 import { useAppStore } from '../../shared/store/appStore';
 import { isProjectRunActive } from '../../shared/store/agentSessionSlice';
+import { deriveChaptersFromDisk } from '../../shared/store/chapterDiskDerivation';
+import { useToastStore } from '../../shared/store/toastStore';
 import { useI18n } from '../../shared/i18n/useI18n';
+import { normalizePath } from '../../shared/utils/paths';
 import type { NovelChapterMeta } from '../../shared/store/novelChapterSlice';
 
 /**
@@ -37,7 +40,7 @@ function findEpisodeForChapter(
 export function ChapterListPanel() {
   const {
     chapters, activeId, selectChapter, moveNovelChapter, resolvedLocale,
-    sendAgentMessage, projectRunActive, episodeOutlines,
+    sendAgentMessage, projectRunActive, episodeOutlines, projectPath,
   } = useAppStore(
     useShallow((s) => ({
       chapters: s.novelChapters,
@@ -50,12 +53,14 @@ export function ChapterListPanel() {
       // D4 同项目单 run，生成会发 agent 消息触发写章链）。
       projectRunActive: isProjectRunActive(s),
       episodeOutlines: s.creativeFields.episode_outlines,
+      projectPath: s.currentProject?.path,
     })),
   );
   const { t } = useI18n(resolvedLocale);
 
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragIndexRef = useRef<number | null>(null);
+  const [creatingFirstChapter, setCreatingFirstChapter] = useState(false);
 
   const handleGenerate = useCallback(
     (ch: NovelChapterMeta, episode: { id: string; title?: string } | undefined) => {
@@ -71,6 +76,54 @@ export function ChapterListPanel() {
     },
     [sendAgentMessage],
   );
+
+  // dogfood R2 #107（R1.2）：零章冷启动空态「新建第一章」——把「用户手动在 chapters/
+  // 建文件」这个既有手势自动化。两步走 createEntry（建空文件，父目录缺失自动补）+
+  // writeFile（补 skeleton：frontmatter order + # 标题，磁盘派生消费契约见
+  // chapterDiskDerivation）。stem 锚当前章数（0-based 对齐 episode.index），标题留给
+  // 用户在编辑器里改。
+  // 建完**主动派生注册**（mirror useToolEvents.scheduleChapterRefresh 主体）：writeFile
+  // 的 shell handler 会 registerSelfWrite 抑制 watcher 广播，本突发的两条 fs 事件都可能
+  // 被吞——主动 derive 保证章列表立即注册（setNovelChapters → sync-chapters-meta 落
+  // yaml）；watcher 车道（file:changed 事件幸存时）幂等兜底。异步边界后按路径守卫
+  // （项目已切换则丢弃，防跨项目串写）。
+  const handleCreateFirstChapter = useCallback(async () => {
+    const state = useAppStore.getState();
+    const projectPath = state.currentProject?.path;
+    if (!projectPath || creatingFirstChapter) return;
+    setCreatingFirstChapter(true);
+    try {
+      const nextIndex = state.novelChapters.length;
+      const stem = `第${String(nextIndex + 1).padStart(2, '0')}章`;
+      const fullPath = normalizePath(`${projectPath}/chapters/${stem}.md`);
+      const skeleton = `---\norder: ${nextIndex}\n---\n\n# 未命名章节\n`;
+      const created = await window.orisonDesktop?.createEntry(fullPath, false);
+      if (created !== true) {
+        // createEntry 对已存在路径返 false（防截断真稿）——失败报错，不静默。
+        useToastStore.getState().showToast(t('novelChapter.createFirstFailed'), 'error');
+        return;
+      }
+      const written = await window.orisonDesktop?.writeFile(fullPath, skeleton);
+      if (written === false) {
+        // 空文件中间态无害（派生成无 frontmatter 章按文件名排），报错即止。
+        useToastStore.getState().showToast(t('novelChapter.createFirstFailed'), 'error');
+        return;
+      }
+      try {
+        const chapters = await deriveChaptersFromDisk(projectPath, state.novelChapters);
+        const latest = useAppStore.getState();
+        if (latest.currentProject?.path === projectPath) {
+          latest.setNovelChapters(chapters);
+        }
+      } catch {
+        // 派生失败静默：文件已上盘，watcher 车道（file:changed → 派生注册）兜底。
+      }
+    } catch {
+      useToastStore.getState().showToast(t('novelChapter.createFirstFailed'), 'error');
+    } finally {
+      setCreatingFirstChapter(false);
+    }
+  }, [creatingFirstChapter, t]);
 
   const handleDragStart = useCallback((e: DragEvent, index: number) => {
     dragIndexRef.current = index;
@@ -107,6 +160,17 @@ export function ChapterListPanel() {
     return (
       <div className="novel-chapter-list-empty">
         <p>{t('novelChapter.emptyList')}</p>
+        {projectPath ? (
+          <button
+            type="button"
+            className="novel-chapter-list-empty-create"
+            onClick={() => void handleCreateFirstChapter()}
+            disabled={creatingFirstChapter}
+          >
+            <span className="material-symbols-outlined" aria-hidden="true">add</span>
+            {t('novelChapter.createFirstChapter')}
+          </button>
+        ) : null}
       </div>
     );
   }

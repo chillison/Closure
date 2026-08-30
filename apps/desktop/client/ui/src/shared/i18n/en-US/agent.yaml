@@ -326,6 +326,14 @@ agent:
   chainStreaming: "{node} is writing"
   # dogfood T1 CR-T1-048: chain-card resume entry for the dogfood-lane pause.
   chainResume: "Resume"
+  # dogfood R2 #105 缝③ (08-30): terminal-state placeholder — no lingering "Working" copy
+  # while the chain is interrupted/failed.
+  chainInterruptedAt: "Interrupted at: {node}"
+  chainFailedAt: "Failed at: {node}"
+  # dogfood R2 #105 缓① (08-30): toast when a passive resume interruption keeps the review
+  # panel — the retained payload is the stale snapshot from your last review (restart point).
+  reviewInterruptedKept: "Chain resume was interrupted — the review panel is kept; you can continue or redo again (restart point is the snapshot from your last review)"
+  reviewInterruptedKeptWithReason: "Chain resume was interrupted ({reason}) — the review panel is kept; you can continue or redo again (restart point is the snapshot from your last review)"
   # Story 2.2 WP-B: setting_md_patch review card.
   settingMd:
     reapplyFailed: "Failed to apply the setting doc (it may have changed since the proposal — ask the agent to re-propose): {reason}"

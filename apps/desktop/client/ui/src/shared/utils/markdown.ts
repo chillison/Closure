@@ -1,5 +1,6 @@
 import { marked } from 'marked';
 import TurndownService from 'turndown';
+import { stripFrontmatter } from './frontmatter';
 
 marked.setOptions({
   gfm: true,
@@ -37,11 +38,16 @@ export function htmlToMarkdown(html: string): string {
 // The TipTap editor only registers StarterKit (no table/image/html nodes). A
 // markdown→HTML→TipTap→markdown round-trip silently drops any construct the
 // schema doesn't know, so an unsuspecting edit + autosave permanently deletes
-// tables, images, HTML blocks and front-matter. We detect those specific
-// high-value constructs and, when they wouldn't survive, fall back to a raw
-// source editor rather than corrupting the manuscript. We count constructs
-// before/after (rather than full-string equality) because marked+turndown
-// reformats even lossless content (list markers, emphasis tokens, blank lines).
+// tables, images and HTML blocks. We detect those specific high-value
+// constructs and, when they wouldn't survive, fall back to a raw source editor
+// rather than corrupting the manuscript. We count constructs before/after
+// (rather than full-string equality) because marked+turndown reformats even
+// lossless content (list markers, emphasis tokens, blank lines).
+//
+// Front-matter is exempt (dogfood #109): the editor strips it before the body
+// reaches TipTap and re-attaches the captured block byte-exact on every
+// write-back (see frontmatter.ts), so it never round-trips through the rich
+// editor at all — only the body is judged here.
 
 const IMAGE_RE = /!\[[^\]]*\]\([^)]*\)/g;
 // A GFM table delimiter row (`---|---`, `| :-- | --: |`). It must contain a
@@ -55,11 +61,6 @@ const RAW_HTML_RE = /<\/?(?:table|thead|tbody|tr|td|th|div|span|section|article|
 
 function countMatches(text: string, re: RegExp): number {
   return (text.match(re) ?? []).length;
-}
-
-/** Leading `--- ... ---` YAML front-matter block (dropped by marked). */
-function hasFrontMatter(md: string): boolean {
-  return /^\uFEFF?---\r?\n[\s\S]*?\r?\n---\r?\n?/.test(md);
 }
 
 /** Remove fenced blocks and inline code, where markdown syntax is literal text. */
@@ -76,19 +77,22 @@ function stripCodeSpans(md: string): string {
  */
 export function isMarkdownRoundTripLossy(md: string): boolean {
   if (!md) return false;
-  // Front-matter never survives; short-circuit.
-  if (hasFrontMatter(md)) return true;
+  // Front-matter is machine metadata the editor never round-trips (stripped on
+  // load, re-attached byte-exact on save — see frontmatter.ts), so it no longer
+  // forces source mode by itself. Judge the body only; any construct still
+  // present in the body keeps triggering the fallback.
+  const body = stripFrontmatter(md);
   // Images: the proxy round-trip below preserves them (turndown ships an <img>
   // rule), but the real editor schema has no image node and drops them — so
   // presence outside code spans is already lossy.
-  if (countMatches(stripCodeSpans(md), IMAGE_RE) > 0) return true;
+  if (countMatches(stripCodeSpans(body), IMAGE_RE) > 0) return true;
 
-  const roundTripped = htmlToMarkdown(markdownToHtml(md));
+  const roundTripped = htmlToMarkdown(markdownToHtml(body));
 
   // Any structural HTML in the source that the round-trip strips out.
-  if (countMatches(md, RAW_HTML_RE) > countMatches(roundTripped, RAW_HTML_RE)) return true;
+  if (countMatches(body, RAW_HTML_RE) > countMatches(roundTripped, RAW_HTML_RE)) return true;
   // GFM tables dropped (no table node) — compare delimiter-row counts.
-  if (countMatches(md, TABLE_DELIM_RE) > countMatches(roundTripped, TABLE_DELIM_RE)) return true;
+  if (countMatches(body, TABLE_DELIM_RE) > countMatches(roundTripped, TABLE_DELIM_RE)) return true;
 
   return false;
 }

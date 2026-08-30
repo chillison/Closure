@@ -99,6 +99,34 @@
   margin: 0;
 }
 
+/* dogfood R2 #107（R1.2）：零章空态「新建第一章」——次级按钮形态，
+   token 对齐 .novel-chapter-actions-bar button 同款。 */
+.novel-chapter-list-empty-create {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  min-height: 30px;
+  padding: var(--space-xs) var(--space-lg);
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.3rem;
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.novel-chapter-list-empty-create:hover:not(:disabled) {
+  background: var(--hover-overlay);
+}
+
+.novel-chapter-list-empty-create:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .novel-chapter-item {
   margin-bottom: var(--space-xs);
   border: 1px solid transparent;

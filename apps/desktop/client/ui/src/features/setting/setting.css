@@ -1,0 +1,564 @@
+/* ── 「设定」页（task 08-30-asset-cards-visualization A1 波）────────────────────
+ *
+ * 形态权威：task research/mockup-setting-page-v1.html（W0 用户拍板）+ 世界面板/结构页
+ * CSS 纪律：类前缀 `.setting-*`，与既有面板零共享选择器；配色/间距/圆角/字号全走
+ * tokens.css + scales.css 生成 token，零字面色。
+ *
+ * 布局（master-detail，整页）：页面 = flex 纵列（工具栏 + grid 主从区）。滚动口纪律
+ * （spec ui/layout-and-pages 恒驻/滚动口前提族）：`.setting-page`（height:100%）持有
+ * 纵向布局，真正的滚动发生在 `.setting-groups`（左列卡列表）与 `.setting-right`（右列
+ * 详情）两个独立滚动面（`.setting-list` 是非滚动布局容器——chips chrome 固定其上；
+ * docs tab 时 `.setting-docs-list` 自持滚动）；滚动面一律 flex-start 对齐
+ * （unsafe-center 反模式），左列/右列 chrome（tabs/chips）固定不随内容滚走。右列 grid
+ * 用 minmax(0,1fr)——1fr 裸用会让长 JSON/长行撑破列宽（内容 min-content 不可收缩）。
+ */
+
+/* ── 页面骨架 ── */
+.setting-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.setting-toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+  flex-shrink: 0;
+}
+
+.setting-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-right: var(--space-sm);
+}
+
+.setting-new-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  background: var(--accent);
+  color: var(--surface-container-lowest);
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: var(--space-2xs) var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.setting-new-btn:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.setting-new-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-new-btn .material-symbols-outlined {
+  font-size: var(--text-sm);
+}
+
+/* ── 新建卡菜单（B 波 CRUD：按钮 + 8 类下拉，工具栏/空态双入口共用）── */
+.setting-newmenu {
+  position: relative;
+  display: inline-flex;
+}
+
+/* 透明背板：点击菜单外任意处收菜单（fixed 全屏，零 document listener）。 */
+.setting-newmenu-backdrop {
+  position: fixed;
+  inset: 0;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: default;
+}
+
+.setting-newmenu-popover {
+  position: absolute;
+  top: calc(100% + var(--space-2xs));
+  left: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  min-width: 160px;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-soft);
+  padding: var(--space-3xs);
+}
+
+.setting-newmenu-item {
+  background: none;
+  border: none;
+  border-radius: var(--radius-2xs);
+  color: var(--on-surface);
+  font-size: var(--text-xs);
+  text-align: left;
+  padding: var(--space-3xs) var(--space-xs);
+  cursor: pointer;
+}
+
+.setting-newmenu-item:hover {
+  background: var(--accent-soft);
+}
+
+.setting-search {
+  flex: 0 0 280px;
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-sm);
+  color: var(--input-text);
+  font-size: var(--text-xs);
+  padding: var(--space-2xs) var(--space-sm);
+  outline: none;
+}
+
+.setting-search:focus {
+  border-color: var(--input-border-focus);
+  background: var(--input-bg-focus);
+}
+
+/* ── 主从区 ── */
+.setting-layout {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 320px minmax(0, 1fr);
+  gap: var(--space-md);
+}
+
+.setting-left {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+/* ── 左列双 tab ── */
+.setting-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.setting-tab {
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  padding: var(--space-xs) var(--space-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.setting-tab:hover {
+  color: var(--on-surface);
+}
+
+.setting-tab.is-active {
+  color: var(--on-surface);
+  border-bottom-color: var(--accent);
+}
+
+.setting-tab-count {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+}
+
+/* ── 卡列表（滚动面：chrome 固定其上）── */
+.setting-list {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* 滚动面 unsafe-center 反模式：默认 flex-start 对齐。 */
+  align-items: flex-start;
+  align-content: flex-start;
+  align-self: stretch;
+}
+
+.setting-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.setting-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  background: var(--chip-bg);
+  color: var(--chip-text);
+  border: 1px solid transparent;
+  border-radius: var(--radius-pill);
+  font-size: var(--text-2xs);
+  padding: var(--space-3xs) var(--space-xs);
+  cursor: pointer;
+}
+
+.setting-chip:hover {
+  color: var(--on-surface);
+}
+
+.setting-chip.is-on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--on-surface);
+}
+
+.setting-chip-count {
+  opacity: 0.65;
+}
+
+.setting-groups {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: 100%;
+  padding: var(--space-2xs) 0 var(--space-sm);
+}
+
+.setting-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--on-surface-variant);
+  letter-spacing: 0.5px;
+  padding: var(--space-2xs) var(--space-md) var(--space-3xs);
+}
+
+.setting-group-count {
+  font-weight: 400;
+  opacity: 0.65;
+}
+
+.setting-cardrow {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  padding: var(--space-2xs) var(--space-md);
+  cursor: pointer;
+}
+
+.setting-cardrow:hover {
+  background: var(--surface-container-low);
+}
+
+.setting-cardrow.is-selected {
+  background: var(--accent-soft);
+  border-left-color: var(--accent);
+}
+
+.setting-cardrow-name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--on-surface);
+  min-width: 0;
+}
+
+.setting-cardrow-summary {
+  display: block;
+  margin-top: var(--space-3xs);
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 徽标（tier/status/type）── */
+.setting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  font-size: var(--text-3xs);
+  font-weight: 400;
+  border-radius: var(--radius-2xs);
+  padding: 0 var(--space-3xs);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.setting-badge--tier {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.setting-badge--type {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--on-surface);
+}
+
+.setting-badge--status-draft {
+  color: var(--warning);
+}
+
+.setting-badge--status-active {
+  color: var(--success);
+}
+
+.setting-badge--status-deprecated,
+.setting-badge--status-locked {
+  color: var(--on-surface-variant);
+  opacity: 0.8;
+}
+
+.setting-badge-default {
+  opacity: 0.7;
+  font-weight: 400;
+}
+
+/* ── 右列（B 波：chrome[locked 横幅] + 滚动面双层——横幅钉在滚动面之上）── */
+.setting-detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.setting-lockbar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  flex-shrink: 0;
+  background: var(--surface-container-low);
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-sm);
+  color: var(--warning);
+  font-size: var(--text-2xs);
+  padding: var(--space-3xs) var(--space-xs);
+  margin-bottom: var(--space-2xs);
+}
+
+.setting-lockbar .material-symbols-outlined {
+  font-size: var(--text-sm);
+}
+
+.setting-lockbar-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-lockbar-unlock {
+  background: none;
+  border: 1px solid var(--warning);
+  border-radius: var(--radius-2xs);
+  color: var(--warning);
+  font-size: var(--text-2xs);
+  padding: var(--space-3xs) var(--space-xs);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.setting-lockbar-unlock:hover {
+  background: var(--warning);
+  color: var(--surface-container-lowest);
+}
+
+.setting-right {
+  flex: 1;
+  min-height: 0;
+  background: var(--surface-container-lowest);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-md);
+  overflow-y: auto;
+  padding: var(--space-lg);
+}
+
+.setting-summary-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-sm);
+  border-bottom: 1px solid var(--outline-variant);
+  margin-bottom: var(--space-md);
+}
+
+.setting-summary-name {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-right: var(--space-2xs);
+  overflow-wrap: anywhere;
+}
+
+.setting-summary-id,
+.setting-summary-rawtype {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+/* ── 未知 type 只读 JSON（防御态）── */
+.setting-readonly-hint {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  margin: 0 0 var(--space-xs);
+}
+
+.setting-readonly-json {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: var(--text-2xs);
+  line-height: 1.55;
+  color: var(--on-surface);
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  overflow-x: auto;
+  white-space: pre;
+  margin: 0;
+}
+
+/* ── 过滤/搜索无匹配提示（B6）── */
+.setting-list-empty {
+  padding: var(--space-md) var(--space-md);
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  margin: 0;
+}
+
+/* ── 未选卡提示（B 波选中语义：null = 右列空态）── */
+.setting-selecthint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 120px;
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+}
+
+/* ── 设定文档列表（B 波 W5：settings/*.md 入口——只列不编，编辑走文件 tab；
+      CR P11：ul > li > button 语义正确结构——button 不再挂 role=listitem 抹掉隐式角色）── */
+.setting-docs-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-2xs) 0 var(--space-sm);
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+  /* ul reset（列表语义自带样式在本布局是噪声） */
+  list-style: none;
+  margin: 0;
+}
+
+.setting-docs-item {
+  display: block;
+}
+
+.setting-docs-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  border-left: 2px solid transparent;
+  padding: var(--space-2xs) var(--space-md);
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+  cursor: pointer;
+}
+
+.setting-docs-row:hover {
+  background: var(--surface-container-low);
+}
+
+.setting-docs-row .material-symbols-outlined {
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+}
+
+.setting-docs-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 零卡空态（非滚动容器内居中——unsafe-center 反模式不适用）── */
+.setting-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-2xl);
+  text-align: center;
+}
+
+.setting-empty-icon {
+  font-size: 48px;
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+}
+
+.setting-empty-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--on-surface);
+  margin: 0;
+}
+
+.setting-empty-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+}
+
+.setting-empty-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  background: var(--accent);
+  color: var(--surface-container-lowest);
+  border: none;
+  border-radius: var(--radius-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  padding: var(--space-2xs) var(--space-md);
+  cursor: pointer;
+}
+
+.setting-empty-cta:hover:not(:disabled) {
+  background: var(--accent-strong);
+}
+
+.setting-empty-cta:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.setting-empty-cta .material-symbols-outlined {
+  font-size: var(--text-sm);
+}

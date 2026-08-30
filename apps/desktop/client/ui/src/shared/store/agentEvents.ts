@@ -509,10 +509,28 @@ export function handleAgentStreamEvent<S extends AgentDispatchState>(store: Agen
       // dogfood T1 Stage 4（design §6.1 兜底）：清残余流式占位（打回丢弃的废稿等不到终帧）；
       // 移除后与后端消息数出现长度差 → 下方对账 fetch 权威替换。
       purgeSessionStreams(store, sid);
-      // dogfood T1 Stage 6：链 run 仍 running = 中途被掐（正常完成哨兵帧先到）→ 标「已中断」
-      //（abort 半 JSON 不落盘——已流出文本保留在链卡，r1）。
-      finalizeChainRun(store, sid, 'aborted');
-      store.getState().setAgentRunState(sid, { phase: 'idle', activity: undefined });
+      // ── dogfood R2 #105 假中断根治（2026-08-30）：done 兜底 finalize 前置守卫 ──
+      //
+      // resume 链事件按同一 leader sessionId 广播、跑在 leader turn 生命周期外（resume IPC 长跑
+      // 至下一 checkpoint/终态）——任何 leader turn 在此期间结束（done）不构成「链被掐」证据
+      //（服务端从未 abort，台账「中断原因未上日志」即此机理：UI 侧误终态化，服务端无 abort 可
+      // 记）。在途判据（跨 slice 结构面读——AgentDispatchState 不含 review 面，最小测试 store
+      // 可缺省字段，缺省 = 无在途，兜底照旧）：chapterReviewSlice.reviewResuming === true 且
+      // pausedReviewBySession[sid] 存在（resume 车道必有 pause 载荷——双条件防 reviewResuming
+      // 残值误放行）。在途 → 不 finalize（不误标 aborted 不删 chainBuffers）也不归位 run 态
+      //（链事件持续维持 running；终态由哨兵帧 / resume IPC summary 和解定）。
+      const resumeProbe = store.getState() as AgentDispatchState & {
+        reviewResuming?: boolean;
+        pausedReviewBySession?: Record<string, unknown>;
+      };
+      const resumeInFlight =
+        resumeProbe.reviewResuming === true && resumeProbe.pausedReviewBySession?.[sid] !== undefined;
+      if (!resumeInFlight) {
+        // dogfood T1 Stage 6：链 run 仍 running = 中途被掐（正常完成哨兵帧先到）→ 标「已中断」
+        //（abort 半 JSON 不落盘——已流出文本保留在链卡，r1）。
+        finalizeChainRun(store, sid, 'aborted');
+        store.getState().setAgentRunState(sid, { phase: 'idle', activity: undefined });
+      }
       if (!isActiveView) return;
       writeState(store, { activeSessionRunning: false });
       // stream 结束后与后端对账，补偿可能因 IPC 时序丢失的消息（后台会话不追——

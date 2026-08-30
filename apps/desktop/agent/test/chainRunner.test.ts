@@ -668,6 +668,51 @@ describe('summarizeRunSnapshot — context isolation（不抽内部 trace）', (
     expect(summary.errors).toEqual(['some warning']);
   });
 
+  it('#107 R1.1c：route_decision.deviation=true → summary.routeDecision.deviation=true 投影（补产 storyDecisions 数据源）', () => {
+    const summary = summarizeRunSnapshot({
+      runId: 'r-dev',
+      status: 'completed',
+      currentNodeId: null,
+      projectPath: '/p',
+      completedNodes: [],
+      pendingNodes: [],
+      artifacts: {
+        'route_decision': { decision: 'accept_as_truth', reason: '角色突然硬气', deviation: true },
+        'draft.initial': { text: '正文。' },
+      },
+      review: null,
+      archive: null,
+      delivery: null,
+      feedback: null,
+    });
+    expect(summary.routeDecision).toEqual({
+      decision: 'accept_as_truth',
+      reason: '角色突然硬气',
+      deviation: true,
+    });
+  });
+
+  it('#107 R1.1c：deviation=false / 缺省 → 投影省略（零噪音，routeDecision 形态与修前一致）', () => {
+    for (const deviation of [false, undefined]) {
+      const summary = summarizeRunSnapshot({
+        runId: 'r-nodev',
+        status: 'completed',
+        currentNodeId: null,
+        projectPath: '/p',
+        completedNodes: [],
+        pendingNodes: [],
+        artifacts: {
+          'route_decision': { decision: 'accept_as_truth', reason: '通过', ...(deviation !== undefined ? { deviation } : {}) },
+        },
+        review: null,
+        archive: null,
+        delivery: null,
+        feedback: null,
+      });
+      expect(summary.routeDecision).toEqual({ decision: 'accept_as_truth', reason: '通过' });
+    }
+  });
+
   it('Story 8.4 Step 3：research_brief.verdict.archive_issues 抽 archiveIssues（坏条目丢好条目留；空/缺零痕迹）', () => {
     const summary = summarizeRunSnapshot({
       runId: 'r-ammo',

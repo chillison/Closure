@@ -17,9 +17,9 @@ type Props = {
   setWallpaperUrl: (value: string) => void;
   wallpaperOpacity: number;
   setWallpaperOpacity: (value: number) => void;
-  /** 08-26 dogfood：可选磨砂（blur 壁纸整层，花背景不抢前景对比度）。 */
-  wallpaperFrost: boolean;
-  setWallpaperFrost: (value: boolean) => void;
+  /** 08-29 滑杆化：磨砂强度（blur 壁纸整层 0–50px；0 = 关）。 */
+  wallpaperFrostBlur: number;
+  setWallpaperFrostBlur: (value: number) => void;
   /** R8 全局界面缩放（0.85–1.3；shell 经 webContents.setZoomFactor 施加）。 */
   interfaceScale: number;
   setInterfaceScale: (value: number) => void;
@@ -59,8 +59,8 @@ export function AppearanceSettingsPage({
   setWallpaperUrl,
   wallpaperOpacity,
   setWallpaperOpacity,
-  wallpaperFrost,
-  setWallpaperFrost,
+  wallpaperFrostBlur,
+  setWallpaperFrostBlur,
   interfaceScale,
   setInterfaceScale,
 }: Props) {
@@ -286,19 +286,27 @@ export function AppearanceSettingsPage({
         </div>
       )}
 
-      {/* 08-26 磨砂开关：checkbox 行照 WritingSettingsPage 范式。 */}
+      {/* 08-29 磨砂滑杆化（0 = 关，checkbox 退役）：行形态照不透明度滑杆。 */}
       {wallpaperUrl && (
         <div className="form-field-row">
           <span className="form-field-label">{t('settings.backgroundFrost')}</span>
-          <div className="form-field-toggle-row">
+          <div className="form-field-range-row">
             <input
-              type="checkbox"
-              checked={wallpaperFrost}
-              onChange={(e) => setWallpaperFrost(e.target.checked)}
-              className="form-field-checkbox"
-              id="setting-wallpaper-frost"
+              type="range"
+              className="form-field-range"
+              min={0}
+              max={50}
+              step={1}
+              role="slider"
+              aria-label={t('settings.backgroundFrost')}
+              aria-valuemin={0}
+              aria-valuemax={50}
+              aria-valuenow={wallpaperFrostBlur}
+              value={wallpaperFrostBlur}
+              onChange={(e) => setWallpaperFrostBlur(Number(e.target.value))}
             />
-            <label htmlFor="setting-wallpaper-frost">{t('settings.backgroundFrostHint')}</label>
+            {/* 值面照 opacity {n}% 形态：内联渲染 {n}px，i18n 键只做纯标签。 */}
+            <span className="form-field-range-value">{wallpaperFrostBlur}px</span>
           </div>
         </div>
       )}

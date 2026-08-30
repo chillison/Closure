@@ -78,6 +78,22 @@ export function ChainRunCard({ run, onRetry, onResume }: Props) {
   const currentLabel = run.currentNodeId ? chainNodeLabel(run.currentNodeId) : null;
   const streamLabel = run.streamNodeId ? chainNodeLabel(run.streamNodeId) : null;
 
+  // dogfood R2 #105 缝③（2026-08-30）：终态占位符节点——aborted/error 兜底 errorNodeId（失败
+  // 定位节点；哨兵前最后一帧 node-done 未必到达，currentNodeId 可为 null）。
+  const terminalNode = run.currentNodeId ?? run.errorNodeId;
+  const terminalLabel = terminalNode ? chainNodeLabel(terminalNode) : null;
+  // 占位符文案按 run.status 分流（loading 三点 :151 已分 status，文案漏了同款门——中断/失败
+  // 态显「正在进行：{node}」与头部「已中断/失败」tag 同卡矛盾）。paused 不渲染正文区（compact
+  // 现状）、completed 不渲染卡（挂载门现状），均不进此分流。
+  const placeholderText =
+    interrupted && terminalLabel
+      ? t('agent.chainInterruptedAt', { node: terminalLabel })
+      : failed && terminalLabel
+        ? t('agent.chainFailedAt', { node: terminalLabel })
+        : currentLabel
+          ? t('agent.chainWorking', { node: currentLabel })
+          : t('agent.chainPreparing');
+
   return (
     <div
       className={[
@@ -144,10 +160,10 @@ export function ChainRunCard({ run, onRetry, onResume }: Props) {
             />
           ) : (
             // JSON 节点期间：正文区显示当前节点名 + 三点 loading（不流 JSON——design §7.5）。
+            // R2.3 #105 缝③：终态（aborted/error）改「已中断于/失败于 {node}」——不再残留
+            //「正在进行」假活文案。
             <div className="chain-run-card-placeholder">
-              <span className="chain-run-card-placeholder-label">
-                {currentLabel ? t('agent.chainWorking', { node: currentLabel }) : t('agent.chainPreparing')}
-              </span>
+              <span className="chain-run-card-placeholder-label">{placeholderText}</span>
               {run.status === 'running' && (
                 <span className="chain-run-card-running" aria-hidden="true">
                   <span className="agent-loading-dot" />

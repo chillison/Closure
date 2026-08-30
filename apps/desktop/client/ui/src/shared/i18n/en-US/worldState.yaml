@@ -1,0 +1,79 @@
+# World state panel (dogfood R2 #92, task 08-29-world-state-panel S3-S6).
+# zh copy discipline (prd): no English jargon in user-facing zh strings
+# (as-of/patch/slice/subject/reduce are renamed 回放/变更/时点/主体/快照).
+# en side uses natural English — the jargon ban targets the zh surface only.
+worldState:
+  title: "World State"
+  noProject: "Open a project to view its world state."
+  searchPlaceholder: "Search subjects…"
+  noMatch: "No matching subjects"
+  subjectsSection: "Subjects"
+  subjectCount: "{count} subjects"
+  activeStripLabel: "Recently present / active"
+  anchorActivity: "{subjects} subjects · {patches} changes"
+  lastChangeAt: "last t={t}"
+  neverWritten: "registered, no changes"
+  totalCounts: "{subjects} subjects · {patches} changes · {anchors} moments"
+  emptyTitle: "No world state extracted yet"
+  emptyDescription: "World state appears here automatically after a chapter is written."
+  loading: "Loading world state…"
+  errorTitle: "Failed to load world state"
+  retry: "Retry"
+  extracting: "Extracting world…"
+  refresh: "Refresh"
+  # ── L2/L3 breadcrumbs & navigation ──
+  crumbsWorld: "World"
+  backToOverview: "‹ Overview"
+  # ── axis filter chips (L2/L3; counts from data, zero-count axes greyed) ──
+  axesFilterLabel: "Filter by axis"
+  # ── L2 moment slice ──
+  sceneTitle: "scene “{title}”"
+  sliceSummary: "{subjects} subjects · {patches} changes"
+  sliceNoChanges: "No changes at this moment."
+  axisFilteredEmpty: "No changes to show under the current axis filters."
+  groupPatchesCount: "{count} changes"
+  enterSubject: "open subject ›"
+  # ── L3 subject spine ──
+  replayTargetNow: "Replay: now"
+  replayTargetAt: "Replay: {target}"
+  replayTargetLabel: "{label} (t={t})"
+  replayTargetBare: "t={t}"
+  replayHint: "click a dot below to replay at that moment"
+  replayBackHint: "click to return to now"
+  cutHere: "replay here"
+  cutHereAt: "replay from t={t}"
+  snapshotTitle: "Snapshot"
+  snapshotScopeLatest: "latest state"
+  snapshotScopeAt: "state at t={t}"
+  snapshotCount: "{count} entries"
+  snapshotDrillHint: "click a key to trace every change to it"
+  snapshotEmpty: "No state at this moment yet (precedes all changes)."
+  pathDrillLabel: "Path drill-down:"
+  pathDrillHint: "show every change to this entry"
+  clearPathFilter: "✕ clear"
+  laterFolded: "▲ {count} later changes hidden after the replay point (click to return to now)"
+  subjectNoChanges: "No changes recorded for this subject yet."
+  jumpToScene: "jump to scene"
+  jumpToSceneNoChapter: "no chapter found for this scene"
+  # reduce issue badges (broken-relative / invalid-op)
+  issueLabels:
+    broken-relative: "missing base"
+    invalid-op: "invalid op"
+  # known layered-value keys (objective/reader_perceived/vad; open-dict unknown keys fall back to raw key)
+  valueLayers:
+    objective: "objective"
+    reader_perceived: "reader-perceived"
+    vad: "VAD projection"
+  typeLabels:
+    character: "Character"
+    group: "Group"
+    item: "Item"
+    faction: "Faction"
+    quest: "Quest"
+    entity: "Unregistered"
+  axisLabels:
+    physical: "Physical"
+    cognitive: "Cognitive"
+    emotional: "Emotional"
+    relational: "Relational"
+    factional: "Factional"

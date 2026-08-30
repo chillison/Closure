@@ -320,6 +320,13 @@ agent:
   chainStreaming: "{node} 正在写作"
   # dogfood T1 CR-T1-048：dogfood 链车道 pause 的链卡 resume 入口。
   chainResume: "继续生成"
+  # dogfood R2 #105 缝③（08-30）：链卡终态占位符——aborted/error 态不残留「正在进行」假活文案。
+  chainInterruptedAt: "已中断于：{node}"
+  chainFailedAt: "失败于：{node}"
+  # dogfood R2 #105 缓①（08-30）：resume 被动中断（continue/redo 返 aborted/error）保留审阅卡的
+  # toast——保留载荷是上一 pause 的旧快照，重跑起点即该快照。
+  reviewInterruptedKept: "链段续跑被中断——审阅卡已保留，可重新继续/改稿重跑（重跑起点为上次审阅时的快照）"
+  reviewInterruptedKeptWithReason: "链段续跑被中断（{reason}）——审阅卡已保留，可重新继续/改稿重跑（重跑起点为上次审阅时的快照）"
   # Story 2.2 WP-B：setting_md_patch 审阅卡。
   settingMd:
     reapplyFailed: "设定文档应用失败（文档可能在提议后已被修改，请让 AI 重新提议）：{reason}"

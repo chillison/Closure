@@ -3,7 +3,7 @@ import { useI18n } from '../../shared/i18n/useI18n';
 import { useShallow } from 'zustand/react/shallow';
 import { Tooltip } from '../../shared/components/Tooltip';
 import {
-  overviewItem, outlineItem, structureItem, assetsItem,
+  overviewItem, outlineItem, structureItem, assetsItem, settingItem,
   productionItems, type PageNavItem,
 } from './navItems';
 import { openWriting } from '../editor/openWriting';
@@ -92,6 +92,20 @@ export function SideNav() {
             </button>
           </Tooltip>
 
+          {/* 世界状态面板（dogfood R2 #92）：世界事件系统读面——L1 总览/L2 时点/L3 主体
+              三级缩放。左槽与 explorer/search/timeline 同族互斥（prd「挂载与形态」），
+              位置在时间线下方。 */}
+          <Tooltip label={t('nav.world') || '世界'} placement="right">
+            <button
+              type="button"
+              className={`icon-rail-btn${activeSidebarPanel === 'world' ? ' icon-rail-btnActive' : ''}`}
+              onClick={() => setActiveSidebarPanel(activeSidebarPanel === 'world' ? 'explorer' : 'world')}
+              aria-label={t('nav.world') || '世界'}
+            >
+              <span className="material-symbols-outlined" aria-hidden="true">public</span>
+            </button>
+          </Tooltip>
+
           <div className="side-nav-separator" />
 
           {/* --- Group 1: Overview / Outline / Structure / Writing / Assets --- */}
@@ -114,6 +128,9 @@ export function SideNav() {
             </button>
           </Tooltip>
           <NavButton item={assetsItem} active={isPageActive('assets')} onClick={() => handlePage('assets')} t={t} />
+          {/* 「设定」页（task 08-30-asset-cards-visualization A1）：asset_cards 8 类
+              设定卡浏览/编辑聚合页——master-detail（左列表右详情）。 */}
+          <NavButton item={settingItem} active={isPageActive('setting')} onClick={() => handlePage('setting')} t={t} />
 
           <div className="side-nav-separator" />
 

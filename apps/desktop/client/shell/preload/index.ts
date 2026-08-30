@@ -51,7 +51,33 @@ import type {
   UpdateCheckResult,
   UpdateEvent,
   UserPreferencesConfig,
+  WorldChangedEvent,
+  WorldOverview,
+  WorldOverviewRequest,
+  WorldSliceDetail,
+  WorldSliceDetailRequest,
+  WorldSubjectDetail,
+  WorldSubjectDetailRequest,
 } from '@orison/shared-contracts';
+// 推送通道名单源常量（BMad CR #8）：preload 与 shell 发射器（worldNotify）共同引用
+// shared-contracts WORLD_CHANGED_CHANNEL，禁硬编码。**深导入 zod-free 叶子模块**
+// （dogfood R2 #99）：barrel 导入会把 contracts 全图连同 zod（顶层 require node:crypto）
+// 内联进 preload bundle——sandbox preload 随即整崩、window.orisonDesktop 消失、
+// 全 app IPC 静默哑掉。叶子路径只内联常量本体。守卫：shell test preload-sandbox-imports。
+import { WORLD_CHANGED_CHANNEL } from '@orison/shared-contracts/contracts/channels';
+
+/**
+ * dogfood R2 #92：world:changed 订阅的 callback → 包装 listener 映射（BMad CR #7+#105：WeakMap →
+ * **Map**——wrapper 登记必须存活到显式退订，不随 callback 可达性被 GC）。ipcRenderer.removeListener
+ * 只认注册时的包装函数，offWorldChanged(callback) 以原 callback 为键取回包装再移除（只移除本
+ * 监听器，绝不 removeAllListeners——mirror onUpdateEvent / onToolEvent 订阅纪律）。同 callback
+ * 重复订阅时**先摘旧 wrapper 再挂新**（防双份回调：旧 wrapper 若不摘，channel 上会残留两条都指向
+ * 同一 callback 的监听，offWorldChanged 只能摘到最新那条）。
+ */
+const worldChangedListeners = new Map<
+  (event: WorldChangedEvent) => void,
+  (_e: unknown, event: WorldChangedEvent) => void
+>();
 
 export const exposedDesktopApi = {
   pickProjectDirectory: () => ipcRenderer.invoke('project:pick-directory'),
@@ -263,6 +289,39 @@ export const exposedDesktopApi = {
     ipcRenderer.invoke('asset:delete', projectId, assetId) as Promise<void>,
   importAssets: (projectDir: string, projectId: string) =>
     ipcRenderer.invoke('asset:import-files', projectDir, projectId) as Promise<string[]>,
+  // dogfood R2 #92：世界状态面板读面三通道（design v2 三级缩放——L1 总览 / L2 时点切片 / L3 主体
+  // 脊柱；载荷契约单源 contracts/world-panel.ts）。纯读 invoke；实时性走 world:changed 推送订阅。
+  worldOverview: (input: WorldOverviewRequest) =>
+    ipcRenderer.invoke('world:overview', input) as Promise<WorldOverview>,
+  worldSliceDetail: (input: WorldSliceDetailRequest) =>
+    ipcRenderer.invoke('world:slice-detail', input) as Promise<WorldSliceDetail>,
+  worldSubjectDetail: (input: WorldSubjectDetailRequest) =>
+    ipcRenderer.invoke('world:subject-detail', input) as Promise<WorldSubjectDetail>,
+  // world:changed 推送订阅（world 数据三写入口事务提交后 best-effort 广播）。返回退订函数（mirror
+  // onUpdateEvent / onToolEvent 形态）；offWorldChanged 以原 callback 为键退订同一监听器。
+  onWorldChanged: (callback: (event: WorldChangedEvent) => void) => {
+    // 重复订阅守卫：先摘同 callback 旧 wrapper 再挂新（见上方 worldChangedListeners 注释）。
+    const stale = worldChangedListeners.get(callback);
+    if (stale) ipcRenderer.removeListener(WORLD_CHANGED_CHANNEL, stale);
+    const listener = (_e: unknown, event: WorldChangedEvent) => callback(event);
+    worldChangedListeners.set(callback, listener);
+    ipcRenderer.on(WORLD_CHANGED_CHANNEL, listener);
+    return () => {
+      // 只摘本订阅注册的 wrapper；若 callback 此间已被再订阅（map 持新 wrapper，旧 wrapper 已被
+      // 上面的守卫摘除），不动新 wrapper。
+      if (worldChangedListeners.get(callback) === listener) {
+        ipcRenderer.removeListener(WORLD_CHANGED_CHANNEL, listener);
+        worldChangedListeners.delete(callback);
+      }
+    };
+  },
+  offWorldChanged: (callback: (event: WorldChangedEvent) => void) => {
+    const listener = worldChangedListeners.get(callback);
+    if (listener) {
+      ipcRenderer.removeListener(WORLD_CHANGED_CHANNEL, listener);
+      worldChangedListeners.delete(callback);
+    }
+  },
   // Logging
   openLogsDir: () => ipcRenderer.invoke('log:open-dir') as Promise<string>,
   writeLog: (payload: { level: 'debug' | 'info' | 'warn' | 'error' | 'fatal'; message: string; meta?: Record<string, unknown> }) =>

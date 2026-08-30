@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain, protocol, session } from 'electron';
+import { app, BrowserWindow, dialog, ipcMain, protocol, session } from 'electron';
 import path from 'node:path';
 import { existsSync } from 'node:fs';
 import { setPromptsBaseDir } from '@orison/desktop-agent';
 import { INTERFACE_SCALE_DEFAULT } from '@orison/shared-contracts';
-import { getLogger, installGlobalErrorHandlers } from './logger';
+import { getLogger, getLogsDirPath, installGlobalErrorHandlers } from './logger';
 import { registerProjectIpc } from './ipc/projectIpc';
 import { initProjectsRoot } from './ipc/pathGuard';
 import { loadWindowState, trackWindowState } from './windowState';
@@ -28,6 +28,7 @@ import { registerSettingMdIpc } from './ipc/settingMdIpc';
 import { registerAuthorProfileIpc } from './ipc/authorProfileIpc';
 import { registerResearchConfigIpc } from './ipc/researchConfigIpc';
 import { registerLintIpc } from './ipc/lintIpc';
+import { registerWorldIpc } from './ipc/worldIpc';
 import { fetchOrisonFile } from './orisonFileProtocol';
 import { closeDb, getDb } from './db';
 import { scanAndReindexCraftKb } from './db/closureCraftIndexer';
@@ -132,6 +133,11 @@ function wireAgentPromptsDir(): void {
   const candidates = [
     app.isPackaged ? path.join(process.resourcesPath, 'prompts') : null,
     path.resolve(app.getAppPath(), '..', '..', 'agent', 'prompts'),
+    // dogfood R2 #97：build 产物直启（electron dist/main/index.cjs，e2e harness 即此形态）
+    // 时 getAppPath() 解析到 dist/main 而非 shell 根 → dev 布局候选落空、契约静默 degrade。
+    // __dirname 候选两态皆中：build = dist/main（↑4 = apps/desktop）/ dev = shell/main
+    // 源码（↑4 同样 = apps/desktop）→ + agent/prompts。existsSync 不中即跳过，零风险。
+    path.resolve(__dirname, '..', '..', '..', '..', 'agent', 'prompts'),
   ].filter((p): p is string => p !== null);
   for (const dir of candidates) {
     if (existsSync(dir)) {
@@ -183,6 +189,10 @@ function registerAllIpc() {
   registerResearchConfigIpc();
   // C1.2 llmlint：全稿静态扫描 / LLM 语境判断 / 机械修复应用（lintIpc 自含三 handler）。
   registerLintIpc();
+  // dogfood R2 #92：世界状态面板读面三通道（world:overview / world:slice-detail /
+  // world:subject-detail——纯读，无窗口面；world:changed 推送不经本注册器，发射埋三写入口
+  // 经 worldNotify 全窗口广播）。
+  registerWorldIpc();
 }
 
 function createWindow() {
@@ -299,6 +309,48 @@ function createWindow() {
 /* ── Custom protocol for serving local project files ── */
 // Note: registerSchemesAsPrivileged was removed in Electron 18+ — protocol.handle() handles it natively
 
+/**
+ * dogfood R2 #101①：注册库初始化失败 = 启动关键路径断裂。旧实现是本文件 whenReady 回调内
+ * 直接 `throw err`——`.then()` 回调里的 throw 变 unhandledRejection，而 installGlobalErrorHandlers
+ * 只记不退 → registerAllIpc/createWindow 永不执行 = 无窗静默死（用户面零信号，仅两行日志）。
+ * 修法：原生错误对话框承载可复制诊断（Windows 下 Ctrl+C 整框复制——UI 侧无 copy-diagnostics
+ * 实现）+ `app.exit(1)` 非零码退出（Electron 原生出口，对 e2e/启动器可见）。showErrorBox
+ * 同步模态天然给 pino 异步 flush（destination sync:false）留时，不加人为延时。
+ * installGlobalErrorHandlers 的「只记不退」全局语义不动——运行期单点错误不杀 app，仅启动
+ * 关键路径局部收紧。deps（getDb/showErrorBox/exit）注入供测试替换；返回 false 时调用方中止
+ * 启动序列（不再注册 IPC / 开窗——与旧 throw 的中止语义等价但可诊断）。
+ */
+export function initProjectRegistryOrExit(
+  deps: {
+    getDb: () => unknown;
+    showErrorBox: (title: string, content: string) => void;
+    exit: (code: number) => void;
+  } = {
+    getDb,
+    showErrorBox: (title, content) => dialog.showErrorBox(title, content),
+    exit: (code) => app.exit(code),
+  },
+): boolean {
+  try {
+    deps.getDb();
+    getLogger().info('project registry initialized');
+    return true;
+  } catch (err) {
+    const logger = getLogger();
+    logger.fatal({ err }, 'project registry initialization failed');
+    const code = err !== null && typeof err === 'object' && 'code' in err ? String((err as { code?: unknown }).code) : null;
+    const detail = err instanceof Error ? `${err.message}\n${err.stack ?? ''}` : String(err);
+    deps.showErrorBox(
+      'Closure 启动失败',
+      `项目注册库初始化失败，应用将以非零码退出。\n\n${code ? `code: ${code}\n` : ''}${detail}\n\n` +
+        `日志目录：${getLogsDirPath()}\n` +
+        '若刚切换过 node 版本或重装依赖：开发者模式请先运行 pnpm rebuild:native 重建原生模块。',
+    );
+    deps.exit(1);
+    return false;
+  }
+}
+
 app.whenReady().then(() => {
   // Register orison-file:// protocol to serve local files from sandbox
   protocol.handle('orison-file', (request) => {
@@ -310,13 +362,9 @@ app.whenReady().then(() => {
   logger.info({ platform: process.platform, version: app.getVersion() }, 'desktop main starting');
   // 数据库迁移必须在 IPC 和窗口创建前完成，不能依赖项目页是否触发首次查询。
   // 这样旧表缺列会在启动阶段一次性修复，不会等到复制/删除时才暴露失败。
-  try {
-    getDb();
-    logger.info('project registry initialized');
-  } catch (err) {
-    logger.fatal({ err }, 'project registry initialization failed');
-    throw err;
-  }
+  // dogfood R2 #101①：失败路径弹原生错误框（详情+日志目录+重编指引）+ app.exit(1)；
+  // 返回 false 即中止启动序列（不再注册 IPC / 开窗——与旧 throw 的中止语义等价但可诊断）。
+  if (!initProjectRegistryOrExit()) return;
   // Story 3.6 WP2 (R13/D6; CR P2): apply the persisted research proxy tier
   // before any research network call can fire (all research outbound rides the
   // dedicated `research` partition session, so one setProxy covers netFetch +

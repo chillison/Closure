@@ -46,7 +46,7 @@ export function SettingsDialog({ onClose }: Props) {
     contextRedlinePercent, setContextRedlinePercent,
     wallpaperUrl, setWallpaperUrl,
     wallpaperOpacity, setWallpaperOpacity,
-    wallpaperFrost, setWallpaperFrost,
+    wallpaperFrostBlur, setWallpaperFrostBlur,
     interfaceScale, setInterfaceScale,
   } = useAppStore(useShallow((s) => ({
     resolvedLocale: s.resolvedLocale,
@@ -69,7 +69,7 @@ export function SettingsDialog({ onClose }: Props) {
     contextRedlinePercent: s.contextRedlinePercent, setContextRedlinePercent: s.setContextRedlinePercent,
     wallpaperUrl: s.wallpaperUrl, setWallpaperUrl: s.setWallpaperUrl,
     wallpaperOpacity: s.wallpaperOpacity, setWallpaperOpacity: s.setWallpaperOpacity,
-    wallpaperFrost: s.wallpaperFrost, setWallpaperFrost: s.setWallpaperFrost,
+    wallpaperFrostBlur: s.wallpaperFrostBlur, setWallpaperFrostBlur: s.setWallpaperFrostBlur,
     interfaceScale: s.interfaceScale, setInterfaceScale: s.setInterfaceScale,
   })));
 
@@ -113,8 +113,8 @@ export function SettingsDialog({ onClose }: Props) {
             setWallpaperUrl={setWallpaperUrl}
             wallpaperOpacity={wallpaperOpacity}
             setWallpaperOpacity={setWallpaperOpacity}
-            wallpaperFrost={wallpaperFrost}
-            setWallpaperFrost={setWallpaperFrost}
+            wallpaperFrostBlur={wallpaperFrostBlur}
+            setWallpaperFrostBlur={setWallpaperFrostBlur}
             interfaceScale={interfaceScale}
             setInterfaceScale={setInterfaceScale}
           />

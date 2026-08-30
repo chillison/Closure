@@ -11,7 +11,11 @@ nav:
   imageGen: "生图"
   assets: "资产库"
   timeline: "时间线"
+  # 世界状态面板（dogfood R2 #92）：世界事件系统读面（icon-rail「世界」钮）。
+  world: "世界"
   structure: "结构"
+  # 设定页（08-30 资产卡可视化）：8 类设定卡浏览/编辑 + 设定文档入口。
+  setting: "设定"
   explorer: "资源管理器"
   search: "搜索"
   settings: "设置"

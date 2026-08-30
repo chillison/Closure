@@ -152,6 +152,11 @@ describe('WorkflowRuntime.runChapterChain（Story 4.0 §4.7）', () => {
     const controller = new AbortController();
     controller.abort();
 
+    // dogfood R2 #105 R2.5（AC9）：链被掐的服务端收口日志——修前 abort 路径全线零日志
+    //（「中断原因未上日志」诊断盲区）。断言 warn 携 sessionId + msg（真机排障的 join key）。
+    const { logger } = await import('../src/logger');
+    const abortLogSpy = vi.spyOn(logger, 'warn');
+
     const summary = await runtime.runChapterChain(parent.id, makeInitialArtifacts(), {
       abort: controller.signal,
     });
@@ -161,6 +166,12 @@ describe('WorkflowRuntime.runChapterChain（Story 4.0 §4.7）', () => {
     expect(summary.routeDecision).toBeUndefined();
     // generate 不应被调（预检在首节点前抛）
     expect(generate).not.toHaveBeenCalled();
+    // 服务端 abort 留痕（workflow.ts ChainAbortedError catch）——sessionId + reason 可诊断。
+    expect(abortLogSpy).toHaveBeenCalledWith(
+      expect.objectContaining({ sessionId: parent.id }),
+      'chapter chain aborted',
+    );
+    abortLogSpy.mockRestore();
   });
 
   // ════════════════════════════════════════════════════════════════════════════

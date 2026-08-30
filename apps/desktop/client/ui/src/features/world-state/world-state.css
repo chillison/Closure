@@ -1,0 +1,1133 @@
+/* ── 世界状态面板（dogfood R2 #92，task 08-29-world-state-panel S3-S6）───────────
+ *
+ * 形态权威：task research/mockup-world-state-panel-v3.html（用户逐轮拍板）。类前缀
+ * `.world-*`，与 timeline/structure 面板零共享选择器。配色/间距/圆角/字号全走
+ * tokens.css + scales.css（theme-tokens 约定），唯一例外见下方轴色段。
+ *
+ * 布局（左槽，与 timeline 同族）：面板 = flex 纵列——头部（标题+计数+刷新+搜索）
+ * / 提取中细条 / 主体选择区（可折叠，max-height 兜长列表）/ 脊柱（flex:1；L1 自身滚动，
+ * L2/L3 chrome 固定 + .world-spine-scroll 内滚动承载窗口化长列表）。 */
+
+/* ── 五轴语义色（本面板唯一字面色例外）──
+ * 轴是语义维度（非线身份类 viz 色），五 hue 等距分离取色盲安全：青 170 / 靛 230 /
+ * 玫 348 / 琥珀 40 / 紫 282——同亮度下 hue 主区分，暗主题整体上调 L（mirror
+ * structure.css --viz-line-* 亮 L58/暗 L66 纪律；琥珀/玫在红绿色盲下趋同故拉大 L 差）。
+ * tokens.css 是生成物（DO NOT EDIT），故落本文件——与 --viz-line-* 同款例外声明。
+ * a11y：轴身份永不仅靠颜色承载——点必配文字 label（tooltip/轴名），色是辅助编码。 */
+:root {
+  --world-axis-physical: hsl(170 45% 32%);
+  --world-axis-cognitive: hsl(230 48% 56%);
+  --world-axis-emotional: hsl(348 62% 50%);
+  --world-axis-relational: hsl(40 75% 42%);
+  --world-axis-factional: hsl(282 45% 55%);
+}
+
+[data-theme='dark'] {
+  --world-axis-physical: hsl(170 45% 60%);
+  --world-axis-cognitive: hsl(230 48% 72%);
+  --world-axis-emotional: hsl(348 62% 68%);
+  --world-axis-relational: hsl(40 80% 60%);
+  --world-axis-factional: hsl(282 45% 72%);
+}
+
+/* 轴色消费单源类：dot/chip 色板一律经此类映射，不直引 --world-axis-*。 */
+.world-axis-dot { border-radius: var(--radius-circle); display: inline-block; flex-shrink: 0; }
+.world-axis-dot--physical { background: var(--world-axis-physical); }
+.world-axis-dot--cognitive { background: var(--world-axis-cognitive); }
+.world-axis-dot--emotional { background: var(--world-axis-emotional); }
+.world-axis-dot--relational { background: var(--world-axis-relational); }
+.world-axis-dot--factional { background: var(--world-axis-factional); }
+
+/* ── 面板骨架 ── */
+.world-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.world-head {
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.world-title-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.world-title {
+  font-size: var(--text-md);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.world-counts {
+  font-size: var(--text-2xs);
+  color: var(--on-surface-variant);
+}
+
+/* 头部右侧动作区（刷新钮）——margin-left:auto 靠右，不参与标题收缩。 */
+.world-head-actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-2xs);
+}
+
+.world-icon-btn {
+  background: none;
+  border: none;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  padding: var(--space-3xs) var(--space-2xs);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+}
+
+.world-icon-btn:hover {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.world-icon-btn .material-symbols-outlined {
+  font-size: var(--text-md);
+}
+
+.world-search {
+  position: relative;
+}
+
+.world-search .material-symbols-outlined {
+  position: absolute;
+  left: var(--space-sm);
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--text-sm);
+  color: var(--on-surface-variant);
+  pointer-events: none;
+}
+
+.world-search input {
+  width: 100%;
+  background: var(--input-bg);
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-sm);
+  color: var(--on-surface);
+  font-size: var(--text-xs);
+  padding: var(--space-2xs) var(--space-sm) var(--space-2xs) var(--space-xl);
+  outline: none;
+}
+
+.world-search input:focus {
+  border-color: var(--accent);
+  background: var(--input-bg-focus);
+}
+
+/* ── 「世界提取中…」细条（#82 相位可见性；extracting 信号驱动）── */
+.world-live-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-3xs) var(--space-md);
+  font-size: var(--text-2xs);
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.world-live-bar .world-pulse {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-circle);
+  background: var(--accent);
+  animation: world-pulse 1.2s infinite;
+}
+
+@keyframes world-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+
+/* ── 主体选择区（可折叠；type 分组；max-height 兜几百主体）── */
+.world-picker {
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  /* mockup v3：选择区至多占面板 34%——脊柱是主角，主体多时内部滚动。 */
+  max-height: 34%;
+}
+
+.world-picker-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  font-size: var(--text-2xs);
+  letter-spacing: 0.5px;
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+.world-picker-head:hover {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.world-picker-head .world-caret {
+  font-size: var(--text-3xs);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.world-picker.is-collapsed .world-picker-head .world-caret {
+  transform: rotate(-90deg);
+}
+
+.world-picker.is-collapsed .world-picker-body {
+  display: none;
+}
+
+.world-picker-head .world-picker-count {
+  margin-left: auto;
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+}
+
+.world-picker-body {
+  overflow-y: auto;
+  padding: 0 var(--space-sm) var(--space-sm);
+}
+
+.world-group-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-xs);
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  font-size: var(--text-2xs);
+  border-radius: var(--radius-sm);
+  user-select: none;
+  background: none;
+  border: none;
+  width: 100%;
+}
+
+.world-group-head:hover {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.world-group-head .world-caret {
+  font-size: var(--text-3xs);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+/* 组头折叠态（S6 窗口化改造：主体行不再经 CSS 隐藏——折叠组的行直接不进窗口列表）。 */
+.world-group-head.is-collapsed .world-caret {
+  transform: rotate(-90deg);
+}
+
+.world-group-head .world-group-count {
+  margin-left: auto;
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+}
+
+.world-subject-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  /* 左缩进让位组头层级（mockup：组内行 indent 18px，换 token 近似值）。 */
+  padding: var(--space-3xs) var(--space-xs) var(--space-3xs) var(--space-lg);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  font-size: var(--text-xs);
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.world-subject-row:hover {
+  background: var(--surface-container-low);
+  color: var(--on-surface);
+}
+
+.world-subject-row.is-selected {
+  background: var(--accent-soft);
+  color: var(--on-surface);
+}
+
+.world-subject-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-subject-id {
+  color: var(--on-surface-variant);
+  opacity: 0.65;
+  font-size: var(--text-3xs);
+  margin-left: var(--space-3xs);
+}
+
+.world-subject-last {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  opacity: 0.75;
+  flex-shrink: 0;
+}
+
+/* 轴点组（主体行首——至多三枚，mockup v3）。 */
+.world-axis-dots {
+  display: inline-flex;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.world-axis-dots .world-axis-dot {
+  width: 7px;
+  height: 7px;
+}
+
+/* ── 脊柱（L1 = 自身滚动；L2/L3 = is-stacked 固定 chrome + world-spine-scroll 内滚动）── */
+.world-spine {
+  flex: 1;
+  overflow-y: auto;
+  /* 横向滚动隐患防御（#18）：锚点圆点/长 path 绝对定位压到左缘外时不出横向滚动条
+   * （CSS 规范：一轴 auto 时另一轴的 visible 计算成 auto——显式 hidden 收口）。 */
+  overflow-x: hidden;
+  min-height: 0;
+  /* 滚动面 flex-start（unsafe-center 反模式）。 */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* 活跃主体条（最近在场 chips）。 */
+.world-active-strip {
+  display: flex;
+  gap: var(--space-2xs);
+  flex-wrap: wrap;
+  padding: var(--space-sm) var(--space-md) var(--space-2xs);
+}
+
+.world-active-strip .world-active-label {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  opacity: 0.75;
+  width: 100%;
+}
+
+.world-chip {
+  font-size: var(--text-2xs);
+  padding: var(--space-3xs) var(--space-sm);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-variant);
+  cursor: pointer;
+  color: var(--on-surface-variant);
+  background: none;
+}
+
+.world-chip:hover {
+  color: var(--on-surface);
+  border-color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+}
+
+/* 时点脊柱行（锚点 = storyTime 场锚点，现在在上=降序渲染）。
+ * 竖线经 .world-anchor::before 画在左缘，行首圆点叠加在线上（mockup .anchor 形态）。
+ *
+ * 几何单源（#18）：竖线宽 / 圆点外沿 / 共轴线心一处定义、下方三处引用（::before 竖线、
+ * L1 行圆点 .world-anchor-row::before、L3 锚圆点 .world-anchor-dot）——圆点心恒与线心
+ * 同轴（三处原各自裸 px 已漂移：L1 圆点 left:-26px 落到面板左缘外）。圆点外沿用
+ * --space-lg（0.75rem=12px，border-box 含 2px 边框）；线心落在左 gutter 中央附近
+ * （--space-md + 线宽）。改几何只改这一组变量。 */
+.world-anchor {
+  position: relative;
+  padding: 0 0 0 var(--space-xl);
+  --world-line-width: 2px;
+  --world-dot-ring: 2px;
+  --world-dot-size: var(--space-lg);
+  --world-spine-axis: calc(var(--space-md) + var(--world-line-width));
+}
+
+.world-anchor::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--world-spine-axis) - var(--world-line-width) / 2);
+  top: 0;
+  bottom: 0;
+  width: var(--world-line-width);
+  background: var(--outline-variant);
+}
+
+.world-anchor:first-child::before {
+  top: var(--space-sm);
+}
+
+.world-anchor:last-child::before {
+  bottom: auto;
+  height: var(--space-sm);
+}
+
+/* L1 锚点行本体 = 整行可点按钮（下钻 L2）；圆点纯装饰。 */
+.world-anchor-row {
+  display: block;
+  width: 100%;
+  padding: var(--space-2xs) var(--space-md) var(--space-3xs) 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+}
+
+.world-anchor-row:hover .world-anchor-label {
+  color: var(--accent);
+}
+
+/* 行首圆点（脊柱节点标记）。left 减 var(--space-xl) = 行体让位的 .world-anchor 左 padding
+ * （圆点画回 gutter 线心上）。 */
+.world-anchor-row::before {
+  content: "";
+  position: absolute;
+  left: calc(var(--world-spine-axis) - var(--world-dot-size) / 2 - var(--space-xl));
+  top: var(--space-sm);
+  width: var(--world-dot-size);
+  height: var(--world-dot-size);
+  border-radius: var(--radius-circle);
+  background: var(--surface-container-lowest);
+  border: var(--world-dot-ring) solid var(--on-surface-variant);
+  z-index: 1;
+}
+
+.world-anchor-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.world-anchor-t {
+  color: var(--on-surface-variant);
+  opacity: 0.7;
+  font-size: var(--text-3xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.world-anchor-label {
+  font-weight: 600;
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.world-anchor-eps {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+  border-radius: var(--radius-2xs);
+  padding: 1px var(--space-xs);
+}
+
+.world-anchor-activity {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+.world-anchor-meta {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px var(--space-md) var(--space-2xs) 0;
+}
+
+.world-anchor-meta .world-axis-dot {
+  width: 7px;
+  height: 7px;
+}
+
+.world-anchor-title {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  opacity: 0.75;
+  margin-left: var(--space-xs);
+}
+
+/* 新时点滑入（事件驱动重拉后新锚点行，mockup .fresh；reduced-motion 全局收敛）。 */
+.world-anchor.is-fresh {
+  animation: world-slidein var(--duration-slow) var(--ease-enter);
+}
+
+@keyframes world-slidein {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ── 三态：加载骨架 / 空态 / 错误态（含重试）── */
+.world-state-block {
+  padding: var(--space-xl) var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-sm);
+  text-align: center;
+}
+
+.world-state-block .material-symbols-outlined {
+  font-size: var(--text-2xl);
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+}
+
+.world-state-title {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--on-surface);
+}
+
+.world-state-desc {
+  font-size: var(--text-xs);
+  color: var(--on-surface-variant);
+  line-height: 1.6;
+  max-width: 22em;
+}
+
+.world-retry-btn {
+  background: var(--surface-container);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2xs) var(--space-lg);
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.world-retry-btn:hover {
+  background: var(--surface-container-high);
+}
+
+/* 加载骨架（Skeleton 组件竖排占位）。 */
+.world-loading {
+  padding: var(--space-lg) var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+/* ── S5：L2 时点切片 / L3 主体脊柱 ───────────────────────────────────────────
+ *
+ * 布局总则：L2/L3 的脊柱是「chrome 固定 + 内滚动列表」结构（.world-spine.is-stacked 不滚、
+ * .world-spine-scroll 滚）——长列表窗口化的滚动区独立，chips/切线行/快照块固定其上，
+ * 从根上规避 sticky 前提族的静默退化（spec/ui/layout-and-pages 布局级模式）。 */
+
+.world-spine.is-stacked {
+  overflow: hidden;
+}
+
+.world-spine-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+/* 窗口化 spacer（上下垫高——估高前缀和派生，见 useWindowedRows）。 */
+.world-scroll-pad {
+  flex-shrink: 0;
+}
+
+/* ── 面包屑（L2/L3 顶部）── */
+.world-crumbs {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
+  border-bottom: 1px solid var(--outline-variant);
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.world-crumbs-trail {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  min-width: 0;
+  overflow: hidden;
+}
+
+.world-crumbs-root {
+  background: none;
+  border: none;
+  padding: 2px var(--space-3xs);
+  border-radius: var(--radius-2xs);
+  color: var(--on-surface-variant);
+  font-size: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.world-crumbs-root:hover {
+  color: var(--accent);
+}
+
+.world-crumbs-sep {
+  color: var(--on-surface-variant);
+  opacity: 0.6;
+}
+
+.world-crumbs-current {
+  font-weight: 600;
+  color: var(--on-surface);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.world-crumbs-back {
+  margin-left: auto;
+  flex-shrink: 0;
+  font-size: var(--text-3xs);
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  padding: 1px var(--space-xs);
+  cursor: pointer;
+}
+
+.world-crumbs-back:hover {
+  border-color: var(--accent);
+}
+
+/* ── 轴 chips 行（L2/L3 共用；缺轴计数 0 灰显仍可点）── */
+.world-chips-row {
+  display: flex;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-md);
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.world-axis-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  font-size: var(--text-3xs);
+  padding: 1px var(--space-xs);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--outline-variant);
+  color: var(--on-surface-variant);
+  background: none;
+  cursor: pointer;
+}
+
+.world-axis-chip .world-axis-dot {
+  width: 7px;
+  height: 7px;
+  opacity: 0.35;
+}
+
+.world-axis-chip.is-on {
+  color: var(--on-surface);
+  border-color: var(--on-surface-variant);
+  background: var(--surface-container-low);
+}
+
+.world-axis-chip.is-on .world-axis-dot {
+  opacity: 1;
+}
+
+.world-axis-chip.is-empty {
+  opacity: 0.45;
+}
+
+.world-axis-chip-count {
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── 有旧数据时的刷新失败细条（不遮数据）── */
+.world-error-strip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-3xs) var(--space-md);
+  font-size: var(--text-3xs);
+  color: var(--error);
+  background: var(--error-bg);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.world-error-strip span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-error-retry {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  color: var(--error);
+  font-size: var(--text-3xs);
+  padding: 0 var(--space-xs);
+  cursor: pointer;
+}
+
+/* ── L2 场景摘要行 ── */
+.world-slice-summary {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  padding: var(--space-2xs) var(--space-md);
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+
+/* ── L2 跨主体分组 ── */
+.world-sgrp-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md) var(--space-3xs);
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+}
+
+.world-sgrp-head:hover .world-sgrp-name {
+  color: var(--accent);
+}
+
+.world-sgrp-name {
+  font-weight: 600;
+  font-size: var(--text-xs);
+  color: var(--on-surface);
+}
+
+.world-sgrp-count {
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── 变更行（L2/L3 共用）── */
+.world-patch {
+  padding: var(--space-3xs) var(--space-md) var(--space-3xs) var(--space-lg);
+}
+
+.world-patch-line {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2xs);
+}
+
+.world-patch-line .world-axis-dot {
+  width: 7px;
+  height: 7px;
+  margin-top: 4px;
+}
+
+.world-patch-head {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 1px 0;
+}
+
+.world-patch-path {
+  display: block;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: var(--text-3xs);
+  color: var(--on-surface);
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.world-patch-caret {
+  display: inline-block;
+  font-size: 8px;
+  color: var(--on-surface-variant);
+  margin-right: var(--space-3xs);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.world-patch.is-open .world-patch-caret {
+  transform: rotate(90deg);
+  color: var(--accent);
+}
+
+.world-patch-op {
+  opacity: 0.5;
+  margin-left: var(--space-3xs);
+  font-weight: 400;
+}
+
+.world-patch-summary {
+  display: block;
+  color: var(--on-surface-variant);
+  line-height: 1.5;
+  margin-top: 1px;
+  font-size: var(--text-3xs);
+}
+
+/* 展开的完整值（三分支渲染，见 worldPatchValue.tsx）。 */
+.world-patch-value {
+  margin-top: var(--space-3xs);
+  margin-left: var(--space-lg);
+  background: var(--surface-container-low);
+  border-left: 2px solid var(--outline-variant);
+  padding: var(--space-3xs) var(--space-xs);
+  font-size: var(--text-3xs);
+  color: var(--on-surface);
+  line-height: 1.55;
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+}
+
+/* 值分层 / 数组项 / 引用 chip。 */
+.world-value-layers,
+.world-value-item {
+  display: block;
+}
+
+.world-value-layer {
+  display: block;
+}
+
+.world-value-label {
+  color: var(--on-surface-variant);
+  opacity: 0.9;
+  margin-right: var(--space-3xs);
+}
+
+.world-ref-chip {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-xs);
+  font-size: var(--text-3xs);
+  cursor: pointer;
+  margin: 0 2px;
+}
+
+.world-ref-chip.is-static {
+  border-style: dashed;
+  cursor: default;
+}
+
+/* issues 徽标（broken-relative / invalid-op 行内警示）。 */
+.world-issue-badge {
+  display: inline-block;
+  font-size: var(--text-3xs);
+  color: var(--warning);
+  background: var(--warning-bg);
+  border-radius: var(--radius-pill);
+  padding: 0 var(--space-xs);
+  margin-left: var(--space-3xs);
+  white-space: nowrap;
+}
+
+/* 跳场景钮（章级定位；查不到章置灰）。 */
+.world-jump-btn {
+  font-size: var(--text-3xs);
+  color: var(--accent);
+  background: none;
+  border: 1px solid var(--outline-variant);
+  border-radius: var(--radius-2xs);
+  padding: 1px var(--space-xs);
+  cursor: pointer;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 1px;
+}
+
+.world-jump-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.world-jump-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* ── L3 回放切线行 ── */
+.world-cut-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: none;
+  border-top: 1px dashed var(--accent);
+  border-bottom: 1px dashed var(--accent);
+  font-size: var(--text-3xs);
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  flex-shrink: 0;
+}
+
+.world-cut-label {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.world-cut-hint {
+  margin-left: auto;
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  flex-shrink: 0;
+}
+
+/* ── L3 此刻快照块（内联可折叠）── */
+.world-snapshot {
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.world-snapshot-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-2xs) var(--space-md);
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+  background: none;
+  border: none;
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+}
+
+.world-snapshot-head .world-caret {
+  font-size: var(--text-3xs);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+
+.world-snapshot:not(.is-open) .world-snapshot-head .world-caret {
+  transform: rotate(-90deg);
+}
+
+.world-snapshot-title {
+  white-space: nowrap;
+}
+
+.world-snapshot-title b {
+  color: var(--on-surface);
+  font-weight: 600;
+}
+
+.world-snapshot-count {
+  color: var(--on-surface-variant);
+  opacity: 0.85;
+}
+
+.world-snapshot-hint {
+  margin-left: auto;
+  color: var(--on-surface-variant);
+  opacity: 0.65;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-snapshot-body {
+  padding: 0 var(--space-md) var(--space-2xs);
+}
+
+.world-snapshot-empty {
+  padding: var(--space-2xs) var(--space-md) var(--space-xs);
+  font-size: var(--text-3xs);
+  color: var(--on-surface-variant);
+}
+
+.world-kv {
+  display: flex;
+  gap: var(--space-xs);
+  padding: 2px 0;
+  font-size: var(--text-3xs);
+  border-bottom: 1px dashed var(--outline-variant);
+  min-width: 0;
+}
+
+.world-kv:last-child {
+  border-bottom: none;
+}
+
+.world-kv-key {
+  color: var(--on-surface-variant);
+  font-family: ui-monospace, Consolas, monospace;
+  flex-shrink: 0;
+  max-width: 45%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  text-align: left;
+  font-size: var(--text-3xs);
+}
+
+.world-kv-key:hover {
+  color: var(--accent);
+  text-decoration: underline dotted;
+}
+
+.world-kv-value {
+  color: var(--on-surface);
+  line-height: 1.5;
+  word-break: break-word;
+  min-width: 0;
+  flex: 1;
+}
+
+/* ── L3 路径钻取条 ── */
+.world-pathfilter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-3xs) var(--space-md);
+  font-size: var(--text-3xs);
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-bottom: 1px solid var(--outline-variant);
+  flex-shrink: 0;
+}
+
+.world-pathfilter code {
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-all;
+}
+
+.world-pathfilter-hint {
+  color: var(--on-surface-variant);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.world-pathfilter-clear {
+  margin-left: auto;
+  flex-shrink: 0;
+  cursor: pointer;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-2xs);
+  padding: 0 var(--space-xs);
+  background: none;
+  color: inherit;
+  font-size: var(--text-3xs);
+}
+
+/* ── L3 更晚折叠灰条 ── */
+.world-later-folded {
+  padding: var(--space-2xs) var(--space-md);
+  color: var(--on-surface-variant);
+  font-size: var(--text-3xs);
+  cursor: pointer;
+  background: var(--surface-container-low);
+  border: none;
+  width: 100%;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.world-later-folded:hover {
+  color: var(--on-surface);
+}
+
+/* ── L3 脊柱锚点块（竖线 + 圆点切线 + 行头下钻 + 切线钮 hover 显形）── */
+.world-anchor-line {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  padding: var(--space-2xs) var(--space-md) var(--space-3xs) 0;
+}
+
+.world-anchor-linehead {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+}
+
+.world-anchor-linehead:hover .world-anchor-label {
+  color: var(--accent);
+}
+
+.world-anchor-dot {
+  position: absolute;
+  left: calc(var(--world-spine-axis) - var(--world-dot-size) / 2);
+  top: var(--space-sm);
+  width: var(--world-dot-size);
+  height: var(--world-dot-size);
+  padding: 0;
+  border-radius: var(--radius-circle);
+  background: var(--surface-container-lowest);
+  border: var(--world-dot-ring) solid var(--on-surface-variant);
+  cursor: pointer;
+}
+
+.world-anchor-dot:hover {
+  border-color: var(--accent);
+}
+
+.world-anchor-scissor {
+  font-size: var(--text-3xs);
+  color: var(--accent);
+  cursor: pointer;
+  border: 1px dashed var(--accent);
+  border-radius: var(--radius-2xs);
+  padding: 1px var(--space-2xs);
+  background: none;
+  opacity: 0;
+  flex-shrink: 0;
+}
+
+.world-anchor:hover .world-anchor-scissor,
+.world-anchor-scissor:focus-visible {
+  opacity: 1;
+}

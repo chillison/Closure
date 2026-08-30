@@ -96,8 +96,28 @@ describe('isMarkdownRoundTripLossy', () => {
     expect(isMarkdownRoundTripLossy('Text with ![alt](assets/pic.png) inline.')).toBe(true);
   });
 
-  it('flags YAML front-matter', () => {
-    expect(isMarkdownRoundTripLossy('---\ntitle: x\n---\n\nBody text.')).toBe(true);
+  it('accepts plain YAML front-matter (editor strips & re-attaches it, #109)', () => {
+    // Front-matter is machine metadata: the editor strips it before the body
+    // reaches TipTap and re-attaches the captured block byte-exact on save, so
+    // it no longer forces the source-mode fallback by itself.
+    expect(isMarkdownRoundTripLossy('---\ntitle: x\n---\n\nBody text.')).toBe(false);
+    expect(isMarkdownRoundTripLossy('---\norder: 0\n---\n\n# 第一章\n\n正文。')).toBe(false);
+  });
+
+  it('accepts CRLF front-matter', () => {
+    expect(isMarkdownRoundTripLossy('---\r\norder: 0\r\n---\r\n\r\n# 第一章\r\n\r\n正文。\r\n')).toBe(false);
+  });
+
+  it('still flags lossy constructs behind front-matter', () => {
+    expect(isMarkdownRoundTripLossy('---\norder: 0\n---\n\n| a | b |\n| --- | --- |\n| 1 | 2 |\n')).toBe(true);
+    expect(isMarkdownRoundTripLossy('---\norder: 0\n---\n\n![alt](pic.png)')).toBe(true);
+    expect(isMarkdownRoundTripLossy('---\norder: 0\n---\n\n<div class="note">html</div>')).toBe(true);
+  });
+
+  it('does not flag image/table-like syntax inside the front-matter block', () => {
+    // The strip happens before judging, so metadata values that merely look
+    // like markdown syntax never reach the lossy construct checks.
+    expect(isMarkdownRoundTripLossy('---\ncover: "![alt](pic.png)"\n---\n\nBody text.')).toBe(false);
   });
 
   it('flags structural raw HTML', () => {

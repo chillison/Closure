@@ -84,6 +84,20 @@ vi.mock('electron', () => ({
   },
 }));
 
+// dogfood #104-b：materialize hook 的无 deps 生产接线（正确形态，不动）会兜底到
+// resolveEmbeddingModel——经 configIpc 读真实 ~/.orison/model 配置 → defaultEmbedBatch
+// 真打 ${baseUrl}/embeddings（400 章排干队列 = 401 ×N 实录）。mock 掉模型解析层（逐字
+// mirror chapterSummaryHookWiring.test.ts:22-29）：resolveEmbeddingModel=null 在 indexer
+// 的 `if (model && …)` 处短路整个 embed 块，「无模型→FTS-only」降级语义不变，零网络。
+vi.mock('../main/ipc/modelGatewayIpc', () => ({
+  resolveEmbeddingModel: () => null,
+  resolveRerankModel: () => null,
+  resolveSummaryModel: () => null,
+  resolveModel: () => {
+    throw new Error('resolveModel should not be called');
+  },
+}));
+
 // project.yaml 边界 mock：materializeChapterSummaryCore 经 dynamic import 读 loadProject——
 // 合成 doc（episode_outlines 400 + promise_registry + 空 scene_graph），免写盘整档。
 const { loadProjectMock } = vi.hoisted(() => ({ loadProjectMock: vi.fn() }));

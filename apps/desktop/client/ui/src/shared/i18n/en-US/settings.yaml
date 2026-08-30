@@ -81,8 +81,7 @@ settings:
   backgroundChoose: "Choose image"
   backgroundReset: "Reset to default"
   backgroundOpacity: "Opacity"
-  backgroundFrost: "Frost background"
-  backgroundFrostHint: "Blur the wallpaper so foreground text stays readable"
+  backgroundFrost: "Frost intensity"
   # ── Global interface scale (08-26 structure-rebuild R8) ──
   interfaceScale: "Interface scale"
   interfaceScaleDesc: "Scales the entire app UI (all pages and text). Takes effect immediately."
